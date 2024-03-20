@@ -1,0 +1,9 @@
+{
+  "platforms": ["ios", "tvos", "android", "web"],
+  "ios": {
+    "modules": ["IronfishNativeModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.ironfishnativemodule.IronfishNativeModule"]
+  }
+}
