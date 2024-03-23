@@ -15,20 +15,12 @@ export function getDirUtils() {
   }
 
   const monorepoRootDir = path.join(nativeModuleProjectDir, "..", "..");
-  const rustLibDir = path.join(nativeModuleProjectDir, "rust_lib");
 
   return {
     monorepoRootDir,
+    nativeModuleProjectDir,
     toMonorepoRootDir: () => {
       process.chdir(monorepoRootDir);
-    },
-    nativeModuleProjectDir,
-    toNativeModuleProjectDir: () => {
-      process.chdir(nativeModuleProjectDir);
-    },
-    rustLibDir,
-    toRustLibDir: () => {
-      process.chdir(rustLibDir);
     },
   };
 }
