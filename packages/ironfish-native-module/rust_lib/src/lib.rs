@@ -12,7 +12,7 @@ pub mod android {
     use jni::sys::jint;
     
     #[no_mangle]
-    pub unsafe extern "C" fn Java_expo_modules_myrustmodule_MyRustModule_rustAdd(
+    pub unsafe extern "C" fn Java_expo_modules_ironfishnativemodule_IronfishNativeModule_rustAdd(
         _env: JNIEnv,
         _class: JClass,
         a: jint,
