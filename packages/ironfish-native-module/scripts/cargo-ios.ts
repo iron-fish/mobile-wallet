@@ -19,6 +19,23 @@ function cargoBuild(target: string) {
   });
 }
 
+function genHeaderFile(rustLibFolder: string) {
+  spawnSync(
+    "cbindgen",
+    [
+      "--lang",
+      "c",
+      "--crate",
+      CONSTANTS.rustLibName,
+      "--output",
+      path.join(rustLibFolder, `${CONSTANTS.rustLibName}.h`),
+    ],
+    {
+      stdio: "inherit",
+    },
+  );
+}
+
 function getTarget() {
   const args = process.argv.slice(2);
   const target = (args[0] ?? "").replace("--target=", "");
@@ -42,6 +59,21 @@ function main() {
   dirUtils.toMonorepoRootDir();
   cargoBuild(target);
 
+  const rustLibFolder = path.join(
+    dirUtils.monorepoRootDir,
+    "target",
+    target,
+    "release",
+  );
+
+  genHeaderFile(rustLibFolder);
+
+  const libFileName = `lib${CONSTANTS.rustLibName}.a`;
+  const headerFileName = `${CONSTANTS.rustLibName}.h`;
+
+  const rustLibPath = path.join(rustLibFolder, libFileName);
+  const rustHeaderPath = path.join(rustLibFolder, headerFileName);
+
   // Initialize the output directory
   const destinationPath = path.join(
     dirUtils.nativeModuleProjectDir,
@@ -53,17 +85,8 @@ function main() {
     fs.mkdirSync(destinationPath, { recursive: true });
   }
 
-  const iosLibName = `lib${CONSTANTS.rustLibName}.a`;
-
-  const rustLibPath = path.join(
-    dirUtils.monorepoRootDir,
-    "target",
-    target,
-    "release",
-    iosLibName,
-  );
-
-  fs.copyFileSync(rustLibPath, path.join(destinationPath, iosLibName));
+  fs.copyFileSync(rustLibPath, path.join(destinationPath, libFileName));
+  fs.copyFileSync(rustHeaderPath, path.join(destinationPath, headerFileName));
 }
 
 main();
