@@ -13,7 +13,10 @@
     "test": "expo-module test",
     "prepare": "expo-module prepare",
     "prepublishOnly": "expo-module prepublishOnly",
-    "expo-module": "expo-module"
+    "expo-module": "expo-module",
+    "cargo-ios": "tsx scripts/cargo-ios.ts",
+    "cargo-android": "tsx scripts/cargo-android.ts",
+    "build-rust": "npm run cargo-android && npm run cargo-ios -- --target=ios-sim && pod install --project-directory=ios"
   },
   "keywords": [
     "react-native",
