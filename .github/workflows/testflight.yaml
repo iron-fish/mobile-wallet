@@ -1,0 +1,60 @@
+name: Testflight Publish
+on:
+  push:
+
+
+jobs:
+  publish_testflight:
+    uses: ./.github/workflows/build_template.yaml
+    with:
+      os: macos-latest
+    steps:
+    - name: setup codesigning
+      env: 
+        APPLE_IFLABS_SIGNING_CERT: ${{ secrets.APPLE_IFLABS_SIGNING_CERT }}
+        APPLE_IFLABS_SIGNING_CERT_PASSWORD: ${{ secrets.APPLE_IFLABS_SIGNING_CERT_PASSWORD }}
+        APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+        APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      run: |
+        # create variables
+        CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+        PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+        KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+        API_KEY_PATH=$RUNNER_TEMP/api_key.p8
+
+        # import certificate and provisioning profile from secrets
+        echo -n "$APPLE_IFLABS_SIGNING_CERT" | base64 --decode -o $CERTIFICATE_PATH
+        echo -n "$APPLE_PROVISIONING_PROFILE" | base64 --decode -o $PP_PATH
+        echo -n "$APPLE_API_KEY" | base64 --decode -o $API_KEY_PATH
+
+        # create temporary keychain
+        security create-keychain -p "$APPLE_IFLABS_SIGNING_CERT_PASSWORD" $KEYCHAIN_PATH
+        security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+        security unlock-keychain -p "$APPLE_IFLABS_SIGNING_CERT_PASSWORD" $KEYCHAIN_PATH
+
+        # import certificate to keychain
+        security import $CERTIFICATE_PATH -P "$APPLE_IFLABS_SIGNING_CERT_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+        security list-keychain -d user -s $KEYCHAIN_PATH
+
+        # apply provisioning profile
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+        ls $RUNNER_TEMP
+    - name: publish
+      working-directory: packages/mobile-app/ios
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      run: |
+        echo "Building app..."
+        ARCHIVE_PATH="$HOME/Library/Developer/Xcode/Archives/mobileapp/$(date +%Y%m%d%H%M%S)/mobileapp.xcarchive"
+        EXPORT_PATH="$HOME/Library/Developer/Xcode/Archives/mobileapp/$(date +%Y%m%d%H%M%S)/"
+        xcodebuild -workspace mobileapp.xcworkspace -scheme "mobileapp" clean archive -sdk iphoneos -archivePath $ARCHIVE_PATH -allowProvisioningUpdates
+        xcodebuild -exportArchive -archivePath $ARCHIVE_PATH -exportPath $EXPORT_PATH -allowProvisioningUpdates
+        echo "Collecting artifacts.."
+        cp -R "${ARCHIVE_PATH}/dSYMs" .
+        IPA="${EXPORT_PATH}mobileapp.ipa"
+        echo $IPA
+        echo "Uploading app to iTC..."
+        xcrun altool --upload-app -t ios -f $IPA --apiKey $API_KEY --apiIssuer $API_ISSUER
