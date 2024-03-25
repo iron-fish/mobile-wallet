@@ -2,6 +2,10 @@ name: Reusable build
 
 on:
   workflow_call:
+    inputs:
+    os:
+      required: true
+      type: string
 
 jobs:
   build:
