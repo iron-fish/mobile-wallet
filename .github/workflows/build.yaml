@@ -2,10 +2,10 @@ name: Build
 on:
   push:
 
-
 jobs:
   build:
     runs-on: macos-latest
-    uses: ./.github/workflows/build_template.yaml
-      with:
-        os: macos-latest
+    steps:
+      - uses: ./.github/workflows/build_template.yaml
+        with:
+          os: macos-latest

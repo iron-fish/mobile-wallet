@@ -5,10 +5,10 @@ on:
 
 jobs:
   publish_testflight:
-    uses: ./.github/workflows/build_template.yaml
-    with:
-      os: macos-latest
     steps:
+    - uses: ./.github/workflows/build_template.yaml
+      with:
+        os: macos-latest
     - name: setup codesigning
       env: 
         APPLE_IFLABS_SIGNING_CERT: ${{ secrets.APPLE_IFLABS_SIGNING_CERT }}
