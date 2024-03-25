@@ -1,0 +1,46 @@
+name: Build
+on:
+  push:
+
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 20
+      
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install dependencies
+        run: |
+          npm install
+
+      - name: Get rust ready
+        run: |
+          rustup target install x86_64-linux-android
+          rustup target install armv7-linux-androideabi
+          rustup target install aarch64-linux-android
+          rustup target install i686-linux-android
+          rustup target install x86_64-apple-ios
+          rustup target install aarch64-apple-ios
+          cargo build
+          
+      - name: Build ironfish-native-module
+        run: |
+          npx nx cargo-ios ironfish-native-module -- --target='ios'
+          npx nx cargo-android ironfish-native-module
+
+
+      - name: Verify prebuild success
+        run: |
+          npx nx prebuild mobile-app
