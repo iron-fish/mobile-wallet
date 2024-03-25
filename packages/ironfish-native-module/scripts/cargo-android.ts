@@ -12,6 +12,9 @@ const TARGET_TO_DESTINATION = {
 } as const;
 
 function build(target: string) {
+  spawnSync("cargo", ["install", "cargo-ndk"], {
+    stdio: "inherit",
+  });
   spawnSync(
     "cargo",
     ["ndk", "--target", target, "--platform", "31", "build", "--release"],
