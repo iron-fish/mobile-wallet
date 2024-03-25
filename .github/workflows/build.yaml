@@ -50,11 +50,3 @@ jobs:
       - name: Verify prebuild success
         run: |
           npx nx prebuild mobile-app
-
-      - name: Build Android
-        run: |
-          eas build --platform android --local
-      
-      - name: Build iOS
-        run: |
-          eas build --platform ios --local
