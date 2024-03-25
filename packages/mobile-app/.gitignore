@@ -3,11 +3,6 @@
 # dependencies
 node_modules/
 
-# Expo
-.expo/
-dist/
-web-build/
-
 # Native
 *.orig.*
 *.jks
@@ -36,5 +31,7 @@ yarn-error.*
 
 # Expo
 .expo
-dist/
-web-build/
+dist
+android
+ios
+web-build
