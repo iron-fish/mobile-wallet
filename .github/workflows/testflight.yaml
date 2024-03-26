@@ -5,6 +5,7 @@ on:
 
 jobs:
   publish_testflight:
+    runs-on: macos-latest
     steps:
     - uses: ./.github/workflows/build_template.yaml
       with:
