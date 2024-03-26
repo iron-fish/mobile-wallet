@@ -38,15 +38,18 @@ jobs:
     - name: Build ironfish-native-module
       run: |
         npx nx cargo-ios ironfish-native-module -- --target='ios'
-        npx nx cargo-android ironfish-native-module
-
-    - name: Patch podfile fix expo bug
-      run: |
-        npx nx patch-podfile mobile-app
 
     - name: prebuild
       run: |
-        npx nx prebuild mobile-app
+        npx nx prebuild mobile-app -- --platform ios --no-install
+    
+    - name: Patch podfile fix expo bug
+      run: |
+        npx nx patch-podfile mobile-app
+    
+    - name: Pod install
+      run: |
+        npx nx prebuild mobile-app -- --platform ios
 
     - name: setup codesigning
       env: 
