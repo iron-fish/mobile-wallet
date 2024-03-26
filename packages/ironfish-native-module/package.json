@@ -16,7 +16,7 @@
     "expo-module": "expo-module",
     "cargo-ios": "tsx scripts/cargo-ios.ts",
     "cargo-android": "tsx scripts/cargo-android.ts",
-    "build-rust": "npm run cargo-android && npm run cargo-ios -- --target=ios-sim && pod install --project-directory=ios"
+    "build-rust": "npm run cargo-android && npm run cargo-ios -- --target=ios-sim"
   },
   "keywords": [
     "react-native",

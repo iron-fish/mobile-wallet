@@ -61,6 +61,34 @@ function main() {
 
     fs.copyFileSync(sourcePath, path.join(architecturePath, androidLibName));
   });
+
+  const bindingPath = path.join(
+    dirUtils.nativeModuleProjectDir,
+    "android",
+    "src",
+    "main",
+    "java",
+  );
+
+  console.log("Generating bindings for android");
+  spawnSync(
+    "cargo",
+    [
+      "run",
+      "-p",
+      "uniffi-bindgen",
+      "generate",
+      "--library",
+      sourcePath,
+      "--language",
+      "kotlin",
+      "--out-dir",
+      bindingPath,
+    ],
+    {
+      stdio: "inherit",
+    },
+  );
 }
 
 main();

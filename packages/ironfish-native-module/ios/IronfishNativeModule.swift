@@ -24,7 +24,7 @@ public class IronfishNativeModule: Module {
     }
 
     AsyncFunction("rustAdd") { (a: Int32, b: Int32) -> Int32 in
-      return rust_add(a, b)
+      return rustAdd(left: a, right: b)
     }
 
     // Defines a JavaScript function that always returns a Promise and whose native code

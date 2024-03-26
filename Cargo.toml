@@ -4,4 +4,5 @@ resolver = "2"
 
 members = [
     "packages/ironfish-native-module/rust_lib",
+    "packages/ironfish-native-module/uniffi-bindgen"
 ]
