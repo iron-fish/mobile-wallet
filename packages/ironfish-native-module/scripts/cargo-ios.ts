@@ -84,14 +84,7 @@ function main() {
   if (!fs.existsSync(destinationPath)) {
     fs.mkdirSync(destinationPath, { recursive: true });
   }
-  try {
-    const output = spawnSync("find /Users/runner/work/mobile-wallet -type f", {
-      encoding: "utf8",
-    });
-    console.log(output);
-  } catch (error) {
-    console.error("Error occurred:", error);
-  }
+
   fs.copyFileSync(rustLibPath, path.join(destinationPath, libFileName));
   fs.copyFileSync(rustHeaderPath, path.join(destinationPath, headerFileName));
 }
