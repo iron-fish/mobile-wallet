@@ -49,7 +49,7 @@ jobs:
     
     - name: Pod install
       run: |
-        npx nx prebuild mobile-app -- --platform ios
+        npx nx pod-install mobile-app
 
     - name: setup codesigning
       env: 

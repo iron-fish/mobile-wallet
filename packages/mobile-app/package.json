@@ -7,6 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "prebuild": "expo prebuild",
+    "pod-install": "cd ios && pod install && cd ..",
     "patch-podfile": "tsx scripts/patch-podfile.ts"
   },
   "dependencies": {
