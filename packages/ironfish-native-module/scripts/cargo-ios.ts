@@ -19,23 +19,6 @@ function cargoBuild(target: string) {
   });
 }
 
-function genHeaderFile(rustLibFolder: string) {
-  spawnSync(
-    "cbindgen",
-    [
-      "--lang",
-      "c",
-      "--crate",
-      CONSTANTS.rustLibName,
-      "--output",
-      path.join(rustLibFolder, `${CONSTANTS.rustLibName}.h`),
-    ],
-    {
-      stdio: "inherit",
-    },
-  );
-}
-
 function getTarget() {
   const args = process.argv.slice(2);
   const target = (args[0] ?? "").replace("--target=", "");
@@ -66,13 +49,9 @@ function main() {
     "release",
   );
 
-  genHeaderFile(rustLibFolder);
-
   const libFileName = `lib${CONSTANTS.rustLibName}.a`;
-  const headerFileName = `${CONSTANTS.rustLibName}.h`;
 
   const rustLibPath = path.join(rustLibFolder, libFileName);
-  const rustHeaderPath = path.join(rustLibFolder, headerFileName);
 
   // Initialize the output directory
   const destinationPath = path.join(
@@ -85,8 +64,27 @@ function main() {
     fs.mkdirSync(destinationPath, { recursive: true });
   }
 
+  console.log("Generating bindings for ios");
+  spawnSync(
+    "cargo",
+    [
+      "run",
+      "-p",
+      "uniffi-bindgen",
+      "generate",
+      "--library",
+      rustLibPath,
+      "--language",
+      "swift",
+      "--out-dir",
+      destinationPath,
+    ],
+    {
+      stdio: "inherit",
+    },
+  );
+
   fs.copyFileSync(rustLibPath, path.join(destinationPath, libFileName));
-  fs.copyFileSync(rustHeaderPath, path.join(destinationPath, headerFileName));
 }
 
 main();

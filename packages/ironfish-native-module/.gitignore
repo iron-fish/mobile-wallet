@@ -40,6 +40,7 @@ android.iml
 android/app/libs
 android/keystores/debug.keystore
 android/src/main/jniLibs
+android/src/main/java/uniffi
 
 # Cocoapods
 #
