@@ -1,0 +1,106 @@
+name: Testflight Publish
+on:
+  push:
+
+
+jobs:
+  publish_testflight:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
+    
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Install dependencies
+      run: |
+        npm install
+
+    - name: Get rust ready
+      run: |
+        rustup target install x86_64-linux-android
+        rustup target install armv7-linux-androideabi
+        rustup target install aarch64-linux-android
+        rustup target install i686-linux-android
+        rustup target install x86_64-apple-ios
+        rustup target install aarch64-apple-ios
+        cargo build
+        
+    - name: Build ironfish-native-module
+      run: |
+        npx nx cargo-ios ironfish-native-module -- --target='ios'
+
+    - name: prebuild
+      run: |
+        npx nx prebuild mobile-app -- --platform ios --no-install
+    
+    - name: Patch podfile fix expo bug
+      run: |
+        npx nx patch-podfile mobile-app
+    
+    - name: Pod install
+      run: |
+        npx nx pod-install mobile-app
+
+    - name: setup codesigning
+      env: 
+        APPLE_IFLABS_SIGNING_CERT: ${{ secrets.APPLE_IFLABS_SIGNING_CERT }}
+        APPLE_IFLABS_SIGNING_CERT_PASSWORD: ${{ secrets.APPLE_IFLABS_SIGNING_CERT_PASSWORD }}
+        APPLE_APPSTORE_PROVISIONING_PROFILE: ${{ secrets.APPLE_APPSTORE_PROVISIONING_PROFILE }}
+        APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      run: |
+        # create variables
+        CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+        PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+        KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+        API_KEY_PATH=$RUNNER_TEMP/api_key.p8
+
+        # import certificate and provisioning profile from secrets
+        echo -n "$APPLE_IFLABS_SIGNING_CERT" | base64 --decode -o $CERTIFICATE_PATH
+        echo -n "$APPLE_APPSTORE_PROVISIONING_PROFILE" | base64 --decode -o $PP_PATH
+        echo -n "$APPLE_API_KEY" | base64 --decode -o $API_KEY_PATH
+
+        # create temporary keychain
+        security create-keychain -p "$APPLE_IFLABS_SIGNING_CERT_PASSWORD" $KEYCHAIN_PATH
+        security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+        security unlock-keychain -p "$APPLE_IFLABS_SIGNING_CERT_PASSWORD" $KEYCHAIN_PATH
+
+        # import certificate to keychain
+        security import $CERTIFICATE_PATH -P "$APPLE_IFLABS_SIGNING_CERT_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+        security list-keychain -d user -s $KEYCHAIN_PATH
+
+        # apply provisioning profile
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+        ls $RUNNER_TEMP
+    - name: publish
+      working-directory: packages/mobile-app/ios
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        EXPORT_OPTIONS_APP_STORE: ${{ secrets.EXPORT_OPTIONS_APP_STORE }}
+      run: |
+        echo "Building app..."
+        EXPORT_OPTIONS_APP_STORE_PATH=$RUNNER_TEMP/exportOptionsAppStore.plist
+        echo -n "$EXPORT_OPTIONS_APP_STORE" | base64 --decode -o $EXPORT_OPTIONS_APP_STORE_PATH
+
+        ARCHIVE_PATH="$HOME/Library/Developer/Xcode/Archives/mobileapp/$(date +%Y%m%d%H%M%S)/mobileapp.xcarchive"
+        EXPORT_PATH="$HOME/Library/Developer/Xcode/Archives/mobileapp/$(date +%Y%m%d%H%M%S)/"
+        xcodebuild -workspace mobileapp.xcworkspace -scheme "mobileapp" clean archive -sdk iphoneos -archivePath $ARCHIVE_PATH -allowProvisioningUpdates DEVELOPMENT_TEAM=9WR79D873L PROVISIONING_PROFILE_SPECIFIER=AppStoreMobileAppProfile
+        xcodebuild -exportArchive -archivePath $ARCHIVE_PATH -exportOptionsPlist $EXPORT_OPTIONS_APP_STORE_PATH -exportPath $EXPORT_PATH -allowProvisioningUpdates
+        echo "Collecting artifacts.."
+        cp -R "${ARCHIVE_PATH}/dSYMs" .
+        IPA="${EXPORT_PATH}mobileapp.ipa"
+        echo $IPA
+        echo "Uploading app to iTC..."
+        xcrun altool --upload-app -t ios -f $IPA --apiKey $API_KEY --apiIssuer $API_ISSUER

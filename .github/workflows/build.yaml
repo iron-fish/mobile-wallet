@@ -2,16 +2,15 @@ name: Build
 on:
   push:
 
-
 jobs:
   build:
     runs-on: macos-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: 20
       
@@ -39,6 +38,14 @@ jobs:
         run: |
           npx nx cargo-ios ironfish-native-module -- --target='ios'
           npx nx cargo-android ironfish-native-module
+
+      - name: prebuild (create iOS dirs for patching)
+        run: |
+          npx nx prebuild mobile-app -- --platform ios --no-install
+
+      - name: Patch podfile fix expo bug
+        run: |
+          npx nx patch-podfile mobile-app
 
 
       - name: Verify prebuild success
