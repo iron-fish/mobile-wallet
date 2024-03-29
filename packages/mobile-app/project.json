@@ -1,0 +1,20 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "targets": {
+    "android": {
+      "dependsOn": ["^cargo-android"]
+    },
+    "pod-sim": {
+      "executor": "@nx/react-native:pod-install",
+      "dependsOn": ["^build", "^cargo-ios-sim"],
+      "cache": true,
+      "inputs": [
+        "!{projectRoot}/**/*",
+        "{workspaceRoot}/packages/ironfish-native-module/**/*"
+      ]
+    },
+    "ios": {
+      "dependsOn": ["pod-sim"]
+    }
+  }
+}
