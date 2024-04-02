@@ -10,7 +10,8 @@
       "cache": true,
       "inputs": [
         "!{projectRoot}/**/*",
-        "{workspaceRoot}/packages/ironfish-native-module/**/*"
+        "{workspaceRoot}/packages/ironfish-native-module/**/*",
+        "{workspaceRoot}/node_modules/**/*"
       ]
     },
     "ios": {
