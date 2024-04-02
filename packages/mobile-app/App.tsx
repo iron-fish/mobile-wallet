@@ -18,7 +18,6 @@ export default function App() {
     <View style={styles.container}>
       <Text>Open up App.tsx to start working on your app!</Text>
       <Text>{value === null ? "Loading..." : `The value is: ${value}`}</Text>
-      <Text>{IronfishNativeModule.hello()}</Text>
       <Button>Click me</Button>
       <StatusBar style="auto" />
     </View>
