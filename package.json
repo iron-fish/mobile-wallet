@@ -1,7 +1,8 @@
 {
   "name": "mobile-wallet",
   "version": "0.0.0",
-  "license": "MIT",
+  "license": "MPL-2.0",
+  "scripts": {},
   "private": true,
   "devDependencies": {
     "@nx/js": "18.1.2",
