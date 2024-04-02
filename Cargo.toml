@@ -6,3 +6,9 @@ members = [
     "packages/ironfish-native-module/rust_lib",
     "packages/ironfish-native-module/uniffi-bindgen"
 ]
+
+[workspace.package]
+authors = ["Iron Fish <contact@ironfish.network> (https://ironfish.network)"]
+edition = "2021"
+homepage = "https://ironfish.network/"
+repository = "https://github.com/iron-fish/mobile-wallet"
