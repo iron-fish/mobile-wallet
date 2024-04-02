@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 uniffi = "0.26.1"
+ironfish = { path = "../ironfish/ironfish-rust" }
 
 [lib]
 crate-type = ["staticlib", "cdylib"]
