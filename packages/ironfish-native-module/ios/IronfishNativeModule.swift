@@ -1,5 +1,25 @@
 import ExpoModulesCore
 
+struct ExpoKey: Record {
+  @Field
+  var spendingKey: String
+
+  @Field
+  var viewKey: String
+
+  @Field
+  var incomingViewKey: String
+
+  @Field
+  var outgoingViewKey: String
+
+  @Field
+  var publicAddress: String
+
+  @Field
+  var proofAuthorizingKey: String
+}
+
 public class IronfishNativeModule: Module {
   // Each module class must implement the definition function. The definition consists of components
   // that describes the module's functionality and behavior.
@@ -10,8 +30,30 @@ public class IronfishNativeModule: Module {
     // The module will be accessible from `requireNativeModule('IronfishNativeModule')` in JavaScript.
     Name("IronfishNativeModule")
 
-    AsyncFunction("rustAdd") { (a: Int32, b: Int32) -> Int32 in
-      return rustAdd(left: a, right: b)
+    AsyncFunction("generateKey") { () -> ExpoKey in
+      let k = generateKey()
+
+      return ExpoKey(
+        spendingKey: Field(wrappedValue: k.spendingKey),
+        viewKey: Field(wrappedValue: k.viewKey),
+        incomingViewKey: Field(wrappedValue: k.incomingViewKey),
+        outgoingViewKey: Field(wrappedValue: k.outgoingViewKey),
+        publicAddress: Field(wrappedValue: k.publicAddress),
+        proofAuthorizingKey: Field(wrappedValue: k.proofAuthorizingKey)
+      )
+    }
+
+    AsyncFunction("generateKeyFromPrivateKey") { (privateKey: String) throws -> ExpoKey in
+      let k = try generateKeyFromPrivateKey(privateKey: privateKey)
+
+      return ExpoKey(
+        spendingKey: Field(wrappedValue: k.spendingKey),
+        viewKey: Field(wrappedValue: k.viewKey),
+        incomingViewKey: Field(wrappedValue: k.incomingViewKey),
+        outgoingViewKey: Field(wrappedValue: k.outgoingViewKey),
+        publicAddress: Field(wrappedValue: k.publicAddress),
+        proofAuthorizingKey: Field(wrappedValue: k.proofAuthorizingKey)
+      )
     }
   }
 }

@@ -5,11 +5,11 @@ import { Button } from "@ironfish/ui";
 import * as IronfishNativeModule from "ironfish-native-module";
 
 export default function App() {
-  const [value, setValue] = useState<null | number>(null);
+  const [value, setValue] = useState<null | string>(null);
   useEffect(() => {
     async function doFetch() {
-      const result = await IronfishNativeModule.rustAdd(40, 12);
-      setValue(result);
+      const result = await IronfishNativeModule.generateKey();
+      setValue(result.publicAddress);
     }
     doFetch();
   }, []);

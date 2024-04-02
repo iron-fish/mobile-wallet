@@ -3,6 +3,21 @@ package expo.modules.ironfishnativemodule
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
+class ExpoKey(
+  @Field
+  val spendingKey: String,
+  @Field
+  val viewKey: String,
+  @Field
+  val incomingViewKey: String,
+  @Field
+  val outgoingViewKey: String,
+  @Field
+  val publicAddress: String,
+  @Field
+  val proofAuthorizingKey: String
+) : Record
+
 class IronfishNativeModule : Module() {
   // Each module class must implement the definition function. The definition consists of components
   // that describes the module's functionality and behavior.
@@ -13,8 +28,30 @@ class IronfishNativeModule : Module() {
     // The module will be accessible from `requireNativeModule('IronfishNativeModule')` in JavaScript.
     Name("IronfishNativeModule")
 
-    AsyncFunction("rustAdd") { a: Int, b: Int ->
-      uniffi.rust_lib.rustAdd(a, b)
+    AsyncFunction("generateKey") { ->
+      val k = uniffi.rust_lib.generateKey()
+
+      ExpoKey(
+        k.spendingKey,
+        k.viewKey,
+        k.incomingViewKey,
+        k.outgoingViewKey,
+        k.publicAddress,
+        k.proofAuthorizingKey
+      )
+    }
+
+    AsyncFunction("generateKeyFromPrivateKey") { privateKey: String ->
+      val k = uniffi.rust_lib.generateKeyFromPrivateKey(privateKey)
+
+      ExpoKey(
+        k.spendingKey,
+        k.viewKey,
+        k.incomingViewKey,
+        k.outgoingViewKey,
+        k.publicAddress,
+        k.proofAuthorizingKey
+      )
     }
   }
 }
