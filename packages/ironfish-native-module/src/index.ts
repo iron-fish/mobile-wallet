@@ -2,6 +2,21 @@
 // and on native platforms to IronfishNativeModule.ts
 import IronfishNativeModule from "./IronfishNativeModule";
 
-export async function rustAdd(a: number, b: number): Promise<number> {
-  return await IronfishNativeModule.rustAdd(a, b);
+export interface Key {
+  spendingKey: string;
+  viewKey: string;
+  incomingViewKey: string;
+  outgoingViewKey: string;
+  publicAddress: string;
+  proofAuthorizingKey: string;
+}
+
+export async function generateKey(): Promise<Key> {
+  return await IronfishNativeModule.generateKey();
+}
+
+export async function generateKeyFromPrivateKey(
+  privateKey: string,
+): Promise<Key> {
+  return await IronfishNativeModule.generateKeyFromPrivateKey(privateKey);
 }

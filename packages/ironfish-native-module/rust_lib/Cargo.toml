@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-uniffi = "0.26.1"
 ironfish = { path = "../ironfish/ironfish-rust" }
+thiserror = "1.0"
+uniffi = "0.26.1"
 
 [lib]
 crate-type = ["staticlib", "cdylib"]
