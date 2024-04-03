@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Button } from "@ironfish/ui";
 import * as IronfishNativeModule from "ironfish-native-module";
 
-export default function App() {
+export default function Balances() {
   const [value, setValue] = useState<null | string>(null);
   useEffect(() => {
     async function doFetch() {
