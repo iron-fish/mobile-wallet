@@ -1,16 +1,8 @@
 /* eslint-env node */
 
-export const ENCRYPTED_NOTE_PLAINTEXT_LENGTH = 136 + 16;
+import * as IronfishNativeModule from "ironfish-native-module";
 
-export const NOTE_ENCRYPTION_KEY_LENGTH = 80;
-
-export const PUBLIC_ADDRESS_LENGTH = 32;
-export const ASSET_ID_LENGTH = 32;
-export const RANDOMNESS_LENGTH = 32;
-export const MEMO_LENGTH = 32;
-export const DECRYPTED_NOTE_LENGTH = 168;
-
-export class Asset {
+class Asset {
   // https://github.com/iron-fish/ironfish/blob/8ee25c612383d4bd6e1e46ff709ed42604abc5f3/ironfish/src/utils/asset.ts#L10
   static nativeId() {
     return Buffer.from([
@@ -19,3 +11,42 @@ export class Asset {
     ]);
   }
 }
+
+const mockIronfishRustNodejs = {
+  "$$typeof": undefined,
+  KEY_LENGTH: 32,
+  ASSET_NAME_LENGTH: 32,
+  ASSET_METADATA_LENGTH: 96,
+  ENCRYPTED_NOTE_PLAINTEXT_LENGTH: 136 + 16,
+  NOTE_ENCRYPTION_KEY_LENGTH: 80,
+  PUBLIC_ADDRESS_LENGTH: 32,
+  ASSET_ID_LENGTH: 32,
+  RANDOMNESS_LENGTH: 32,
+  MEMO_LENGTH: 32,
+  Asset: new Proxy(Asset, {
+    get: (obj, property) => {
+      if (obj.hasOwnProperty(property)) {
+        return obj[property];
+      }
+      const message = `ERROR: Please implement ${property} in shims/ironfish-rust-nodejs/Asset`
+      console.error(message);
+      throw new Error(message);
+    }
+  }),
+  wordsToSpendingKey: IronfishNativeModule.wordsToSpendingKey,
+  generateKeyFromPrivateKey: IronfishNativeModule.generateKeyFromPrivateKey,
+  isValidPublicAddress: IronfishNativeModule.isValidPublicAddress,
+}
+
+const proxy = new Proxy(mockIronfishRustNodejs, {
+  get: (obj, property) => {
+    if (obj.hasOwnProperty(property)) {
+      return obj[property];
+    }
+    const message = `ERROR: Please implement ${property} in shims/ironfish-rust-nodejs`
+    console.error(message);
+    throw new Error(message);
+  }
+});
+
+module.exports = proxy;

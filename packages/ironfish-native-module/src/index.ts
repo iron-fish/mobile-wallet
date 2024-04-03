@@ -11,12 +11,21 @@ export interface Key {
   proofAuthorizingKey: string;
 }
 
-export async function generateKey(): Promise<Key> {
-  return await IronfishNativeModule.generateKey();
+export function generateKey(): Key {
+  return IronfishNativeModule.generateKey();
 }
 
-export async function generateKeyFromPrivateKey(
-  privateKey: string,
-): Promise<Key> {
-  return await IronfishNativeModule.generateKeyFromPrivateKey(privateKey);
+export function wordsToSpendingKey(
+  words: string,
+  languageCode: number,
+): string {
+  return IronfishNativeModule.wordsToSpendingKey(words, languageCode);
+}
+
+export function generateKeyFromPrivateKey(privateKey: string): Key {
+  return IronfishNativeModule.generateKeyFromPrivateKey(privateKey);
+}
+
+export function isValidPublicAddress(hexAddress: string): boolean {
+  return IronfishNativeModule.isValidPublicAddress(hexAddress);
 }
