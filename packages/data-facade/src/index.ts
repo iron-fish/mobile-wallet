@@ -4,6 +4,7 @@ import {
   UseQueryResult,
   useQuery,
 } from "@tanstack/react-query";
+import { buildQueryKey } from "./utils";
 
 type UseQueryOptions = UndefinedInitialDataOptions<any, Error, any, unknown[]>;
 type ResolverFunc<T = any> = (opts: T) => any;
@@ -22,7 +23,7 @@ function buildUseQuery(baseQueryKey: string) {
   return <TResolver extends ResolverFunc>(resolver: TResolver) => ({
     useQuery: (args?: unknown) => {
       return useQuery({
-        queryKey: [baseQueryKey],
+        queryKey: [baseQueryKey, ...buildQueryKey(args)],
         queryFn: () => resolver(args),
       });
     },

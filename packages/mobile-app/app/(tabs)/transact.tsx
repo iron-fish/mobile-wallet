@@ -44,6 +44,9 @@ export default function Transact() {
   return (
     <View>
       <Text>Balances</Text>
+      <Text>{JSON.stringify(getAccountsResult.data)}</Text>
+      <Text>{JSON.stringify(getAccountsWithZodResult.data)}</Text>
+      <Text>{JSON.stringify(getAllAccountsResult.data)}</Text>
     </View>
   );
 }
