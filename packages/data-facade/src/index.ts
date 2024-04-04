@@ -59,13 +59,13 @@ function input<TSchema extends ZodTypeAny>(_schema: TSchema) {
   };
 }
 
-const handler = {
-  input,
-  query: handlerQuery,
-  mutation: (options: any) => {},
-};
-
 export const f = {
   facade,
-  handler,
+  handler: {
+    input,
+    query: handlerQuery,
+    mutation: (options: any) => {
+      // @todo
+    },
+  },
 };
