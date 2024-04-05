@@ -53,8 +53,8 @@ export type Mutation<T extends any = any> = {
 };
 
 export type FacadeDefinition<
-  TDefinition extends Record<
-    string,
-    Query | Mutation | Record<string, Query | Mutation>
-  >,
-> = TDefinition;
+  TDefinition extends Record<string, Query | Mutation>,
+> = {
+  // @todo: Type this correctly
+  [K in keyof TDefinition]: any;
+};
