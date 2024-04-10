@@ -1,6 +1,9 @@
 import {
   UndefinedInitialDataOptions,
   UseQueryResult,
+  UseMutationResult,
+  UseMutateFunction,
+  UseMutationOptions,
 } from "@tanstack/react-query";
 
 export type Expect<T extends true> = T;
@@ -17,8 +20,6 @@ export type UseQueryOptions = UndefinedInitialDataOptions<
   unknown[]
 >;
 
-export type AnyFunc = (...args: any[]) => any;
-
 export type ResolverFunc<T = any> = (opts: T) => any;
 
 export type UseQueryType<TResolver extends ResolverFunc> =
@@ -32,14 +33,27 @@ export type UseQueryType<TResolver extends ResolverFunc> =
         opts?: UseQueryOptions,
       ) => UseQueryResult<ReturnType<TResolver>>;
 
-export type HandlerQueryFn = <TResolver extends ResolverFunc>(
+export type UseMutationType<TResolver extends ResolverFunc> = (
+  opts?: UseMutationOptions,
+) => UseMutationResult<ReturnType<TResolver>>;
+
+export type HandlerQueryBuilder = <TResolver extends ResolverFunc>(
   func: TResolver,
 ) => (baseQueryKey: string) => {
   useQuery: UseQueryType<TResolver>;
 };
 
+export type HandlerMutationBuilder = <TResolver extends ResolverFunc>(
+  func: TResolver,
+) => () => {
+  useMutation: UseMutationType<TResolver>;
+};
+
 export type FacadeFn = <
-  THandlers extends Record<string, ReturnType<HandlerQueryFn>>,
+  THandlers extends Record<
+    string,
+    ReturnType<HandlerQueryBuilder> | ReturnType<HandlerMutationBuilder>
+  >,
 >(
   handlers: THandlers,
 ) => { [K in keyof THandlers]: ReturnType<THandlers[K]> };
@@ -49,7 +63,7 @@ export type Query<T extends any = any> = {
 };
 
 export type Mutation<T extends any = any> = {
-  useMutation: T;
+  useMutation: UseMutationType<ResolverFunc<T>>;
 };
 
 export type FacadeDefinition<

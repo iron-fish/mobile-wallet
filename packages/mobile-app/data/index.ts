@@ -1,15 +1,10 @@
-import { accountsFacade } from "./accounts";
+import { accountsHandlers } from "./accounts/handlers";
+import { AccountsMethods } from "./accounts/types";
 
-import { FacadeDefinition, Query, createFacadeContext } from "data-facade";
-
-type FacadeMethods = FacadeDefinition<{
-  getAccounts: Query<(count: number) => string[]>;
-  getAllAccounts: Query<() => string[]>;
-  getAccountsWithZod: Query<(args: { limit: number }) => string[]>;
-}>;
+import { createFacadeContext } from "data-facade";
 
 const facadeContext = createFacadeContext(
-  accountsFacade satisfies FacadeMethods,
+  accountsHandlers satisfies AccountsMethods,
 );
 
 export const FacadeProvider = facadeContext.Provider;

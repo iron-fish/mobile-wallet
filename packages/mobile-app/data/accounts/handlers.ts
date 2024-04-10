@@ -8,7 +8,7 @@ async function getAccounts(limit: number) {
   return accounts.slice(0, limit);
 }
 
-export const accountsFacade = f.facade({
+export const accountsHandlers = f.facade({
   getAccounts: f.handler.query(async (count: number) => {
     const accounts = await getAccounts(count ?? 1);
     console.log("getAccounts", accounts);
@@ -30,4 +30,9 @@ export const accountsFacade = f.facade({
       console.log("getAccountsWithZod", accounts);
       return accounts;
     }),
+  createAccount: f.handler.mutation(async (account: string) => {
+    console.log("createAccount", account);
+    accounts.push(account);
+    return accounts;
+  }),
 });
