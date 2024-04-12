@@ -1,5 +1,6 @@
 import { f } from "data-facade";
 import { z } from "zod";
+import { AccountsMethods } from "./types";
 
 const accounts = ["alice", "bob", "carol"];
 
@@ -8,7 +9,7 @@ async function getAccounts(limit: number) {
   return accounts.slice(0, limit);
 }
 
-export const accountsHandlers = f.facade({
+export const accountsHandlers = f.facade<AccountsMethods>({
   getAccounts: f.handler.query(async (count: number) => {
     const accounts = await getAccounts(count ?? 1);
     console.log("getAccounts", accounts);
@@ -35,4 +36,15 @@ export const accountsHandlers = f.facade({
     accounts.push(account);
     return accounts;
   }),
+  createAccountWithZod: f.handler
+    .input(
+      z.object({
+        account: z.string(),
+      }),
+    )
+    .mutation(async ({ account }) => {
+      console.log("createAccountWithZod", account);
+      accounts.push(account);
+      return accounts;
+    }),
 });

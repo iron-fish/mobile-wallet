@@ -2,42 +2,43 @@ import { ZodTypeAny, z } from "zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { buildQueryKey } from "./utils";
 import type {
-  Expect,
-  Equal,
   ResolverFunc,
-  UseQueryType,
-  HandlerQueryBuilder,
-  FacadeFn,
-  UseMutationType,
+  HandlerMutationBuilderReturn,
+  HandlerQueryBuilderReturn,
 } from "./types";
 
-// Query handlers
+// QUERY HANDLERS
 
 function buildUseQuery(baseQueryKey: string) {
-  return <TResolver extends ResolverFunc>(resolver: TResolver) => ({
-    useQuery: (args?: unknown) => {
-      return useQuery({
-        queryKey: [baseQueryKey, ...buildQueryKey(args)],
-        queryFn: () => resolver(args),
-      });
-    },
-  });
+  return <TResolver extends ResolverFunc>(resolver: TResolver) => {
+    return {
+      useQuery: (args?: unknown) => {
+        return useQuery({
+          queryKey: [baseQueryKey, ...buildQueryKey(args)],
+          queryFn: () => resolver(args),
+        });
+      },
+    };
+  };
 }
 
 function handlerQueryBuilder<TResolver extends ResolverFunc>(
   resolver: TResolver,
-): (baseQueryKey: string) => {
-  useQuery: UseQueryType<TResolver>;
-} {
+): HandlerQueryBuilderReturn<TResolver> {
   return (baseQueryKey: string) => buildUseQuery(baseQueryKey)(resolver);
 }
 
-// Mutation handlers
+// MUTATION HANDLERS
 
 function buildUseMutation() {
   return <TResolver extends ResolverFunc>(resolver: TResolver) => ({
     useMutation: () => {
-      return useMutation<ReturnType<TResolver>, Error, unknown, unknown>({
+      return useMutation<
+        Awaited<ReturnType<TResolver>>,
+        Error,
+        unknown,
+        unknown
+      >({
         mutationFn: resolver,
       });
     },
@@ -46,13 +47,11 @@ function buildUseMutation() {
 
 function handlerMutationBuilder<TResolver extends ResolverFunc>(
   resolver: TResolver,
-): () => {
-  useMutation: UseMutationType<TResolver>;
-} {
+): HandlerMutationBuilderReturn<TResolver> {
   return () => buildUseMutation()(resolver);
 }
 
-// Input util
+// INPUT UTIL
 
 function handlerInputBuilder<TSchema extends ZodTypeAny>(_schema: TSchema) {
   return {
@@ -61,16 +60,20 @@ function handlerInputBuilder<TSchema extends ZodTypeAny>(_schema: TSchema) {
     ) => {
       return handlerQueryBuilder(resolver);
     },
+    mutation: <TResolver extends ResolverFunc<z.infer<TSchema>>>(
+      resolver: (args: Parameters<TResolver>[0]) => ReturnType<TResolver>,
+    ) => {
+      return handlerMutationBuilder(resolver);
+    },
   };
 }
 
-// Facade
+// FACADE FUNCTION
 
 function facade<
   THandlers extends Record<
     string,
-    | ReturnType<typeof handlerQueryBuilder>
-    | ReturnType<typeof handlerMutationBuilder>
+    ReturnType<typeof handlerQueryBuilder | typeof handlerMutationBuilder>
   >,
 >(handlers: THandlers) {
   const result: Record<string, any> = {};
@@ -82,10 +85,7 @@ function facade<
   return result as { [K in keyof THandlers]: ReturnType<THandlers[K]> };
 }
 
-type assertions = [
-  Expect<Equal<typeof handlerQueryBuilder, HandlerQueryBuilder>>,
-  Expect<Equal<typeof facade, FacadeFn>>,
-];
+// EXPORTS
 
 export const f = {
   facade,

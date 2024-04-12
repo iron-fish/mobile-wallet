@@ -1,11 +1,7 @@
-import { accountsHandlers } from "./accounts/handlers";
-import { AccountsMethods } from "./accounts/types";
-
 import { createFacadeContext } from "data-facade";
+import { accountsHandlers } from "./accounts/handlers";
 
-const facadeContext = createFacadeContext(
-  accountsHandlers satisfies AccountsMethods,
-);
+const facadeContext = createFacadeContext(accountsHandlers);
 
 export const FacadeProvider = facadeContext.Provider;
 export const useFacade = facadeContext.useFacade;
