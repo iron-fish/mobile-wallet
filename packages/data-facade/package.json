@@ -1,0 +1,21 @@
+{
+  "name": "data-facade",
+  "version": "0.0.1",
+  "description": "",
+  "license": "MPL-2.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.28.14",
+    "react": "18.2.0",
+    "zod": "^3.22.4"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5",
+    "react": "^18",
+    "zod": "^3"
+  }
+}
