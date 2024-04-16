@@ -30,7 +30,7 @@ public class IronfishNativeModule: Module {
     // The module will be accessible from `requireNativeModule('IronfishNativeModule')` in JavaScript.
     Name("IronfishNativeModule")
 
-    AsyncFunction("generateKey") { () -> ExpoKey in
+    Function("generateKey") { () -> ExpoKey in
       let k = generateKey()
 
       return ExpoKey(
@@ -43,7 +43,12 @@ public class IronfishNativeModule: Module {
       )
     }
 
-    AsyncFunction("generateKeyFromPrivateKey") { (privateKey: String) throws -> ExpoKey in
+    Function("wordsToSpendingKey") { (words: String, languageCode: Int32) throws -> String in
+      let k = try wordsToSpendingKey(words: words, languageCode: languageCode)
+      return k
+    }
+
+    Function("generateKeyFromPrivateKey") { (privateKey: String) throws -> ExpoKey in
       let k = try generateKeyFromPrivateKey(privateKey: privateKey)
 
       return ExpoKey(
@@ -54,6 +59,10 @@ public class IronfishNativeModule: Module {
         publicAddress: Field(wrappedValue: k.publicAddress),
         proofAuthorizingKey: Field(wrappedValue: k.proofAuthorizingKey)
       )
+    }
+
+    Function("isValidPublicAddress") { (hexAddress: String) -> Bool in
+      return isValidPublicAddress(hexAddress: hexAddress)
     }
   }
 }
