@@ -14,7 +14,6 @@ export const accountsHandlers = f.facade<AccountsMethods>({
       }),
     )
     .mutation(async ({ name }) => {
-      console.log("createAccount", name);
       const account = await wallet.createAccount(name);
       return account;
     }),

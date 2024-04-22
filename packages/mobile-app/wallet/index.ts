@@ -41,7 +41,7 @@ class Wallet {
       name,
     }, AccountFormat.Base64Json)
 
-    await this.state.db.createAccount(name, viewOnlyAccount)
+    return await this.state.db.createAccount(name, viewOnlyAccount)
   }
 
   async getAccounts() {

@@ -5,6 +5,9 @@ import { wallet } from "../../wallet";
 
 export const appHandlers = f.facade<AppMethods>({
   loadDatabases: f.handler.mutation(async () => {
-    await wallet.start();
+    if (wallet.state.type !== 'STARTED') {
+      await wallet.start();
+    }
+    return 'loaded'
   }),
 });

@@ -31,7 +31,7 @@ export class WalletDb {
               migrations: {
                 "createAccounts": {
                   up: async (db: Kysely<Database>) => {
-                    console.log("running createAccounts");
+                    console.log("running createAccounts migration");
                     await db.schema
                       .createTable("accounts")
                       .addColumn("id", "integer", (col) =>
@@ -56,8 +56,9 @@ export class WalletDb {
         name: name,
         viewOnlyAccount: viewOnlyAccount,
       }).executeTakeFirst();
-      console.log(result, "result");
+
       return {
+        id: Number(result.insertId),
         name: name,
         viewOnlyAccount: viewOnlyAccount,
       };
