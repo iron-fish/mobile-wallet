@@ -4,7 +4,7 @@ import { appHandlers as appDemoHandlers } from "./app/demoHandlers";
 import { appHandlers } from "./app/handlers";
 import { createFacadeContext } from "data-facade";
 
-const DEMO = false;
+const DEMO = true;
 
 export const facadeContext = createFacadeContext(DEMO ? {
     ...accountsDemoHandlers,
