@@ -1,9 +1,12 @@
 import { Query, Mutation } from "data-facade";
 
+export type Account = {
+  id: number;
+  name: string;
+  viewOnlyAccount: string;
+}
+
 export type AccountsMethods = {
-  getAccounts: Query<(count: number) => string[]>;
-  getAllAccounts: Query<() => string[]>;
-  getAccountsWithZod: Query<(args: { limit: number }) => string[]>;
-  createAccount: Mutation<(account: string) => string[]>;
-  createAccountWithZod: Mutation<(args: { account: string }) => string[]>;
+  getAccounts: Query<() => Account[]>;
+  createAccount: Mutation<(args: { name: string }) => Account>;
 };
