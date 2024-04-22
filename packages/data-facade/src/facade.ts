@@ -1,5 +1,5 @@
 import { ZodTypeAny, z } from "zod";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, UseMutationOptions } from "@tanstack/react-query";
 import { buildQueryKey } from "./utils";
 import type {
   ResolverFunc,
@@ -32,13 +32,14 @@ function handlerQueryBuilder<TResolver extends ResolverFunc>(
 
 function buildUseMutation() {
   return <TResolver extends ResolverFunc>(resolver: TResolver) => ({
-    useMutation: () => {
+    useMutation: (opts?: UseMutationOptions<Awaited<ReturnType<TResolver>>, Error, unknown, unknown>) => {
       return useMutation<
         Awaited<ReturnType<TResolver>>,
         Error,
         unknown,
         unknown
       >({
+        ...opts,
         mutationFn: resolver,
       });
     },
