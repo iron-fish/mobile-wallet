@@ -1,33 +1,34 @@
 import { View, Text } from "react-native";
-import { useFacade } from "../../data";
+import { useFacade } from "../../data/facades";
 import { Button } from "@ironfish/ui";
-import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Transact() {
-  const [facadeResult, setFacadeResult] = useState([""]);
   const facade = useFacade();
+  const qc = useQueryClient()
 
-  const getAccountsResult = facade.getAccounts.useQuery(123);
-  const getAccountsWithZodResult = facade.getAccountsWithZod.useQuery({
-    limit: 2,
+  const getAccountsResult = facade.getAccounts.useQuery();
+  const createAccount = facade.createAccount.useMutation({
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ['getAccounts']
+      })
+    }
   });
-  const getAllAccountsResult = facade.getAllAccounts.useQuery();
-  const createAccount = facade.createAccount.useMutation();
 
   return (
     <View>
       <Text>Accounts</Text>
-      <Text>{JSON.stringify(getAccountsResult.data)}</Text>
-      <Text>{JSON.stringify(getAccountsWithZodResult.data)}</Text>
-      <Text>{JSON.stringify(getAllAccountsResult.data)}</Text>
-      <Text>Mutation: {facadeResult}</Text>
+      {(getAccountsResult.data ?? []).map((account) => (
+        <Text key={account.id}>{account.name}</Text>
+      ))}
       <Button
         onClick={async () => {
-          const otherResult = await createAccount.mutateAsync("dave");
-          setFacadeResult(otherResult);
+          const otherResult = await createAccount.mutateAsync({ name: "dave" });
+          console.log('Created Account:', otherResult)
         }}
       >
-        Click me
+        Create Account
       </Button>
     </View>
   );
