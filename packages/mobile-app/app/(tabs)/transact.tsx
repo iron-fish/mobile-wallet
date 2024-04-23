@@ -1,5 +1,5 @@
 import { View, Text } from "react-native";
-import { useFacade } from "../../data";
+import { useFacade } from "../../data/facades";
 import { Button } from "@ironfish/ui";
 import { useQueryClient } from "@tanstack/react-query";
 

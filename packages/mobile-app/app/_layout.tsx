@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 import { Text } from 'react-native';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { FacadeProvider, useFacade } from "../data";
+import { FacadeProvider, useFacade } from "../data/facades";
 import React, { useEffect } from "react";
 
 const queryClient = new QueryClient();
