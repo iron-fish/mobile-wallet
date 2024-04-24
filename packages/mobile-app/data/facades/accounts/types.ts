@@ -9,4 +9,5 @@ export type Account = {
 export type AccountsMethods = {
   getAccounts: Query<() => Account[]>;
   createAccount: Mutation<(args: { name: string }) => Account>;
+  exportAccount: Mutation<(args: { name: string }) => string>;
 };

@@ -65,6 +65,10 @@ export class WalletDb {
     }
 
     async getAccounts() {
-      return await this.db.selectFrom("accounts").selectAll('accounts').execute();
+      return await this.db.selectFrom("accounts").selectAll().execute();
+    }
+
+    async getAccount(name: string) {
+      return await this.db.selectFrom("accounts").selectAll().where('accounts.name', '==', name).executeTakeFirst();
     }
 }
