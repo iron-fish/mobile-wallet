@@ -15,6 +15,13 @@ export function generateKey(): Key {
   return IronfishNativeModule.generateKey();
 }
 
+export function spendingKeyToWords(
+  privateKey: string,
+  languageCode: number,
+): string {
+  return IronfishNativeModule.spendingKeyToWords(privateKey, languageCode);
+}
+
 export function wordsToSpendingKey(
   words: string,
   languageCode: number,

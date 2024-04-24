@@ -67,6 +67,19 @@ fn generate_key() -> Key {
 }
 
 #[uniffi::export]
+pub fn spending_key_to_words(
+    private_key: String,
+    language_code: i32,
+) -> Result<String, EnumError> {
+    let key = SaplingKey::from_hex(&private_key).map_err(|e| EnumError::Error { msg: e.to_string() })?;
+    let language_code_enum: LanguageCode = LanguageCode::from_i32(language_code).ok_or_else(|| EnumError::Error { msg: "Invalid language code".to_string() })?;
+    let language = Language::from(language_code_enum);
+
+    let mnemonic = key.to_words(language).map_err(|e| EnumError::Error { msg: e.to_string() })?;
+    Ok(mnemonic.into_phrase())
+}
+
+#[uniffi::export]
 pub fn words_to_spending_key(
     words: String,
     language_code: i32,
