@@ -65,12 +65,7 @@ class IronfishNativeModule : Module() {
     }
 
     Function("isValidPublicAddress") { hexAddress: String ->
-      try {
-        uniffi.rust_lib.isValidPublicAddress(hexAddress)
-      } catch (error: Exception) {
-        error.printStackTrace()
-        throw error
-      }
+      uniffi.rust_lib.isValidPublicAddress(hexAddress)
     }
   }
 }
