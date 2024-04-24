@@ -1,7 +1,9 @@
 package expo.modules.ironfishnativemodule
 
+import expo.modules.kotlin.records.Field
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import expo.modules.kotlin.records.Record
 
 class ExpoKey(
   @Field
@@ -28,7 +30,7 @@ class IronfishNativeModule : Module() {
     // The module will be accessible from `requireNativeModule('IronfishNativeModule')` in JavaScript.
     Name("IronfishNativeModule")
 
-    AsyncFunction("generateKey") { ->
+    Function("generateKey") { ->
       val k = uniffi.rust_lib.generateKey()
 
       ExpoKey(
@@ -41,25 +43,15 @@ class IronfishNativeModule : Module() {
       )
     }
 
-    Function("spendingKeyToWords") { privateKey: String, languageCode: Long ->
-      try {
-        return spendingKeyToWords(privateKey: privateKey, languageCode: languageCode)
-      } catch (error: Exception) {
-        error.printStackTrace()
-        throw error
-      }
+    Function("spendingKeyToWords") { privateKey: String, languageCode: Int ->
+      uniffi.rust_lib.spendingKeyToWords(privateKey, languageCode)
     }
 
-    Function("wordsToSpendingKey") { words: String, languageCode: Long ->
-      try {
-        return wordsToSpendingKey(words: words, languageCode: languageCode)
-      } catch (error: Exception) {
-        error.printStackTrace()
-        throw error
-      }
+    Function("wordsToSpendingKey") { words: String, languageCode: Int ->
+      uniffi.rust_lib.wordsToSpendingKey(words, languageCode)
     }
 
-    AsyncFunction("generateKeyFromPrivateKey") { privateKey: String ->
+    Function("generateKeyFromPrivateKey") { privateKey: String ->
       val k = uniffi.rust_lib.generateKeyFromPrivateKey(privateKey)
 
       ExpoKey(
@@ -74,7 +66,7 @@ class IronfishNativeModule : Module() {
 
     Function("isValidPublicAddress") { hexAddress: String ->
       try {
-        uniffi.rust_lib.isValidPublicAddress(hexAddress: hexAddress)
+        uniffi.rust_lib.isValidPublicAddress(hexAddress)
       } catch (error: Exception) {
         error.printStackTrace()
         throw error

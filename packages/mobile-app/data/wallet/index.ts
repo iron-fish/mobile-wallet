@@ -68,7 +68,10 @@ class Wallet {
       throw new Error(`No account found with name ${name}`)
     }
 
-    const decodedAccount = decodeAccount(account.viewOnlyAccount);
+    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+      name,
+    });
+
     decodedAccount.name = name;
     decodedAccount.spendingKey = await SecureStore.getItemAsync(decodedAccount.publicAddress, {
       keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
