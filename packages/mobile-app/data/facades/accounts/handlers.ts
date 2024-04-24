@@ -17,4 +17,14 @@ export const accountsHandlers = f.facade<AccountsMethods>({
       const account = await wallet.createAccount(name);
       return account;
     }),
+    exportAccount: f.handler
+    .input(
+      z.object({
+        name: z.string(),
+      }),
+    )
+    .mutation(async ({ name }) => {
+      const account = await wallet.exportAccount(name);
+      return account;
+    }),
 });

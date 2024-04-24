@@ -35,4 +35,17 @@ export const accountsHandlers = f.facade<AccountsMethods>({
       ACCOUNTS.push(account);
       return account;
     }),
+  exportAccount: f.handler
+    .input(
+      z.object({
+        name: z.string(),
+      }),
+    )
+    .mutation(async ({ name }) => {
+      const account = ACCOUNTS.find((a) => a.name === name)
+      if (account === undefined) {
+        throw new Error("No accounts found");
+      }
+      return JSON.stringify(account);
+    }),
 });
