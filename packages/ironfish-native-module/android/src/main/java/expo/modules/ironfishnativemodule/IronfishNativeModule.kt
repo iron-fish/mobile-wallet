@@ -41,6 +41,24 @@ class IronfishNativeModule : Module() {
       )
     }
 
+    Function("spendingKeyToWords") { privateKey: String, languageCode: Long ->
+      try {
+        return spendingKeyToWords(privateKey: privateKey, languageCode: languageCode)
+      } catch (error: Exception) {
+        error.printStackTrace()
+        throw error
+      }
+    }
+
+    Function("wordsToSpendingKey") { words: String, languageCode: Long ->
+      try {
+        return wordsToSpendingKey(words: words, languageCode: languageCode)
+      } catch (error: Exception) {
+        error.printStackTrace()
+        throw error
+      }
+    }
+
     AsyncFunction("generateKeyFromPrivateKey") { privateKey: String ->
       val k = uniffi.rust_lib.generateKeyFromPrivateKey(privateKey)
 
@@ -52,6 +70,15 @@ class IronfishNativeModule : Module() {
         k.publicAddress,
         k.proofAuthorizingKey
       )
+    }
+
+    Function("isValidPublicAddress") { hexAddress: String ->
+      try {
+        uniffi.rust_lib.isValidPublicAddress(hexAddress: hexAddress)
+      } catch (error: Exception) {
+        error.printStackTrace()
+        throw error
+      }
     }
   }
 }

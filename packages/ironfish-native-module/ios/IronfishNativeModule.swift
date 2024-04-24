@@ -43,6 +43,11 @@ public class IronfishNativeModule: Module {
       )
     }
 
+    Function("spendingKeyToWords") { (privateKey: String, languageCode: Int32) throws -> String in
+      let phrase = try spendingKeyToWords(privateKey: privateKey, languageCode: languageCode)
+      return phrase
+    }
+
     Function("wordsToSpendingKey") { (words: String, languageCode: Int32) throws -> String in
       let k = try wordsToSpendingKey(words: words, languageCode: languageCode)
       return k
