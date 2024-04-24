@@ -33,6 +33,7 @@ const mockIronfishRustNodejs = {
       throw new Error(message);
     }
   }),
+  spendingKeyToWords: IronfishNativeModule.spendingKeyToWords,
   wordsToSpendingKey: IronfishNativeModule.wordsToSpendingKey,
   generateKeyFromPrivateKey: IronfishNativeModule.generateKeyFromPrivateKey,
   isValidPublicAddress: IronfishNativeModule.isValidPublicAddress,
