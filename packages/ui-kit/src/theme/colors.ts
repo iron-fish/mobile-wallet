@@ -1,16 +1,16 @@
-const COLORS = {
-  light: {
+export const COLORS = {
+  LIGHT: {
     foreground: "#000000",
-    background: "#FFFFFF",
-    gray1: "#7F7F7F",
-    gray2: "#DEDFE2",
-    gray3: "#F3F3F4",
+    background: "#ffffff",
+    gray1: "#7f7f7f",
+    gray2: "#dedfe2",
+    gray3: "#f3f3f4",
   },
-  dark: {
-    foreground: "#FFFFFF",
+  DARK: {
+    foreground: "#ffffff",
     background: "#101010",
-    gray1: "#ADAEB4",
-    gray2: "#3B3B3B",
+    gray1: "#adaeb4",
+    gray2: "#3b3b3b",
     gray3: "#252525",
   },
 };

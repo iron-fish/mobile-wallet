@@ -22,7 +22,7 @@ export default function Transact() {
       <Text>{JSON.stringify(getAllAccountsResult.data)}</Text>
       <Text>Mutation: {facadeResult}</Text>
       <Button
-        onClick={async () => {
+        onPress={async () => {
           const otherResult = await createAccount.mutateAsync("dave");
           setFacadeResult(otherResult);
         }}
