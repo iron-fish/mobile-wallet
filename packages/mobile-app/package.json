@@ -9,7 +9,7 @@
     "prebuild": "expo prebuild"
   },
   "dependencies": {
-    "@ironfish/sdk": "2.1.0",
+    "@ironfish/sdk": "2.2.0",
     "@ironfish/ui": "*",
     "data-facade": "*",
     "expo": "^50.0.0",

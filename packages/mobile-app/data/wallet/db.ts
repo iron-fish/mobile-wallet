@@ -71,4 +71,12 @@ export class WalletDb {
     async getAccount(name: string) {
       return await this.db.selectFrom("accounts").selectAll().where('accounts.name', '==', name).executeTakeFirst();
     }
+
+    async renameAccount(name: string, newName: string) {
+      return await this.db.updateTable("accounts").where('accounts.name', '==', name).set('accounts.name', newName).executeTakeFirst();
+    }
+
+    async removeAccount(name: string) {
+      return await this.db.deleteFrom("accounts").where('accounts.name', '==', name).executeTakeFirst();
+    }
 }
