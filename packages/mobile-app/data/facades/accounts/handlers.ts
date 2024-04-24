@@ -15,16 +15,9 @@ export const accountsHandlers = f.facade<AccountsMethods>({
       const account = await wallet.createAccount(name);
       return account;
     }),
+  // The enums used when exporting are tricky to use with Zod 
   exportAccount: f.handler
-    .input(
-      z.object({
-        name: z.string(),
-        format: z.nativeEnum(AccountFormat),
-        language: z.string().optional(),
-        viewOnly: z.boolean().optional(),
-      }),
-    )
-    .mutation(async ({ name, format, language, viewOnly }) => {
+    .mutation(async ({ name, format, language, viewOnly }: { name: string, format: AccountFormat, language?: LanguageKey, viewOnly?: boolean }) => {
       if (language && !Object.hasOwn(LanguageUtils.LANGUAGES, language)) {
         throw new Error(`Language ${language} is not supported`);
       }

@@ -32,11 +32,11 @@ function handlerQueryBuilder<TResolver extends ResolverFunc>(
 
 function buildUseMutation() {
   return <TResolver extends ResolverFunc>(resolver: TResolver) => ({
-    useMutation: (opts?: UseMutationOptions<Awaited<ReturnType<TResolver>>, Error, unknown, unknown>) => {
+    useMutation: (opts?: UseMutationOptions<Awaited<ReturnType<TResolver>>, Error, Parameters<TResolver>[0], unknown>) => {
       return useMutation<
         Awaited<ReturnType<TResolver>>,
         Error,
-        unknown,
+        Parameters<TResolver>[0],
         unknown
       >({
         ...opts,
