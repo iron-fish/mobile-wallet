@@ -1,10 +1,18 @@
 import { generateKey } from "ironfish-native-module";
 import { WalletDb } from "./db";
-import { AccountFormat, Assert, LanguageKey, decodeAccount, encodeAccount } from "@ironfish/sdk";
-import * as SecureStore from 'expo-secure-store'
+import { AccountFormat, LanguageKey, decodeAccount, encodeAccount } from "@ironfish/sdk";
+
+type StartedState = { type: 'STARTED', db: WalletDb }
+type WalletState = { type: 'STOPPED' } | { type: 'LOADING' } | StartedState
+
+function assertStarted(state: WalletState): asserts state is StartedState {
+  if (state.type !== 'STARTED') {
+    throw new Error('Wallet is not started');
+  }
+}
 
 class Wallet {
-  state: { type: 'STOPPED' } | { type: 'LOADING' } | { type: 'STARTED', db: WalletDb } = { type: 'STOPPED' };
+  state: WalletState = { type: 'STOPPED' };
 
   async start() {
     if (this.state.type !== 'STOPPED') {
@@ -23,16 +31,13 @@ class Wallet {
   }
 
   async createAccount(name: string) {
-    if (this.state.type !== 'STARTED') {
-      throw new Error('Wallet is not started');
-    }
+    assertStarted(this.state)
 
     const key = generateKey();
-
-    const viewOnlyAccount = encodeAccount({
+    return await this.state.db.createAccount({
       // TODO: support account birthdays on new accounts
       createdAt: null,
-      spendingKey: null,
+      spendingKey: key.spendingKey,
       incomingViewKey: key.incomingViewKey,
       outgoingViewKey: key.outgoingViewKey,
       proofAuthorizingKey: key.proofAuthorizingKey,
@@ -40,36 +45,23 @@ class Wallet {
       version: 4,
       viewKey: key.viewKey,
       name,
-    }, AccountFormat.Base64Json)
-
-    const newAccount = await this.state.db.createAccount(name, viewOnlyAccount)
-    await SecureStore.setItemAsync(key.publicAddress, key.spendingKey, {
-      keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-      requireAuthentication: false,
     });
-    return newAccount;
   }
 
   async getAccount(name: string) {
-    if (this.state.type !== 'STARTED') {
-      throw new Error('Wallet is not started');
-    }
+    assertStarted(this.state)
 
     return this.state.db.getAccount(name);
   }
 
   async getAccounts() {
-    if (this.state.type !== 'STARTED') {
-      throw new Error('Wallet is not started');
-    }
+    assertStarted(this.state)
 
     return this.state.db.getAccounts();
   }
 
   async exportAccount(name: string, format: AccountFormat, options?: { viewOnly?: boolean; language?: LanguageKey }) {
-    if (this.state.type !== 'STARTED') {
-      throw new Error('Wallet is not started');
-    }
+    assertStarted(this.state)
 
     const account = await this.state.db.getAccount(name);
     if (account == null) {
@@ -80,13 +72,8 @@ class Wallet {
       name,
     });
 
-    decodedAccount.name = name;
-
-    if (!options?.viewOnly) {
-      decodedAccount.spendingKey = await SecureStore.getItemAsync(decodedAccount.publicAddress, {
-        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-        requireAuthentication: false,
-      })
+    if (!account.viewOnly && !options?.viewOnly) {
+      decodedAccount.spendingKey = await this.state.db.getSpendingKey(account.publicAddress)
     }
 
     return encodeAccount(decodedAccount, format, {
@@ -95,60 +82,25 @@ class Wallet {
   }
 
   async importAccount(account: string, name?: string) {
-    if (this.state.type !== 'STARTED') {
-      throw new Error('Wallet is not started');
-    }
+    assertStarted(this.state)
 
     const decodedAccount = decodeAccount(account, {
       name,
     });
 
-    const viewOnlyAccount = encodeAccount({
-      ...decodedAccount,
-      spendingKey: null,
-    }, AccountFormat.Base64Json)
-
-    const newAccount = await this.state.db.createAccount(decodedAccount.name, viewOnlyAccount)
-
-    if (decodedAccount.spendingKey != null) {
-      await SecureStore.setItemAsync(decodedAccount.publicAddress, decodedAccount.spendingKey,{
-        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-        requireAuthentication: false,
-      })
-    }
-
-    return newAccount;
+    return await this.state.db.createAccount(decodedAccount)
   }
 
   async renameAccount(name: string, newName: string) {
-    if (this.state.type !== 'STARTED') {
-      throw new Error('Wallet is not started');
-    }
+    assertStarted(this.state)
 
     await this.state.db.renameAccount(name, newName)
   }
 
   async removeAccount(name: string) {
-    if (this.state.type !== 'STARTED') {
-      throw new Error('Wallet is not started');
-    }
+    assertStarted(this.state)
 
-    const account = await this.state.db.getAccount(name)
-    if (!account) {
-      throw new Error(`No account found with name ${name}`)
-    }
-
-    const result = await this.state.db.removeAccount(name)
-    if (result.numDeletedRows > 0) {
-      try {
-        await SecureStore.deleteItemAsync(decodeAccount(account.viewOnlyAccount).publicAddress, {
-          keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-          requireAuthentication: false,
-        })
-      } catch {
-        console.log(`Failed to delete spending key for account ${name}`)
-      }
-    }
+    await this.state.db.removeAccount(name)
   }
 }
 
