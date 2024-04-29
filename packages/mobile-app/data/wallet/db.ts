@@ -2,7 +2,7 @@ import { AccountImport } from "@ironfish/sdk/build/src/wallet/walletdb/accountVa
 import { Kysely, Generated, Migrator } from "kysely";
 import { ExpoDialect, ExpoMigrationProvider, SQLiteType} from "kysely-expo";
 import * as SecureStore from 'expo-secure-store';
-import { AccountFormat, decodeAccount, encodeAccount } from "@ironfish/sdk";
+import { AccountFormat, encodeAccount } from "@ironfish/sdk";
 
 interface AccountsTable {
     id: Generated<number>;
