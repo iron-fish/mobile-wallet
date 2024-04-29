@@ -1,94 +1,55 @@
+import {
+  media,
+  shorthands,
+  themes,
+  tokens as baseTokens,
+} from "@tamagui/config/v3";
 import { createTamagui } from "tamagui";
-import { createInterFont } from "@tamagui/font-inter";
-import { shorthands } from "@tamagui/shorthands";
-import { tokens } from "@tamagui/themes/v2";
-import { themes } from "@tamagui/themes/v2-themes";
-import { createMedia } from "@tamagui/react-native-media-driver";
-
+import { createTokens } from "@tamagui/core";
 import { animations } from "./animations";
+import { fonts } from "./fonts";
 
-const headingFont = createInterFont({
-  size: {
-    6: 15,
-  },
-  transform: {
-    6: "uppercase",
-    7: "none",
-  },
-  weight: {
-    6: "400",
-    7: "700",
-  },
+const tokens = createTokens({
+  ...baseTokens,
   color: {
-    6: "$colorFocus",
-    7: "$color",
+    ...baseTokens.color,
+    ifForegroundLight: "#000000",
+    ifBackgroundLight: "#ffffff",
+    ifGray1Light: "#7f7f7f",
+    ifGray2Light: "#dedfe2",
+    ifGray3Light: "#f3f3f4",
+    ifForegroundDark: "#ffffff",
+    ifBackgroundDark: "#101010",
+    ifGray1Dark: "#adaeb4",
+    ifGray2Dark: "#3b3b3b",
+    ifGray3Dark: "#252525",
   },
-  letterSpacing: {
-    5: 2,
-    6: 1,
-    7: 0,
-    8: -1,
-    9: -2,
-    10: -3,
-    12: -4,
-    14: -5,
-    15: -6,
-  },
-  face: {
-    700: { normal: "InterBold" },
+  radius: {
+    sm: 4,
+    full: 9999,
   },
 });
-
-const bodyFont = createInterFont(
-  {
-    face: {
-      700: { normal: "InterBold" },
-    },
-  },
-  {
-    sizeSize: (size) => Math.round(size * 1.1),
-    sizeLineHeight: (size) => Math.round(size * 1.1 + (size > 20 ? 10 : 10)),
-  },
-);
 
 export const config = createTamagui({
-  defaultFont: "body",
   animations,
-  shouldAddPrefersColorThemes: true,
-  themeClassNameOnRoot: true,
-
-  // highly recommended to turn this on if you are using shorthands
-  // to avoid having multiple valid style keys that do the same thing
-  // we leave it off by default because it can be confusing as you onboard.
-  onlyAllowShorthands: false,
   shorthands,
-
-  fonts: {
-    body: bodyFont,
-    heading: headingFont,
-  },
-  settings: {
-    allowedStyleValues: "somewhat-strict",
-  },
-  themes,
   tokens,
-  media: createMedia({
-    xs: { maxWidth: 660 },
-    sm: { maxWidth: 800 },
-    md: { maxWidth: 1020 },
-    lg: { maxWidth: 1280 },
-    xl: { maxWidth: 1420 },
-    xxl: { maxWidth: 1600 },
-    gtXs: { minWidth: 660 + 1 },
-    gtSm: { minWidth: 800 + 1 },
-    gtMd: { minWidth: 1020 + 1 },
-    gtLg: { minWidth: 1280 + 1 },
-    short: { maxHeight: 820 },
-    tall: { minHeight: 820 },
-    hoverNone: { hover: "none" },
-    pointerCoarse: { pointer: "coarse" },
-  }),
+  themes: {
+    light_Button: {
+      background: tokens.color.ifForegroundLight,
+      color: tokens.color.ifBackgroundLight,
+      backgroundHover: "#353535",
+      backgroundPress: "#353535",
+    },
+  },
+  fonts,
+  media,
 });
 
-// for the compiler to find it
+type Conf = typeof config;
+
+declare module "tamagui" {
+  interface TamaguiCustomCOnfig extends Conf {}
+}
+
 export default config;

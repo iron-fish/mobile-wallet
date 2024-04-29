@@ -19,9 +19,10 @@
     "watch": "tamagui-build --skip-types --watch"
   },
   "dependencies": {
-    "@tamagui/toast": "^1.95.1",
+    "@tamagui/config": "^1.95.1",
     "@tamagui/font-inter": "^1.95.1",
     "@tamagui/themes": "^1.95.1",
+    "@tamagui/toast": "^1.95.1",
     "burnt": "^0.12.1",
     "tamagui": "^1.95.1"
   },
