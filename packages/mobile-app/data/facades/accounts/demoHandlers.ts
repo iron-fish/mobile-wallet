@@ -1,7 +1,7 @@
 import { f } from "data-facade";
 import { z } from "zod";
 import { AccountsMethods } from "./types";
-import { AccountFormat } from "@ironfish/sdk";
+import { AccountFormat, LanguageKey } from "@ironfish/sdk";
 
 let ACCOUNTS = [
   { id: 0, name: "alice", viewOnlyAccount: "alice" },
@@ -31,16 +31,9 @@ export const accountsHandlers = f.facade<AccountsMethods>({
       ACCOUNTS.push(account);
       return account;
     }),
+  // The enums used when exporting are tricky to use with Zod 
   exportAccount: f.handler
-    .input(
-      z.object({
-        name: z.string(),
-        format: z.nativeEnum(AccountFormat),
-        language: z.string().optional(),
-        viewOnly: z.boolean().optional(),
-      }),
-    )
-    .mutation(async ({ name }) => {
+    .mutation(async ({ name }: { name: string, format: AccountFormat, language?: LanguageKey, viewOnly?: boolean }) => {
       const account = ACCOUNTS.find((a) => a.name === name)
       if (account === undefined) {
         throw new Error(`No account found with name ${name}`);

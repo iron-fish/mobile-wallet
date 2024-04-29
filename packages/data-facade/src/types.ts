@@ -35,7 +35,9 @@ export type HandlerQueryBuilderReturn<TResolver extends ResolverFunc> = (
 type UseMutationType<
   TResolver extends ResolverFunc,
   TReturn = Awaited<ReturnType<TResolver>>,
-> = (opts?: UseMutationOptions<TReturn, Error, unknown, unknown>) => UseMutationResult<TReturn>;
+> = Parameters<TResolver>["length"] extends 0
+  ? (opts?: UseMutationOptions<TReturn, Error, null | undefined, unknown>) => UseMutationResult<TReturn>
+  : (opts?: UseMutationOptions<TReturn, Error, Parameters<TResolver>[0], unknown>) => UseMutationResult<TReturn>
 
 export type HandlerMutationBuilderReturn<TResolver extends ResolverFunc> =
   () => {
