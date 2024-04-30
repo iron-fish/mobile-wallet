@@ -28,6 +28,9 @@ node_modules
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# tamagui
+**/.tamagui/*
+
 # misc
 /.sass-cache
 /connect.lock

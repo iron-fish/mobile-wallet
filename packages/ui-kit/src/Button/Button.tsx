@@ -1,26 +1,37 @@
 import React, { ComponentProps } from "react";
-import { css, html } from "react-strict-dom";
+import { View, Text, styled } from "@tamagui/web";
 
-const styles = css.create({
-  root: {
-    backgroundColor: "black",
-    borderRadius: "1000px",
-    color: "white",
-    fontSize: "16px",
-    fontWeight: 600,
-    paddingBottom: 14,
-    paddingLeft: 32,
-    paddingRight: 32,
-    paddingTop: 14,
+const ButtonFrame = styled(View, {
+  name: "Button",
+  alignItems: "center",
+  flexDirection: "row",
+  backgroundColor: "$background",
+  height: "$md",
+  borderRadius: "$full",
+  paddingHorizontal: 32,
+  paddingVertical: 14,
+
+  hoverStyle: {
+    backgroundColor: "$backgroundHover",
+  },
+  pressStyle: {
+    backgroundColor: "$backgroundPress",
   },
 });
 
-type Props = ComponentProps<typeof html.button>;
+export const ButtonText = styled(Text, {
+  name: "ButtonText",
+  color: "$color",
+  fontFamily: "$body",
+  fontSize: "$md",
+  lineHeight: "$md",
+  userSelect: "none",
+});
 
-export function Button({ children, style, ...rest }: Props) {
-  return (
-    <html.button style={[styles.root, style ? style : false]} {...rest}>
-      {children}
-    </html.button>
-  );
-}
+type ButtonProps = ComponentProps<typeof ButtonFrame>;
+
+export const Button = ({ children, ...rest }: ButtonProps) => (
+  <ButtonFrame {...rest}>
+    <ButtonText>{children}</ButtonText>
+  </ButtonFrame>
+);

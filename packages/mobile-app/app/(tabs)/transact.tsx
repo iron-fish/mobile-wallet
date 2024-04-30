@@ -7,71 +7,80 @@ import { AccountFormat } from "@ironfish/sdk";
 
 export default function Transact() {
   const facade = useFacade();
-  const qc = useQueryClient()
+  const qc = useQueryClient();
 
   const getAccountsResult = facade.getAccounts.useQuery();
   const createAccount = facade.createAccount.useMutation({
     onSuccess: () => {
       qc.invalidateQueries({
-        queryKey: ['getAccounts']
-      })
-    }
+        queryKey: ["getAccounts"],
+      });
+    },
   });
   const importAccount = facade.importAccount.useMutation({
     onSuccess: () => {
       qc.invalidateQueries({
-        queryKey: ['getAccounts']
-      })
-    }
+        queryKey: ["getAccounts"],
+      });
+    },
   });
   const removeAccount = facade.removeAccount.useMutation({
     onSuccess: () => {
       qc.invalidateQueries({
-        queryKey: ['getAccounts']
-      })
-    }
+        queryKey: ["getAccounts"],
+      });
+    },
   });
   const exportAccount = facade.exportAccount.useMutation();
 
-  const [importAccountText, setImportAccountText] = React.useState('')
+  const [importAccountText, setImportAccountText] = React.useState("");
 
   return (
     <ScrollView>
       <Text>Accounts</Text>
-      {(getAccountsResult.data ?? []).map((account) => (
-        <View key={account.id}>
+      {(getAccountsResult.data ?? []).map((account, i) => (
+        <View key={i}>
           <Text>{account.name}</Text>
           <Button
-            onClick={async () => {
+            onPress={async () => {
               await removeAccount.mutateAsync({ name: account.name });
-              console.log('Removed Account', account.name)
+              console.log("Removed Account", account.name);
             }}
           >
-          Remove Account
+            Remove Account
           </Button>
           <Button
-            onClick={async () => {
-              const otherResult = await exportAccount.mutateAsync({ name: account.name, format: AccountFormat.Base64Json });
-              console.log('Exported Account:', otherResult)
+            onPress={async () => {
+              const otherResult = await exportAccount.mutateAsync({
+                name: account.name,
+                format: AccountFormat.Base64Json,
+              });
+              console.log("Exported Account:", otherResult);
             }}
           >
-          Export Account
+            Export Account
           </Button>
         </View>
       ))}
       <Button
-        onClick={async () => {
+        onPress={async () => {
           const otherResult = await createAccount.mutateAsync({ name: "dave" });
-          console.log('Created Account:', otherResult)
+          console.log("Created Account:", otherResult);
         }}
       >
         Create Account
       </Button>
-      <TextInput value={importAccountText} onChangeText={setImportAccountText} placeholder="Import account"/>
+      <TextInput
+        value={importAccountText}
+        onChangeText={setImportAccountText}
+        placeholder="Import account"
+      />
       <Button
-        onClick={async () => {
-          const otherResult = await importAccount.mutateAsync({ account: importAccountText });
-          console.log('Imported Account:', otherResult)
+        onPress={async () => {
+          const otherResult = await importAccount.mutateAsync({
+            account: importAccountText,
+          });
+          console.log("Imported Account:", otherResult);
         }}
       >
         Import Account

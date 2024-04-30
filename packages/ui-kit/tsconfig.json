@@ -13,10 +13,6 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "rootDir": "./src",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
   },
-  "include": ["src", "types"]
+  "include": ["src/**/*"]
 }

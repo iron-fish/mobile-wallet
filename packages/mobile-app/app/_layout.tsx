@@ -1,13 +1,26 @@
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
 import { Stack } from "expo-router";
-import { Text } from 'react-native';
+import { Text } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import { useColorScheme } from "react-native";
+import { UIKitProvider } from "@ironfish/ui";
 import { FacadeProvider, useFacade } from "../data/facades";
 import React, { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-function DatabaseLoader({ loading, children }: { loading: React.ReactNode, children?: React.ReactNode }) {
+function DatabaseLoader({
+  loading,
+  children,
+}: {
+  loading: React.ReactNode;
+  children?: React.ReactNode;
+}) {
   const facade = useFacade();
   const [status, setStatus] = React.useState<string>("loading");
   const loadDatabases = facade.loadDatabases.useMutation();
@@ -15,14 +28,14 @@ function DatabaseLoader({ loading, children }: { loading: React.ReactNode, child
   useEffect(() => {
     const fn = async () => {
       const result = await loadDatabases.mutateAsync(undefined);
-      setStatus(result)
-    }
-    fn()
-  }, [])
+      setStatus(result);
+    };
+    fn();
+  }, []);
 
   if (status === "loading") {
     return loading;
-  } else if (status === 'loaded') {
+  } else if (status === "loaded") {
     return children;
   } else {
     throw new Error(`Unknown status ${status}`);
@@ -30,20 +43,25 @@ function DatabaseLoader({ loading, children }: { loading: React.ReactNode, child
 }
 
 export default function Layout() {
+  const scheme = useColorScheme();
   return (
-    <QueryClientProvider client={queryClient}>
-      <FacadeProvider>
-        <DatabaseLoader loading={<Text>Loading databases...</Text>}>
-          <Stack>
-            <Stack.Screen
-              name="(tabs)"
-              options={{
-                headerShown: false,
-              }}
-            />
-          </Stack>
-        </DatabaseLoader>
-      </FacadeProvider>
-    </QueryClientProvider>
+    <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
+      <UIKitProvider colorScheme={scheme || "light"}>
+        <QueryClientProvider client={queryClient}>
+          <FacadeProvider>
+            <DatabaseLoader loading={<Text>Loading databases...</Text>}>
+              <Stack>
+                <Stack.Screen
+                  name="(tabs)"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+              </Stack>
+            </DatabaseLoader>
+          </FacadeProvider>
+        </QueryClientProvider>
+      </UIKitProvider>
+    </ThemeProvider>
   );
 }
