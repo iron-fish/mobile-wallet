@@ -14,7 +14,7 @@
     "prepare": "expo-module prepare",
     "prepublishOnly": "expo-module prepublishOnly",
     "expo-module": "expo-module",
-    "cargo-ios": "tsx scripts/cargo-ios.ts",
+    "cargo-ios": "tsx scripts/cargo-ios.ts --target=ios",
     "cargo-ios-sim": "tsx scripts/cargo-ios.ts --target=ios-sim",
     "cargo-android": "tsx scripts/cargo-android.ts",
     "build-rust": "npm run cargo-android && npm run cargo-ios -- --target=ios-sim"
