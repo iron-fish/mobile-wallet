@@ -39,6 +39,15 @@ export default function Layout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="background-download"
+        options={{
+          title: "Background Download",
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="user-circle-o" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
