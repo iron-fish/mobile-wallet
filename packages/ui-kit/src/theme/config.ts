@@ -24,10 +24,6 @@ const tokens = createTokens({
     ifGray2Dark: "#3b3b3b",
     ifGray3Dark: "#252525",
   },
-  radius: {
-    sm: 4,
-    full: 9999,
-  },
 });
 
 export const config = createTamagui({
