@@ -16,8 +16,19 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.ironfish.mobileapp"
+      "bundleIdentifier": "com.ironfish.mobileapp",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSExceptionDomains": {
+            "walletserver.ironfish.network": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
+      },
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
