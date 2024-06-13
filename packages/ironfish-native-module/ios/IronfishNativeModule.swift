@@ -69,5 +69,13 @@ public class IronfishNativeModule: Module {
     Function("isValidPublicAddress") { (hexAddress: String) -> Bool in
       return isValidPublicAddress(hexAddress: hexAddress)
     }
+
+    AsyncFunction("unpackGzip") { (gzipPath: String, outputPath: String) -> Bool in
+      return unpackGzip(gzipPath: gzipPath, outputPath: outputPath)
+    }
+
+    AsyncFunction("readPartialFile") { (path: String, offset: UInt32, length: UInt32) -> Data in
+      return readPartialFile(path: path, offset: offset, length: length)
+    }
   }
 }

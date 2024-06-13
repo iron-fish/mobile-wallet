@@ -12,6 +12,7 @@ num-derive = "0.4.2"
 num-traits = "0.2.18"
 thiserror = "1.0"
 uniffi = "0.26.1"
+zune-inflate = "0.2.54"
 
 [lib]
 crate-type = ["staticlib", "cdylib"]

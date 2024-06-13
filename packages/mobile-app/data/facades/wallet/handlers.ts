@@ -1,6 +1,9 @@
 import { f } from "data-facade";
-import { Account, AccountSettings, Output, WalletHandlers, WalletStatus } from "./types";
+import { Account, AccountSettings, Output, Transaction, WalletHandlers, WalletStatus } from "./types";
 import { wallet } from "../../wallet";
+import { Network } from "../../constants";
+import { uint8ArrayToHex } from "uint8array-extras";
+
 import { AccountFormat, LanguageKey, LanguageUtils } from "@ironfish/sdk";
 
 export const walletHandlers = f.facade<WalletHandlers>({
@@ -12,7 +15,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
       publicAddress: account.publicAddress,
       balances: { 
         iron: {
-          assetId: "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+          assetId: Math.random().toString(),
           available: "0",
           confirmed: "0",
           pending: "0",
@@ -68,14 +71,23 @@ export const walletHandlers = f.facade<WalletHandlers>({
     return result;
   }),
   getAccounts: f.handler.query(async () => {
-    return (await wallet.getAccounts()).map((a): Account => ({
+    const accounts = await wallet.getAccounts();
+    const heads = new Map((await wallet.getAccountHeads(Network.TESTNET)).map((h) => [h.accountId, h]))
+    return accounts.map((a): Account => { 
+      const h = heads.get(a.id)
+      let head = null
+      if (h) {
+        head = { hash: uint8ArrayToHex(h.hash), sequence: h.sequence }
+      }
+
+      return {
       name: a.name,
       viewOnly: a.viewOnly,
       publicAddress: a.publicAddress,
       // TODO: Implement balances in Wallet
       balances: { 
         iron: {
-          assetId: "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+          assetId: Math.random().toString(),
           available: "0",
           confirmed: "0",
           pending: "0",
@@ -83,28 +95,28 @@ export const walletHandlers = f.facade<WalletHandlers>({
         },
         custom: []
       },
-      // TODO: Implement account syncing in Wallet
-      head: null,
+      head,
       // TODO: Implement account settings in Wallet
       settings: {
         balanceAutoHide: false,
       }
-    }));
+    }});
   }),
   getEstimatedFees: f.handler.query(async (args: { accountName: string, outputs: Output[] }) => {
     // TODO: Implement getEstimatedFees
     return { slow: "0", average: "0", fast: "0" } 
   }),
-  getTransaction: f.handler.query(async ({ accountName, hash }: { accountName: string, hash: string }) => {
+  getTransaction: f.handler.query(async ({ accountName, hash }: { accountName: string, hash: string }): Promise<Transaction> => {
     // TODO: Implement getTransaction
     throw new Error('getTransaction not yet implemented')
   }),
-  getTransactions: f.handler.query(async ({ accountName, hash }: { accountName: string, hash: string, options?: { limit?: number, offset?: number, ascending?: boolean, assetId?: string, address?: string } }) => {
+  getTransactions: f.handler.query(async ({ accountName, hash }: { accountName: string, hash: string, options?: { limit?: number, offset?: number, ascending?: boolean, assetId?: string, address?: string } }): Promise<Transaction[]> => {
     // TODO: Implement getTransactions
+    throw new Error('TODO: Implement getTransactions');
     return [];
   }),
   getWalletStatus: f.handler.query(async (): Promise<WalletStatus> => {
-    // TODO: Implement getWalletStatus
+    // TODO: gImplement getWalletStatus
     return { status: 'PAUSED', latestKnownBlock: 0 }
   }),
   importAccount: f.handler.mutation(async ({ account, name }: { account: string, name?: string }): Promise<Account> => {

@@ -1,7 +1,7 @@
 import * as FileSystem from "expo-file-system";
 import { Chunk, ChunksManifest } from "./syncer/types";
 import { LightBlock } from "./api/lightstreamer";
-import { readGzip, readPartialFile } from "ironfish-native-module";
+import { unpackGzip, readPartialFile } from "ironfish-native-module";
 import * as WalletServerApi from "./api/walletServer";
 import { Network } from "./constants";
 
@@ -50,13 +50,16 @@ class Syncer {
     async getChunkBlocks(network: Network, chunk: Chunk): Promise<void> {
         const directory = await this.getChunksDir(network)
         const file = `${chunk.timestamp}.blocks`
+        console.log('chunk dir', directory)
 
         const dirInfo = await FileSystem.getInfoAsync(directory + file)
         if (dirInfo.exists) {
             return
         }
 
+        console.log('downloading chunk', chunk.timestamp)
         const result = await FileSystem.downloadAsync(LIGHT_BLOCKS_URLS[network] + chunk.blocks, directory + file)
+        console.log('download complete', chunk.timestamp)
         if (result.status !== 200) {
             console.warn('Unhandled status code', result.status)
         }
@@ -75,7 +78,7 @@ class Syncer {
         if (result.status !== 200) {
             console.warn('Unhandled status code', result.status)
         }
-        await readGzip(directory + file + '.gz', directory + file)
+        await unpackGzip(directory + file + '.gz', directory + file)
     }
 
     private async readRangesFile(network: Network, chunk: Chunk): Promise<[number, number, number][]> {
@@ -115,6 +118,7 @@ class Syncer {
 
             const start = ranges[pos][1]
             const end = ranges[endIndex][2]
+            // TODO: start the next read while decoding
             const bytes = await readPartialFile(directory + file, start, end - start + 1)
 
             for (let i = pos; i <= endIndex; i++) {
@@ -124,30 +128,70 @@ class Syncer {
         }
     }
 
-    async requestBlocks() {
-        const network = Network.TESTNET
-        console.log('requesting latest block')
-        const latestBlock = await WalletServerApi.getLatestBlock(network)
-        console.log('latest block', latestBlock)
+    private readWalletServerBlocks(blocks: Array<string>, onBlock: (block: LightBlock) => unknown): void {
+        for (const serverBlock of blocks) {
+            const block = LightBlock.decode(Buffer.from(serverBlock, 'hex'))
+            onBlock(block)
+        }
+    }
 
-        console.log('downloading manifest')
-        const manifest = await this.getChunksManifest(network)
-
-        let readPromise = Promise.resolve()
-
-        const finalizedChunks = manifest.chunks.filter(chunk => chunk.finalized)
-        for (const chunk of finalizedChunks) {
-            await this.getChunkBlockAndByteRanges(network, chunk)
-            readPromise = readPromise.then(async () => {
-                await this.readChunkBlocks(network, chunk, (block) => {
-                    if (block.sequence % 1000 === 0) {
-                        console.log(block.sequence)
-                    }
-                })
-            })
+    isRequesting = false
+    
+    async lockRequest(cb: () => Promise<void>) {
+        if (this.isRequesting) {
+            console.warn('already requesting')
+            return
         }
 
-        await readPromise
+        this.isRequesting = true
+        try {
+            await cb()
+        } finally {
+            this.isRequesting = false
+        }
+    }
+
+    async iterateTo(network: Network, start: { hash: Uint8Array, sequence: number }, end: { hash: Uint8Array, sequence: number}, onBlock: (block: LightBlock) => unknown) {
+        await this.lockRequest(async () => {   
+            console.log('downloading manifest')
+            const manifest = await this.getChunksManifest(network)
+    
+            let readPromise = Promise.resolve()
+
+            let lastHash = start.hash
+
+            const onBlockInner = (block: LightBlock) => {
+                // TODO: Do this right
+                if (!areUint8ArraysEqual(block.previousBlockHash, lastHash)) {
+                    throw new Error('Chain mismatch')
+                }
+                lastHash = block.hash
+                onBlock(block)
+            }
+    
+            const finalizedChunks = manifest.chunks.filter(chunk => chunk.finalized && chunk.range.end >= start.sequence)
+            for (const chunk of finalizedChunks) {
+                await this.getChunkBlockAndByteRanges(network, chunk)
+                readPromise = readPromise.then(async () => {
+                    await this.readChunkBlocks(network, chunk, onBlockInner)
+                })
+            }
+    
+            const serverStart = (finalizedChunks.at(-1)?.range.end ?? 0) + 1
+            const lastSequence = end.sequence
+            const downloadSize = 100
+    
+            for (let i = serverStart; i < lastSequence; i += downloadSize) {
+                const endIndex = Math.min(i + downloadSize - 1, lastSequence - 1)
+                console.log('fetching blocks from wallet server', i, endIndex)
+                const download = await WalletServerApi.getBlockRange(network, i, endIndex)
+                readPromise = readPromise.then(async () => {
+                    this.readWalletServerBlocks(download, onBlockInner)
+                })
+            }
+    
+            await readPromise
+        })
     }
 }
 

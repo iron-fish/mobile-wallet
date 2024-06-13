@@ -9,7 +9,7 @@ export default function Transact() {
   const facade = useFacade();
   const qc = useQueryClient();
 
-  const getAccountsResult = facade.getAccounts.useQuery();
+  const getAccountsResult = facade.getAccounts.useQuery(undefined, { refetchInterval: 1000 });
   const createAccount = facade.createAccount.useMutation({
     onSuccess: () => {
       qc.invalidateQueries({
@@ -41,6 +41,7 @@ export default function Transact() {
       {(getAccountsResult.data ?? []).map((account, i) => (
         <View key={i}>
           <Text>{account.name}</Text>
+          <Text>{JSON.stringify(account)}</Text>
           <Button
             onPress={async () => {
               await removeAccount.mutateAsync({ name: account.name });

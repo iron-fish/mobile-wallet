@@ -10,13 +10,20 @@ const TARGETS = {
 };
 
 function cargoBuild(target: string) {
-  spawnSync("cargo", ["build", "--release", "--target", target], {
-    stdio: "inherit",
-    env: {
-      IPHONEOS_DEPLOYMENT_TARGET: "14.0",
-      ...process.env,
+  const result = spawnSync(
+    "cargo",
+    ["build", "--release", "--target", target],
+    {
+      stdio: "inherit",
+      env: {
+        IPHONEOS_DEPLOYMENT_TARGET: "14.0",
+        ...process.env,
+      },
     },
-  });
+  );
+  if (result.status && result.status !== 0) {
+    process.exit(result.status);
+  }
 }
 
 function getTarget() {

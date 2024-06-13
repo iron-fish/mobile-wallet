@@ -1,19 +1,21 @@
 import { ZodTypeAny, z } from "zod";
-import { useQuery, useMutation, UseMutationOptions } from "@tanstack/react-query";
+import { useQuery, useMutation, UseMutationOptions, UseQueryResult } from "@tanstack/react-query";
 import { buildQueryKey } from "./utils";
 import type {
   ResolverFunc,
   HandlerMutationBuilderReturn,
   HandlerQueryBuilderReturn,
+  UseQueryOptionsWithoutKey,
 } from "./types";
 
 // QUERY HANDLERS
 
 function buildUseQuery(baseQueryKey: string) {
-  return <TResolver extends ResolverFunc>(resolver: TResolver) => {
+  return <TResolver extends ResolverFunc, TReturn extends Awaited<ReturnType<TResolver>>>(resolver: TResolver) => {
     return {
-      useQuery: (args?: unknown) => {
-        return useQuery({
+      useQuery: (args?: unknown, opts?: UseQueryOptionsWithoutKey<TReturn>): UseQueryResult<TReturn> => {
+        return useQuery<TReturn>({
+          ...opts,
           queryKey: [baseQueryKey, ...buildQueryKey(args)],
           queryFn: () => resolver(args),
         });
