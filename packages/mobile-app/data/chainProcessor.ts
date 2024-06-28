@@ -1,28 +1,18 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 import { LightBlock } from './api/lightstreamer'
 import { Network } from './constants'
-import * as WalletServerApi from "./api/walletServer";
-import { syncer } from './syncer';
-import { areUint8ArraysEqual } from 'uint8array-extras';
+import { WalletServerApi } from "./api/walletServer";
+import { Blockchain } from './blockchain';
+import * as Uint8ArrayUtils from '../utils/uint8Array';
 
 /**
- * This is used to get a non synchronous chain of block events from the blockchain
- * As blocks are added and removed, this system will call onAdd() and onRemove() in
- * a guaranteed correct order. If you have this chain:
- *      G -> A1
+ * Fetches blocks from the wallet server (or cache) and, on calling update, calls onRemove
+ * and onAdd to move from head to the latest block.
  *
- * You'll get
- *  - onAdd(G)
- *  - onAdd(A1)
- *
- * If you then reorg and have received
+ * For example, if head is A1, and the wallet server returns B2 as the new head:
  *      G -> A1
  *        -> B1 -> B2
- *
- * - onAdd(G)
- * - onAdd(A1)
+ * 
+ * You'll get
  * - onRemove(A1)
  * - onAdd(B1)
  * - onAdd(B2)
@@ -54,62 +44,27 @@ export class ChainProcessor {
 
         // Freeze this value in case it changes while we're updating the head
         const latest = await WalletServerApi.getLatestBlock(this.network)
-        const chainHead = { hash: Buffer.from(latest.hash, 'hex'), sequence: latest.sequence }
+        const chainHead = { hash: Uint8ArrayUtils.fromHex(latest.hash), sequence: latest.sequence }
+        console.log('Chain Processor Latest Block: ', chainHead)
 
-        if (areUint8ArraysEqual(chainHead.hash, this.head.hash)) {
+        if (Uint8ArrayUtils.areEqual(chainHead.hash, this.head.hash)) {
             return { hashChanged: false }
         }
 
-        await syncer.iterateTo(this.network, this.head, chainHead, (block) => {
+        const result = await Blockchain.iterateFrom(this.network, this.head)
+        if (result.needsReset) {
+            throw new Error('No path from chain processor head to chain head.')
+        }
+
+        for (const block of result.blocksToRemove) {
+            this.onRemove(block)
+            this.head = { hash: block.previousBlockHash, sequence: block.sequence - 1 }
+        }
+
+        await Blockchain.iterateTo(this.network, this.head, chainHead, (block) => {
             this.onAdd(block)
             this.head = { hash: block.hash, sequence: block.sequence }
         })
-
-        // const block = await WalletServerApi.getBlockBySequence(this.network, this.head.sequence)
-
-        // if (block) {
-        //     const lightBlock = LightBlock.decode(block)
-        //     if (lightBlock.hash !== this.head.hash) {
-        //         // roll back blocks to fork
-        //     }
-        // }
-
-        //  const fork = await this.chain.findFork(head, chainHead)
-
-        // All cases can be handled by rewinding to the fork point
-        // and then fast-forwarding to the destination. In cases where `head` and `chainHead`
-        // are on the same linear chain, either rewind or fast-forward will just be a no-op
-        //  const iterBackwards = this.chain.iterateFrom(head, fork, undefined, false)
-
-        //  for await (const remove of iterBackwards) {
-        //    if (signal?.aborted) {
-        //      return { hashChanged: !oldHash || !this.hash.equals(oldHash) }
-        //    }
-
-        //    if (remove.hash.equals(fork.hash)) {
-        //      continue
-        //    }
-
-        //    await this.remove(remove)
-        //    this.hash = remove.previousBlockHash
-        //    this.sequence = remove.sequence - 1
-        //  }
-
-        //  const iterForwards = this.chain.iterateTo(fork, chainHead, undefined, false)
-
-        //  for await (const add of iterForwards) {
-        //    if (signal?.aborted) {
-        //      return { hashChanged: !oldHash || !this.hash.equals(oldHash) }
-        //    }
-
-        //    if (add.hash.equals(fork.hash)) {
-        //      continue
-        //    }
-
-        //    await this.add(add)
-        //    this.hash = add.hash
-        //    this.sequence = add.sequence
-        //  }
 
         return { hashChanged: !oldHash || this.head.hash !== oldHash.hash }
     }

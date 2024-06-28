@@ -1,20 +1,33 @@
 import * as FileSystem from "expo-file-system";
-import { Chunk, ChunksManifest } from "./syncer/types";
-import { LightBlock } from "./api/lightstreamer";
+import { Network } from "../constants"
 import { unpackGzip, readPartialFile } from "ironfish-native-module";
-import * as WalletServerApi from "./api/walletServer";
-import { Network } from "./constants";
+import { LightBlock } from "./lightstreamer";
+
+export type Chunk = {
+    blocks: string,
+    byteRangesFile: string,
+    timestamp: number,
+    range: {
+        start: number,
+        end: number
+    },
+    finalized: boolean
+}
+
+export type ChunksManifest = {
+    "chunks": Chunk[]
+    "timestamp": number,
+}
 
 const LIGHT_BLOCKS_URLS: Record<Network, string> = {
     [Network.MAINNET]: 'https://lightblocks.ironfish.network/',
     [Network.TESTNET]: 'https://testnet.lightblocks.ironfish.network/',
 }
 
-
 /**
- * Downloads blocks from the light-wallet server, caching them to provide to the Wallet.
+ * Contains methods for fetching chunks, or groups of blocks, fron an S3-compatible bucket.
  */
-class Syncer {
+class WalletServerChunks {
     private async getChunksDir(network: Network): Promise<string> {
         const directory = FileSystem.cacheDirectory + `chunks/${network.toString()}/`;
         try {
@@ -39,8 +52,11 @@ class Syncer {
             }
         }
 
+        console.log('downloading manifest')
         const result = await FileSystem.downloadAsync(LIGHT_BLOCKS_URLS[network] + 'manifest.json', manifestFile)
-        console.log('getManifest Status:', result.status)
+        if (result.status !== 200) {
+            console.warn('getManifest Status:', result.status)
+        }
         const chunksString = await FileSystem.readAsStringAsync(manifestFile, {
             encoding: FileSystem.EncodingType.UTF8,
         })
@@ -81,6 +97,9 @@ class Syncer {
         await unpackGzip(directory + file + '.gz', directory + file)
     }
 
+    /**
+     * Returns an array of [sequence, start, end]
+     */
     private async readRangesFile(network: Network, chunk: Chunk): Promise<[number, number, number][]> {
         const directory = await this.getChunksDir(network)
         const file = `${chunk.timestamp}.ranges.csv`
@@ -92,28 +111,23 @@ class Syncer {
         })
     }
 
-    // Fetching blocks:
-    // TODO: What to do if chunk isn't finalized?
-    // * check wallet server for latest block
-    // * get chunk storage manifest
-    // * check chunks for range containing block. If block is in chunk:
-    //   * check if chunk is already cached locally
-    //   * if not, set chunk to download
-    // * if block is not in chunk:
-    //   * fetch from wallet server
-    //
-
-    private async getChunkBlockAndByteRanges(network: Network, chunk: Chunk) {
+    async getChunkBlockAndByteRanges(network: Network, chunk: Chunk) {
         await Promise.all([this.getChunkBlocks(network, chunk), this.getChunkByteRanges(network, chunk)])
     }
 
-    private async readChunkBlocks(network: Network, chunk: Chunk, onBlock: (block: LightBlock) => unknown): Promise<void> {
+    async readChunkBlocks(network: Network, chunk: Chunk, startSequence: number, onBlock: (block: LightBlock) => unknown): Promise<void> {
         const directory = await this.getChunksDir(network)
         const file = `${chunk.timestamp}.blocks`
         const ranges = await this.readRangesFile(network, chunk)
-        let blocksPerRead = 100
+        const blocksPerRead = 100
 
-        for (let pos = 0; pos < ranges.length; pos += blocksPerRead) {
+        let pos = 0;
+
+        if (ranges[pos][0] < startSequence) {
+            pos = startSequence - ranges[pos][0]
+        }
+
+        for (; pos < ranges.length; pos += blocksPerRead) {
             const endIndex = Math.min(pos + blocksPerRead - 1, ranges.length - 1)
 
             const start = ranges[pos][1]
@@ -123,76 +137,11 @@ class Syncer {
 
             for (let i = pos; i <= endIndex; i++) {
                 const block = LightBlock.decode(bytes.subarray(ranges[i][1] - start, ranges[i][2] - start + 1))
-                onBlock(block)
+                await onBlock(block)
             }
         }
-    }
-
-    private readWalletServerBlocks(blocks: Array<string>, onBlock: (block: LightBlock) => unknown): void {
-        for (const serverBlock of blocks) {
-            const block = LightBlock.decode(Buffer.from(serverBlock, 'hex'))
-            onBlock(block)
-        }
-    }
-
-    isRequesting = false
-    
-    async lockRequest(cb: () => Promise<void>) {
-        if (this.isRequesting) {
-            console.warn('already requesting')
-            return
-        }
-
-        this.isRequesting = true
-        try {
-            await cb()
-        } finally {
-            this.isRequesting = false
-        }
-    }
-
-    async iterateTo(network: Network, start: { hash: Uint8Array, sequence: number }, end: { hash: Uint8Array, sequence: number}, onBlock: (block: LightBlock) => unknown) {
-        await this.lockRequest(async () => {   
-            console.log('downloading manifest')
-            const manifest = await this.getChunksManifest(network)
-    
-            let readPromise = Promise.resolve()
-
-            let lastHash = start.hash
-
-            const onBlockInner = (block: LightBlock) => {
-                // TODO: Do this right
-                if (!areUint8ArraysEqual(block.previousBlockHash, lastHash)) {
-                    throw new Error('Chain mismatch')
-                }
-                lastHash = block.hash
-                onBlock(block)
-            }
-    
-            const finalizedChunks = manifest.chunks.filter(chunk => chunk.finalized && chunk.range.end >= start.sequence)
-            for (const chunk of finalizedChunks) {
-                await this.getChunkBlockAndByteRanges(network, chunk)
-                readPromise = readPromise.then(async () => {
-                    await this.readChunkBlocks(network, chunk, onBlockInner)
-                })
-            }
-    
-            const serverStart = (finalizedChunks.at(-1)?.range.end ?? 0) + 1
-            const lastSequence = end.sequence
-            const downloadSize = 100
-    
-            for (let i = serverStart; i < lastSequence; i += downloadSize) {
-                const endIndex = Math.min(i + downloadSize - 1, lastSequence - 1)
-                console.log('fetching blocks from wallet server', i, endIndex)
-                const download = await WalletServerApi.getBlockRange(network, i, endIndex)
-                readPromise = readPromise.then(async () => {
-                    this.readWalletServerBlocks(download, onBlockInner)
-                })
-            }
-    
-            await readPromise
-        })
     }
 }
 
-export const syncer = new Syncer();
+export const WalletServerChunksApi = new WalletServerChunks();
+
