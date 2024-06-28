@@ -175,7 +175,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
     },
   ),
   getWalletStatus: f.handler.query(async (): Promise<WalletStatus> => {
-    // TODO: gImplement getWalletStatus
+    // TODO: Implement getWalletStatus
     return { status: "PAUSED", latestKnownBlock: 0 };
   }),
   importAccount: f.handler.mutation(
