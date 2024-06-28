@@ -1,4 +1,8 @@
 /* eslint-disable */
+/**
+ * This is a generated file from the source protobuf file here:
+ * https://github.com/iron-fish/wallet-server/tree/afce9286a24ab1aec5a74cff9ce1bef7aed64711/protos
+ */
 import Long from "long";
 import _m0 from "protobufjs/minimal";
 
