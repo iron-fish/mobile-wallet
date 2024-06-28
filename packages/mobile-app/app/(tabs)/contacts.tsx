@@ -2,7 +2,6 @@ import "../../globals";
 
 import { Button } from "@ironfish/ui";
 import { View, Text } from "react-native";
-import { generateForks } from "../../data/api/walletServer";
 import { wallet } from "../../data/wallet/wallet";
 
 import { Network } from "../../data/constants";
@@ -17,13 +16,6 @@ export default function Contacts() {
         }}
       >
         Request Blocks
-      </Button>
-      <Button
-        onPress={() => {
-          generateForks();
-        }}
-      >
-        Generate Forks
       </Button>
     </View>
   );
