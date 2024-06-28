@@ -1,15 +1,15 @@
 import {
-  UndefinedInitialDataOptions,
   UseQueryResult,
   UseMutationResult,
   UseMutationOptions,
+  UseQueryOptions,
 } from "@tanstack/react-query";
 
 export type ResolverFunc<T = any> = (args: T) => any;
 
 // Query type utils
 
-type UseQueryOptions = UndefinedInitialDataOptions<any, Error, any, unknown[]>;
+export type UseQueryOptionsWithoutKey<T> = Omit<UseQueryOptions<T>, 'queryKey'>
 
 type UseQueryType<
   TResolver extends ResolverFunc,
@@ -17,17 +17,17 @@ type UseQueryType<
 > = Parameters<TResolver>["length"] extends 0
   ? (
       args?: null | undefined,
-      opts?: UseQueryOptions | undefined,
+      opts?: UseQueryOptionsWithoutKey<TReturn>,
     ) => UseQueryResult<TReturn>
   : (
       args: Parameters<TResolver>[0],
-      opts?: UseQueryOptions | undefined,
+      opts?: UseQueryOptionsWithoutKey<TReturn>,
     ) => UseQueryResult<TReturn>;
 
 export type HandlerQueryBuilderReturn<TResolver extends ResolverFunc> = (
   baseQueryKey: string,
 ) => {
-  useQuery: UseQueryType<TResolver>;
+  useQuery: UseQueryType<TResolver, Awaited<ReturnType<TResolver>>>;
 };
 
 // Mutation type utils

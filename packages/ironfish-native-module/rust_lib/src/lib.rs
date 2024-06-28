@@ -2,6 +2,9 @@ extern crate num;
 #[macro_use]
 extern crate num_derive;
 
+use std::{fs::{self, File}, io::{Read, Seek, SeekFrom}};
+use zune_inflate::DeflateDecoder;
+
 use crate::num::FromPrimitive;
 use ironfish::{keys::Language, serializing::bytes_to_hex, PublicAddress, SaplingKey};
 
@@ -111,4 +114,29 @@ fn generate_key_from_private_key(private_key: String) -> Result<Key, EnumError> 
 #[uniffi::export]
 pub fn is_valid_public_address(hex_address: String) -> bool {
     PublicAddress::from_hex(&hex_address).is_ok()
+}
+
+#[uniffi::export]
+pub fn unpack_gzip(gzip_path: String, output_path: String) -> bool {
+    let trimmed_path = gzip_path.replacen("file://", "", 1);
+    let trimmed_new_path: String = output_path.replacen("file://", "", 1);
+
+    let result = fs::read(&trimmed_path).unwrap();
+    let mut decoder = DeflateDecoder::new(&result);
+    let contents = decoder.decode_gzip().unwrap();
+    fs::write(&trimmed_new_path, contents).unwrap();
+    fs::remove_file(&trimmed_path).unwrap();
+    true
+}
+
+#[uniffi::export]
+pub fn read_partial_file(path: String, offset: u32, length: u32) -> Vec<u8> {
+    let trimmed_path = path.replacen("file://", "", 1);
+
+    let mut result = File::open(&trimmed_path).unwrap();
+    result.seek(SeekFrom::Start(offset as u64)).unwrap();
+    let mut buf = vec![0u8; length as usize];
+
+    result.read_exact(&mut buf).unwrap();
+    buf
 }

@@ -7,7 +7,6 @@ export type Account = {
   head: {
     hash: string;
     sequence: number;
-    inChain: boolean | null;
 } | null;
   viewOnly: boolean;
   balances: { iron: AccountBalance, custom: AccountBalance[] };
