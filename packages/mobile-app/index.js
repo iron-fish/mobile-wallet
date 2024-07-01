@@ -1,5 +1,4 @@
-import 'expo-router/entry'
-// import { registerRootComponent } from 'expo';
-// import App from './App';
+global.Buffer = require('buffer').Buffer
+global.process = require('process')
 
-// registerRootComponent(App);
+import 'expo-router/entry'

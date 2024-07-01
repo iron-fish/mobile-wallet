@@ -1,5 +1,3 @@
-import "../../globals";
-
 import { Button } from "@ironfish/ui";
 import { View, Text } from "react-native";
 import { wallet } from "../../data/wallet/wallet";
