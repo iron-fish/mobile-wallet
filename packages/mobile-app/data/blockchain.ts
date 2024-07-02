@@ -10,7 +10,7 @@ import { WalletServerChunksApi } from "./api/walletServerChunks";
  * (or read them from the cache), returning them in order to the caller.
  */
 class BlockchainClass {
-    private async readWalletServerBlocks(blocks: Array<string>, onBlock: (block: LightBlock) => unknown): Promise<void> {
+    private async readWalletServerBlocks(blocks: string[], onBlock: (block: LightBlock) => unknown): Promise<void> {
         for (const serverBlock of blocks) {
             const block = LightBlock.decode(Uint8ArrayUtils.fromHex(serverBlock))
             await onBlock(block)

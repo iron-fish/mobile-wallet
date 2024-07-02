@@ -171,7 +171,6 @@ export const walletHandlers = f.facade<WalletHandlers>({
     }): Promise<Transaction[]> => {
       // TODO: Implement getTransactions
       throw new Error("TODO: Implement getTransactions");
-      return [];
     },
   ),
   getWalletStatus: f.handler.query(async (): Promise<WalletStatus> => {

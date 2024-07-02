@@ -64,7 +64,7 @@ class WalletServer {
         console.log("requesting blocks", start, end);
 
         const fetchResult = await fetch(url);
-        let blocks = await fetchResult.json() as Array<string>;
+        let blocks = await fetchResult.json() as string[];
 
         for (const transformer of this.transformers) {
             blocks = await transformer.getBlockRange(network, start, end, blocks);

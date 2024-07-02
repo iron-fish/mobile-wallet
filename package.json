@@ -4,6 +4,8 @@
   "license": "MPL-2.0",
   "private": true,
   "scripts": {
+    "lint": "npm run lint --workspaces --if-present -- --max-warnings=0",
+    "lint:fix": "npm run lint --workspaces --if-present -- --fix --max-warnings=0",
     "postinstall": "git submodule update --init --recursive"
   },
   "devDependencies": {

@@ -23,15 +23,15 @@ function DatabaseLoader({
 }) {
   const facade = useFacade();
   const [status, setStatus] = React.useState<string>("loading");
-  const loadDatabases = facade.loadDatabases.useMutation();
+  const { mutateAsync: loadDatabases } = facade.loadDatabases.useMutation();
 
   useEffect(() => {
     const fn = async () => {
-      const result = await loadDatabases.mutateAsync(undefined);
+      const result = await loadDatabases(undefined);
       setStatus(result);
     };
     fn();
-  }, []);
+  }, [loadDatabases]);
 
   if (status === "loading") {
     return loading;
