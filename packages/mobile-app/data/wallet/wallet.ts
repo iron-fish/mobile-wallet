@@ -177,12 +177,10 @@ class Wallet {
               });
             }
           }
-
         });
       },
     });
 
-     
     const saveLoop = async () => {
       assertStarted(this.state);
 
@@ -209,7 +207,7 @@ class Wallet {
       await saveLoop();
       console.log(`finished in ${performance.now() - performanceTimer}ms`);
     }
-    
+
     return hashChanged;
   }
 }

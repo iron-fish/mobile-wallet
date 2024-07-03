@@ -13,7 +13,7 @@ class Asset {
 }
 
 const mockIronfishRustNodejs = {
-  "$$typeof": undefined,
+  $$typeof: undefined,
   KEY_LENGTH: 32,
   ASSET_NAME_LENGTH: 32,
   ASSET_METADATA_LENGTH: 96,
@@ -28,26 +28,26 @@ const mockIronfishRustNodejs = {
       if (obj.hasOwnProperty(property)) {
         return obj[property];
       }
-      const message = `ERROR: Please implement ${property} in shims/ironfish-rust-nodejs/Asset`
+      const message = `ERROR: Please implement ${property} in shims/ironfish-rust-nodejs/Asset`;
       console.error(message);
       throw new Error(message);
-    }
+    },
   }),
   spendingKeyToWords: IronfishNativeModule.spendingKeyToWords,
   wordsToSpendingKey: IronfishNativeModule.wordsToSpendingKey,
   generateKeyFromPrivateKey: IronfishNativeModule.generateKeyFromPrivateKey,
   isValidPublicAddress: IronfishNativeModule.isValidPublicAddress,
-}
+};
 
 const proxy = new Proxy(mockIronfishRustNodejs, {
   get: (obj, property) => {
     if (obj.hasOwnProperty(property)) {
       return obj[property];
     }
-    const message = `ERROR: Please implement ${property} in shims/ironfish-rust-nodejs`
+    const message = `ERROR: Please implement ${property} in shims/ironfish-rust-nodejs`;
     console.error(message);
     throw new Error(message);
-  }
+  },
 });
 
 module.exports = proxy;

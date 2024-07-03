@@ -9,7 +9,9 @@ export default function Transact() {
   const facade = useFacade();
   const qc = useQueryClient();
 
-  const getAccountsResult = facade.getAccounts.useQuery(undefined, { refetchInterval: 1000 });
+  const getAccountsResult = facade.getAccounts.useQuery(undefined, {
+    refetchInterval: 1000,
+  });
   const createAccount = facade.createAccount.useMutation({
     onSuccess: () => {
       qc.invalidateQueries({
