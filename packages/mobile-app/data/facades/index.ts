@@ -9,17 +9,21 @@ import { contactsDemoHandlers } from "./contacts/demoHandlers";
 
 const DEMO = false;
 
-export const facadeContext = createFacadeContext(DEMO ? {
-    ...appDemoHandlers,
-    ...chainDemoHandlers,
-    ...contactsDemoHandlers,
-    ...walletDemoHandlers,
-} : {
-    ...appHandlers,
-    ...chainHandlers,
-    ...contactsDemoHandlers,
-    ...walletHandlers,
-});
+export const facadeContext = createFacadeContext(
+  DEMO
+    ? {
+        ...appDemoHandlers,
+        ...chainDemoHandlers,
+        ...contactsDemoHandlers,
+        ...walletDemoHandlers,
+      }
+    : {
+        ...appHandlers,
+        ...chainHandlers,
+        ...contactsDemoHandlers,
+        ...walletHandlers,
+      },
+);
 
 export const FacadeProvider = facadeContext.Provider;
 export const useFacade = facadeContext.useFacade;

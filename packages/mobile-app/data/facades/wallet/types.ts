@@ -7,25 +7,25 @@ export type Account = {
   head: {
     hash: string;
     sequence: number;
-} | null;
+  } | null;
   viewOnly: boolean;
-  balances: { iron: AccountBalance, custom: AccountBalance[] };
+  balances: { iron: AccountBalance; custom: AccountBalance[] };
   settings: AccountSettings;
-}
+};
 
 export type AccountBalance = {
-  assetId: string
-  confirmed: string
-  unconfirmed: string
-  pending: string
-  available: string
-}
+  assetId: string;
+  confirmed: string;
+  unconfirmed: string;
+  pending: string;
+  available: string;
+};
 
 export enum TransactionType {
   SEND = "send",
   RECEIVE = "receive",
   MULTI = "multi",
-  MINER = "miner"
+  MINER = "miner",
 }
 
 export type AssetBalanceDelta = {
@@ -48,13 +48,13 @@ export type Transaction = {
   blockSequence?: number;
   notes: Note[];
   spends: Spend[];
-}
+};
 
 export type Output = {
   amount: number;
   memo: string;
   publicAddress: string;
-  assetId: string
+  assetId: string;
 };
 
 export type Note = {
@@ -85,26 +85,72 @@ export type Burn = {
   value: string;
 };
 
-export type WalletStatus = { status: 'SYNCING' | 'PAUSED', latestKnownBlock: number }
+export type WalletStatus = {
+  status: "SYNCING" | "PAUSED";
+  latestKnownBlock: number;
+};
 
 export type AccountSettings = {
   balanceAutoHide: boolean;
-}
+};
 
 export type WalletHandlers = {
   createAccount: Mutation<(args: { name: string }) => Account>;
-  exportAccount: Mutation<(args: { name: string, format: AccountFormat, viewOnly?: boolean, language?: LanguageKey }) => string>;
+  exportAccount: Mutation<
+    (args: {
+      name: string;
+      format: AccountFormat;
+      viewOnly?: boolean;
+      language?: LanguageKey;
+    }) => string
+  >;
   getAccount: Query<(args: { name: string }) => Account>;
   getAccounts: Query<() => Account[]>;
-  getEstimatedFees: Query<(args: { accountName: string, outputs: Output[] }) => { slow: string; average: string; fast: string }>;
-  getTransactions: Query<(args: { accountName: string, hash: string, options?: { limit?: number, offset?: number, ascending?: boolean, assetId?: string, address?: string } }) => Transaction[]>;
-  getTransaction: Query<(args: { accountName: string, hash: string }) => Transaction>;
+  getEstimatedFees: Query<
+    (args: { accountName: string; outputs: Output[] }) => {
+      slow: string;
+      average: string;
+      fast: string;
+    }
+  >;
+  getTransactions: Query<
+    (args: {
+      accountName: string;
+      hash: string;
+      options?: {
+        limit?: number;
+        offset?: number;
+        ascending?: boolean;
+        assetId?: string;
+        address?: string;
+      };
+    }) => Transaction[]
+  >;
+  getTransaction: Query<
+    (args: { accountName: string; hash: string }) => Transaction
+  >;
   getWalletStatus: Query<() => WalletStatus>;
-  importAccount: Mutation<(args: { account: string; name?: string }) => Account>;
+  importAccount: Mutation<
+    (args: { account: string; name?: string }) => Account
+  >;
   pauseSyncing: Mutation<() => void>;
   renameAccount: Mutation<(args: { name: string; newName: string }) => void>;
-  removeAccount: Mutation<(args: { name: string; }) => void>;
+  removeAccount: Mutation<(args: { name: string }) => void>;
   resumeSyncing: Mutation<() => void>;
-  sendTransaction: Mutation<(args: { accountName: string; outputs: { amount: number; memo: string; publicAddress: string; assetId: string }[], fee: string; expiration?: number; }) => void>;
-  setAccountSettings: Mutation<(args: { name: string, settings: Partial<AccountSettings> }) => void>;
+  sendTransaction: Mutation<
+    (args: {
+      accountName: string;
+      outputs: {
+        amount: number;
+        memo: string;
+        publicAddress: string;
+        assetId: string;
+      }[];
+      fee: string;
+      expiration?: number;
+    }) => void
+  >;
+  setAccountSettings: Mutation<
+    (args: { name: string; settings: Partial<AccountSettings> }) => void
+  >;
 };
