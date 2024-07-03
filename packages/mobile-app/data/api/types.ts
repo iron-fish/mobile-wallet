@@ -10,5 +10,5 @@ export interface WalletServerTransformer {
     getLatestBlock(network: Network, result: GetLatestBlockResponse): Promise<GetLatestBlockResponse>;
     getBlockByHash(network: Network, hash: string, result: LightBlock): Promise<LightBlock>;
     getBlockBySequence(network: Network, sequence: number, result: LightBlock): Promise<LightBlock>;
-    getBlockRange(network: Network, start: number, end: number, result: Array<string>): Promise<Array<string>>;
+    getBlockRange(network: Network, start: number, end: number, result: string[]): Promise<string[]>;
 }
