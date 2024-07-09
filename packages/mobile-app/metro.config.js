@@ -1,5 +1,8 @@
 /* eslint-env node */
 
+/**
+ * @type {import('expo/metro-config')}
+ */
 const { getDefaultConfig } = require("expo/metro-config");
 const path = require("path");
 
@@ -14,6 +17,13 @@ config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(monorepoRoot, "node_modules"),
 ];
+
+config.resolver.disableHierarchicalLookup = true;
+
+config.transformer = {
+  ...config.transformer,
+  unstable_allowRequireContext: true,
+};
 
 // Modules in our node_modules that are used and require React Native-specific overrides
 // (whether because we need them in React Native, or because they're executed when code is required in @ironfish/sdk)
