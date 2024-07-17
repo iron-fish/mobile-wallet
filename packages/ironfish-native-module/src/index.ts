@@ -26,11 +26,27 @@ export function wordsToSpendingKey(
   words: string,
   languageCode: number,
 ): string {
-  return IronfishNativeModule.wordsToSpendingKey(words, languageCode);
+  const result = IronfishNativeModule.wordsToSpendingKey(words, languageCode);
+
+  // Throwing exceptions from expo modules directly logs to the console, even
+  // if the warning is caught.
+  if (result) {
+    return result;
+  } else {
+    throw new Error("Failed to generate key from private key");
+  }
 }
 
 export function generateKeyFromPrivateKey(privateKey: string): Key {
-  return IronfishNativeModule.generateKeyFromPrivateKey(privateKey);
+  const result = IronfishNativeModule.generateKeyFromPrivateKey(privateKey);
+
+  // Throwing exceptions from expo modules directly logs to the console, even
+  // if the warning is caught.
+  if (result) {
+    return result;
+  } else {
+    throw new Error("Failed to generate key from private key");
+  }
 }
 
 export function isValidPublicAddress(hexAddress: string): boolean {
@@ -50,4 +66,14 @@ export function readPartialFile(
   length: number,
 ): Promise<Uint8Array> {
   return IronfishNativeModule.readPartialFile(path, offset, length);
+}
+
+export function decryptNotesForOwner(
+  noteEncrypted: string[],
+  incomingHexKey: string,
+): Promise<{ index: number; note: string }[]> {
+  return IronfishNativeModule.decryptNotesForOwner(
+    noteEncrypted,
+    incomingHexKey,
+  );
 }

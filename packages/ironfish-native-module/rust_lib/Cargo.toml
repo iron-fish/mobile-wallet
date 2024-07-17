@@ -6,12 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+const-hex = "1.12.0"
 ironfish = { path = "../ironfish/ironfish-rust" }
 num = "0.4.1"
 num-derive = "0.4.2"
 num-traits = "0.2.18"
+tokio = { version = "1.38.1", features = ["full"] }
+tokio-rayon = "2.1.0"
 thiserror = "1.0"
-uniffi = "0.26.1"
+uniffi = { version = "0.28.0", features = ["tokio"] }
 zune-inflate = "0.2.54"
 
 [lib]

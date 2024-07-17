@@ -20,6 +20,14 @@ struct ExpoKey: Record {
   var proofAuthorizingKey: String
 }
 
+struct ExpoOutput : Record {
+  @Field
+  var index: UInt32 = 0
+
+  @Field
+  var note: String
+}
+
 public class IronfishNativeModule: Module {
   // Each module class must implement the definition function. The definition consists of components
   // that describes the module's functionality and behavior.
@@ -48,13 +56,18 @@ public class IronfishNativeModule: Module {
       return phrase
     }
 
-    Function("wordsToSpendingKey") { (words: String, languageCode: Int32) throws -> String in
-      let k = try wordsToSpendingKey(words: words, languageCode: languageCode)
+    Function("wordsToSpendingKey") { (words: String, languageCode: Int32) throws -> String? in
+      guard let k = try? wordsToSpendingKey(words: words, languageCode: languageCode) else {
+        return nil
+      }
+
       return k
     }
 
-    Function("generateKeyFromPrivateKey") { (privateKey: String) throws -> ExpoKey in
-      let k = try generateKeyFromPrivateKey(privateKey: privateKey)
+    Function("generateKeyFromPrivateKey") { (privateKey: String) throws -> ExpoKey? in
+      guard let k = try? generateKeyFromPrivateKey(privateKey: privateKey) else {
+        return nil
+      }
 
       return ExpoKey(
         spendingKey: Field(wrappedValue: k.spendingKey),
@@ -76,6 +89,16 @@ public class IronfishNativeModule: Module {
 
     AsyncFunction("readPartialFile") { (path: String, offset: UInt32, length: UInt32) -> Data in
       return readPartialFile(path: path, offset: offset, length: length)
+    }
+
+    AsyncFunction("decryptNotesForOwner") { (noteEncrypted: [String], incomingHexKey: String, promise: Promise) in
+      Task {
+        let decryptedNotes = try await decryptNotesForOwner(noteEncrypted: noteEncrypted, incomingHexKey: incomingHexKey)
+        let expoOutputs = decryptedNotes.map { note in
+          ExpoOutput(index: note.index, note: Field(wrappedValue: note.note))
+        }
+        promise.resolve(expoOutputs)
+      }
     }
   }
 }

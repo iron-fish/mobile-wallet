@@ -1,27 +1,32 @@
-import { useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
-import { Button } from "@ironfish/ui";
-import * as IronfishNativeModule from "ironfish-native-module";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Assert } from "@ironfish/sdk";
+import { useFacade } from "../../data/facades";
 
 export default function Balances() {
-  const [value, setValue] = useState<null | string>(null);
-  useEffect(() => {
-    async function doFetch() {
-      const result = await IronfishNativeModule.generateKey();
-      setValue(result.publicAddress);
-    }
-    doFetch();
-  }, []);
+  const facade = useFacade();
+
+  const getTransactionsResult = facade.getTransactions.useQuery(
+    { accountName: "", hash: "" },
+    {
+      refetchInterval: 1000,
+    },
+  );
 
   Assert.isEqual(50, 50);
 
   return (
     <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <Text>{value === null ? "Loading..." : `The value is: ${value}`}</Text>
-      <Button>Click me</Button>
+      <Text style={{ fontWeight: 700, fontSize: 24 }}>Transactions</Text>
+      <ScrollView>
+        {getTransactionsResult.data?.map((transaction) => (
+          <View key={transaction.hash} style={{ marginBottom: 8 }}>
+            <Text style={{ fontSize: 14 }}>{transaction.hash}</Text>
+            <Text>Block Sequence: {transaction.blockSequence}</Text>
+            <Text>Timestamp: {transaction.timestamp.toString()}</Text>
+          </View>
+        ))}
+      </ScrollView>
       <StatusBar style="auto" />
     </View>
   );

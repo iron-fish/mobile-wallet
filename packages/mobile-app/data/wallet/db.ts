@@ -5,14 +5,6 @@ import * as SecureStore from "expo-secure-store";
 import { AccountFormat, encodeAccount } from "@ironfish/sdk";
 import { Network } from "../constants";
 
-interface AccountNetworkHeadsTable {
-  id: Generated<number>;
-  accountId: number;
-  network: Network;
-  sequence: number;
-  hash: Uint8Array;
-}
-
 interface AccountsTable {
   id: Generated<number>;
   name: string;
@@ -21,9 +13,35 @@ interface AccountsTable {
   viewOnly: boolean;
 }
 
+interface AccountNetworkHeadsTable {
+  id: Generated<number>;
+  accountId: number;
+  network: Network;
+  sequence: number;
+  hash: Uint8Array;
+}
+
+interface TransactionsTable {
+  hash: Uint8Array;
+  network: Network;
+  timestamp: Date;
+  blockSequence: number | null;
+  blockHash: Uint8Array | null;
+}
+
+interface AccountTransactionsTable {
+  id: Generated<number>;
+  accountId: number;
+  transactionHash: Uint8Array;
+  // TODO: narrow this further, like Network
+  transactionType: string;
+}
+
 interface Database {
   accounts: AccountsTable;
   accountNetworkHeads: AccountNetworkHeadsTable;
+  transactions: TransactionsTable;
+  accountTransactions: AccountTransactionsTable;
 }
 
 export class WalletDb {
@@ -44,12 +62,12 @@ export class WalletDb {
       db: db,
       provider: new ExpoMigrationProvider({
         migrations: {
-          createAccounts: {
+          ["001_createAccounts"]: {
             up: async (db: Kysely<Database>) => {
               console.log("creating accounts");
               await db.schema
                 .createTable("accounts")
-                .addColumn("id", "integer", (col) =>
+                .addColumn("id", SQLiteType.Integer, (col) =>
                   col.primaryKey().autoIncrement(),
                 )
                 .addColumn("name", SQLiteType.String, (col) =>
@@ -65,10 +83,15 @@ export class WalletDb {
                   col.notNull(),
                 )
                 .execute();
+              console.log("created accounts");
+            },
+          },
+          ["002_createAccountNetworkHeads"]: {
+            up: async (db: Kysely<Database>) => {
               console.log("creating accountNetworkHeads");
               await db.schema
                 .createTable("accountNetworkHeads")
-                .addColumn("id", "integer", (col) =>
+                .addColumn("id", SQLiteType.Integer, (col) =>
                   col.primaryKey().autoIncrement(),
                 )
                 .addColumn("accountId", SQLiteType.Integer, (col) =>
@@ -82,13 +105,64 @@ export class WalletDb {
                 )
                 .addColumn("hash", SQLiteType.Blob, (col) => col.notNull())
                 .execute();
+              console.log("created accountNetworkHeads");
+            },
+          },
+          ["003_createTransactions"]: {
+            up: async (db: Kysely<Database>) => {
+              console.log("creating transactions");
+              await db.schema
+                .createTable("transactions")
+                .addColumn("hash", SQLiteType.Blob, (col) => col.primaryKey())
+                .addColumn("network", SQLiteType.String, (col) =>
+                  col.notNull().check(sql`network IN ("mainnet", "testnet")`),
+                )
+                .addColumn("timestamp", SQLiteType.DateTime)
+                .addColumn("blockSequence", SQLiteType.Integer)
+                .addColumn("blockHash", SQLiteType.Blob)
+                .execute();
+              console.log("created transactions");
+            },
+          },
+          ["004_createAccountTransactions"]: {
+            up: async (db: Kysely<Database>) => {
+              console.log("creating account transactions");
+              await db.schema
+                .createTable("accountTransactions")
+                .addColumn("id", SQLiteType.Integer, (col) =>
+                  col.primaryKey().autoIncrement(),
+                )
+                .addColumn("transactionHash", SQLiteType.Blob, (col) =>
+                  col.notNull().references("transactions.hash"),
+                )
+                .addColumn("accountId", SQLiteType.Integer, (col) =>
+                  col.notNull().references("accounts.id"),
+                )
+                .addColumn("transactionType", SQLiteType.String, (col) =>
+                  col.notNull(),
+                )
+                .execute();
+              console.log("created account transactions");
             },
           },
         },
       }),
     });
 
-    await migrator.migrateToLatest();
+    const { error, results } = await migrator.migrateToLatest();
+
+    for (const result of results ?? []) {
+      if (result.status === "Success") {
+        console.log(`Ran migration "${result.migrationName}"`);
+      } else if (result.status === "Error") {
+        console.error(`failed to run migration "${result.migrationName}"`);
+      }
+    }
+
+    if (error) {
+      console.error("failed to run `migrateToLatest`");
+      console.error(error);
+    }
 
     return new WalletDb(db);
   }
@@ -161,14 +235,22 @@ export class WalletDb {
       throw new Error(`No account found with name ${name}`);
     }
 
-    await this.db
-      .deleteFrom("accountNetworkHeads")
-      .where("accountId", "==", account.id)
-      .executeTakeFirst();
-    const result = await this.db
-      .deleteFrom("accounts")
-      .where("accounts.name", "==", name)
-      .executeTakeFirst();
+    const result = await this.db.transaction().execute(async (db) => {
+      this.db
+        .deleteFrom("accountNetworkHeads")
+        .where("accountId", "==", account.id)
+        .executeTakeFirstOrThrow();
+
+      await this.db
+        .deleteFrom("accountTransactions")
+        .where("accountId", "==", account.id)
+        .executeTakeFirstOrThrow();
+
+      return await this.db
+        .deleteFrom("accounts")
+        .where("accounts.id", "==", account.id)
+        .executeTakeFirst();
+    });
 
     if (result.numDeletedRows > 0) {
       try {
@@ -179,22 +261,23 @@ export class WalletDb {
       } catch {
         console.log(`Failed to delete spending key for account ${name}`);
       }
+
+      // Clean up any orphaned transactions
+      await this.db
+        .deleteFrom("transactions")
+        .where(({ eb, not, exists, selectFrom }) =>
+          not(
+            exists(
+              selectFrom("accountTransactions")
+                .selectAll()
+                .whereRef("transactionHash", "==", "transactions.hash"),
+            ),
+          ),
+        )
+        .executeTakeFirst();
     }
 
     return result;
-  }
-
-  async getEarliestHead(
-    network: Network,
-  ): Promise<{ hash: Uint8Array; sequence: number } | null> {
-    const result = await this.db
-      .selectFrom("accountNetworkHeads")
-      .select(["hash", "sequence"])
-      .where("network", "==", network)
-      .rightJoin("accounts", "accounts.id", "accountNetworkHeads.accountId")
-      .orderBy("sequence")
-      .executeTakeFirst();
-    return result ?? null;
   }
 
   async getAccountHead(accountId: number, network: Network) {
@@ -242,5 +325,48 @@ export class WalletDb {
         })
         .executeTakeFirst();
     }
+  }
+
+  async saveTransaction(values: {
+    hash: Uint8Array;
+    accountId: number;
+    network: Network;
+    blockSequence: number | null;
+    blockHash: Uint8Array | null;
+    timestamp: Date;
+  }) {
+    return await this.db.transaction().execute(async (db) => {
+      // One transaction could apply to multiple accounts
+      await db
+        .insertInto("transactions")
+        .values({
+          hash: values.hash,
+          network: values.network,
+          blockSequence: values.blockSequence,
+          blockHash: values.blockHash,
+          timestamp: values.timestamp,
+        })
+        .onConflict((oc) => oc.column("hash").doNothing())
+        .executeTakeFirstOrThrow();
+
+      await db
+        .insertInto("accountTransactions")
+        .values({
+          accountId: values.accountId,
+          transactionHash: values.hash,
+          // TODO: implement transaction type
+          transactionType: "receive",
+        })
+        .executeTakeFirst();
+    });
+  }
+
+  async getTransactions(network: Network) {
+    return await this.db
+      .selectFrom("transactions")
+      .selectAll()
+      .where("network", "==", network)
+      .orderBy("timestamp", "asc")
+      .execute();
   }
 }

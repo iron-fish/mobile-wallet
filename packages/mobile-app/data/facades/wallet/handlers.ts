@@ -4,6 +4,7 @@ import {
   AccountSettings,
   Output,
   Transaction,
+  TransactionType,
   WalletHandlers,
   WalletStatus,
 } from "./types";
@@ -11,7 +12,12 @@ import { wallet } from "../../wallet/wallet";
 import { Network } from "../../constants";
 import * as Uint8ArrayUtils from "../../../utils/uint8Array";
 
-import { AccountFormat, LanguageKey, LanguageUtils } from "@ironfish/sdk";
+import {
+  AccountFormat,
+  LanguageKey,
+  LanguageUtils,
+  TransactionStatus,
+} from "@ironfish/sdk";
 
 export const walletHandlers = f.facade<WalletHandlers>({
   createAccount: f.handler.mutation(
@@ -169,8 +175,29 @@ export const walletHandlers = f.facade<WalletHandlers>({
         address?: string;
       };
     }): Promise<Transaction[]> => {
-      // TODO: Implement getTransactions
-      throw new Error("TODO: Implement getTransactions");
+      const txns = await wallet.getTransactions(Network.TESTNET);
+      return txns.map((txn) => ({
+        // TODO: Implement transaction fees
+        fee: "",
+        // TODO: Implement transaction timestamp
+        timestamp: txn.timestamp,
+        // TODO: Implement transaction expiration
+        expiration: 0,
+        hash: Uint8ArrayUtils.toHex(txn.hash),
+        blockHash: txn.blockHash
+          ? Uint8ArrayUtils.toHex(txn.blockHash)
+          : undefined,
+        blockSequence: txn.blockSequence ?? undefined,
+        submittedSequence: 0,
+        assetBalanceDeltas: [],
+        status: TransactionStatus.CONFIRMED,
+        notes: [],
+        burns: [],
+        mints: [],
+        spends: [],
+        // TODO: Implement transaction type when accountName is implemented
+        type: TransactionType.RECEIVE,
+      }));
     },
   ),
   getWalletStatus: f.handler.query(async (): Promise<WalletStatus> => {

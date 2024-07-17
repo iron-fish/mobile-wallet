@@ -1,4 +1,4 @@
-import { generateKey } from "ironfish-native-module";
+import { generateKey, decryptNotesForOwner } from "ironfish-native-module";
 import { WalletDb } from "./db";
 import {
   AccountFormat,
@@ -9,6 +9,8 @@ import {
 import { ChainProcessor } from "../chainProcessor";
 import { Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
+import { LightBlock, LightTransaction } from "../api/lightstreamer";
+import { WriteCache } from "./writeCache";
 
 type StartedState = { type: "STARTED"; db: WalletDb };
 type WalletState = { type: "STOPPED" } | { type: "LOADING" } | StartedState;
@@ -123,38 +125,118 @@ class Wallet {
     await this.state.db.removeAccount(name);
   }
 
+  async getTransactions(network: Network) {
+    assertStarted(this.state);
+
+    return await this.state.db.getTransactions(network);
+  }
+
+  private async connectBlock(
+    block: LightBlock,
+    incomingHexKey: string,
+  ): Promise<LightTransaction[]> {
+    assertStarted(this.state);
+
+    const hexOutputs = block.transactions
+      .flatMap((transaction) => transaction.outputs)
+      .map((output) => Uint8ArrayUtils.toHex(output.note));
+
+    const results = await decryptNotesForOwner(hexOutputs, incomingHexKey);
+
+    if (results.length === 0) {
+      return [];
+    }
+
+    const transactions: Map<string, LightTransaction> = new Map();
+    for (const result of results) {
+      const output = hexOutputs[result.index];
+      const outputBuffer = Uint8ArrayUtils.fromHex(output);
+
+      // find a transaction with a matching output
+      const transaction = block.transactions.find((transaction) =>
+        transaction.outputs.some((output) =>
+          Uint8ArrayUtils.areEqual(output.note, outputBuffer),
+        ),
+      );
+
+      if (!transaction) {
+        console.error("Transaction not found");
+        continue;
+      }
+
+      console.log(Uint8ArrayUtils.toHex(transaction.hash));
+
+      transactions.set(Uint8ArrayUtils.toHex(transaction.hash), transaction);
+    }
+
+    console.log("block seq", block.sequence);
+
+    return [...transactions.values()];
+  }
+
   async scan(network: Network): Promise<boolean> {
     assertStarted(this.state);
+
+    const cache = new WriteCache(this.state.db, network);
 
     let blockProcess = Promise.resolve();
     let performanceTimer = performance.now();
     let finished = false;
-    let map = new Map<number, { hash: Uint8Array; sequence: number }>();
 
     // todo: lock scanning
 
-    const accounts = await this.state.db.getAccounts();
+    const dbAccounts = await this.state.db.getAccounts();
+    let accounts = dbAccounts.map((account) => {
+      return {
+        ...account,
+        decodedAccount: decodeAccount(account.viewOnlyAccount, {
+          name: account.name,
+        }),
+      };
+    });
     const accountHeads = await this.state.db.getAccountHeads(network);
+    let earliestHead = null;
     for (const h of accountHeads) {
-      map.set(h.accountId, { hash: h.hash, sequence: h.sequence });
+      if (
+        earliestHead === null ||
+        (earliestHead && h.sequence < earliestHead.sequence)
+      ) {
+        earliestHead = h;
+      }
+      cache.setHead(h.accountId, {
+        hash: h.hash,
+        sequence: h.sequence,
+      });
     }
 
-    let earliestHead = await this.state.db.getEarliestHead(network);
     const chainProcessor = new ChainProcessor({
       network,
       onAdd: (block) => {
-        blockProcess = blockProcess.then(() => {
+        blockProcess = blockProcess.then(async () => {
           assertStarted(this.state);
-          console.log(`Adding block ${block.sequence} ${block.hash}`);
 
           const prevHash = block.previousBlockHash;
 
           for (const account of accounts) {
-            const h = map.get(account.id)?.hash ?? null;
+            const h = cache.getHead(account.id)?.hash ?? null;
 
             if (h === null || Uint8ArrayUtils.areEqual(h, prevHash)) {
-              // TODO: Implement connect block
-              map.set(account.id, {
+              const transactions = await this.connectBlock(
+                block,
+                account.decodedAccount.incomingViewKey,
+              );
+
+              for (const transaction of transactions) {
+                cache.pushTransaction(
+                  account.id,
+                  block.hash,
+                  block.sequence,
+                  new Date(block.timestamp),
+                  transaction,
+                );
+              }
+
+              cache.setHead(account.id, {
                 hash: block.hash,
                 sequence: block.sequence,
               });
@@ -167,14 +249,15 @@ class Wallet {
           console.log(`Removing block ${block.sequence}`);
 
           for (const account of accounts) {
-            const h = map.get(account.id)?.hash ?? null;
+            const h = cache.getHead(account.id)?.hash ?? null;
 
             if (h && Uint8ArrayUtils.areEqual(h, block.hash)) {
-              // TODO: Implement connect block
-              map.set(account.id, {
+              // TODO: Implement disconnect block
+              cache.setHead(account.id, {
                 hash: block.previousBlockHash,
                 sequence: block.sequence - 1,
               });
+              // TODO: Remove transactions
             }
           }
         });
@@ -184,10 +267,7 @@ class Wallet {
     const saveLoop = async () => {
       assertStarted(this.state);
 
-      for (const [k, v] of map) {
-        console.log(`updating account ID ${k} head to ${v.sequence}`);
-        await this.state.db.updateAccountHead(k, network, v.sequence, v.hash);
-      }
+      await cache.write();
 
       if (!finished) {
         saveLoopTimeout = setTimeout(saveLoop, 1000);
