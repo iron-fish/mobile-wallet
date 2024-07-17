@@ -12,16 +12,25 @@ const TARGET_TO_DESTINATION = {
 } as const;
 
 function build(target: string) {
-  spawnSync("cargo", ["install", "cargo-ndk"], {
+  let spawnResult = spawnSync("cargo", ["install", "cargo-ndk"], {
     stdio: "inherit",
   });
-  spawnSync(
+
+  if (spawnResult.status) {
+    process.exit(spawnResult.status);
+  }
+
+  spawnResult = spawnSync(
     "cargo",
     ["ndk", "--target", target, "--platform", "31", "build", "--release"],
     {
       stdio: "inherit",
     },
   );
+
+  if (spawnResult.status) {
+    process.exit(spawnResult.status);
+  }
 }
 
 function main() {
@@ -71,7 +80,7 @@ function main() {
   );
 
   console.log("Generating bindings for android");
-  spawnSync(
+  const spawnResult = spawnSync(
     "cargo",
     [
       "run",
@@ -89,6 +98,10 @@ function main() {
       stdio: "inherit",
     },
   );
+
+  if (spawnResult.status) {
+    process.exit(spawnResult.status);
+  }
 }
 
 main();

@@ -82,6 +82,7 @@ export default function Transact() {
         onPress={async () => {
           const otherResult = await importAccount.mutateAsync({
             account: importAccountText,
+            name: "asdf",
           });
           console.log("Imported Account:", otherResult);
         }}

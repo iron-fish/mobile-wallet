@@ -10,7 +10,7 @@ const TARGETS = {
 };
 
 function cargoBuild(target: string) {
-  const result = spawnSync(
+  const spawnResult = spawnSync(
     "cargo",
     ["build", "--release", "--target", target],
     {
@@ -21,8 +21,8 @@ function cargoBuild(target: string) {
       },
     },
   );
-  if (result.status && result.status !== 0) {
-    process.exit(result.status);
+  if (spawnResult.status) {
+    process.exit(spawnResult.status);
   }
 }
 
@@ -72,7 +72,7 @@ function main() {
   }
 
   console.log("Generating bindings for ios");
-  spawnSync(
+  const spawnResult = spawnSync(
     "cargo",
     [
       "run",
@@ -90,6 +90,9 @@ function main() {
       stdio: "inherit",
     },
   );
+  if (spawnResult.status) {
+    process.exit(spawnResult.status);
+  }
 
   fs.copyFileSync(rustLibPath, path.join(destinationPath, libFileName));
 }

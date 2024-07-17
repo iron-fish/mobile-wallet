@@ -10,7 +10,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useColorScheme } from "react-native";
 import { UIKitProvider } from "@ironfish/ui";
 import { FacadeProvider, useFacade } from "../data/facades";
-import React, { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
@@ -22,7 +22,7 @@ function DatabaseLoader({
   children?: React.ReactNode;
 }) {
   const facade = useFacade();
-  const [status, setStatus] = React.useState<string>("loading");
+  const [status, setStatus] = useState<string>("loading");
   const { mutateAsync: loadDatabases } = facade.loadDatabases.useMutation();
 
   useEffect(() => {

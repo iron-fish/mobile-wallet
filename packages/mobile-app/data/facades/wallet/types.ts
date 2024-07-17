@@ -37,7 +37,7 @@ export type Transaction = {
   hash: string;
   fee: string;
   expiration: number;
-  timestamp: number;
+  timestamp: Date;
   submittedSequence: number;
   type: TransactionType;
   status: TransactionStatus;
