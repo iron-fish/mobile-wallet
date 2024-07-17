@@ -155,9 +155,34 @@ export const walletHandlers = f.facade<WalletHandlers>({
     }: {
       accountName: string;
       hash: string;
-    }): Promise<Transaction> => {
-      // TODO: Implement getTransaction
-      throw new Error("getTransaction not yet implemented");
+    }): Promise<Transaction | null> => {
+      const txn = await wallet.getTransaction(
+        accountName,
+        Uint8ArrayUtils.fromHex(hash),
+      );
+
+      if (!txn) {
+        return null;
+      }
+
+      return {
+        // TODO: Implement transaction fees
+        fee: "",
+        timestamp: txn.timestamp,
+        // TODO: Implement transaction expiration
+        expiration: 0,
+        hash: Uint8ArrayUtils.toHex(txn.hash),
+        blockSequence: txn.blockSequence ?? undefined,
+        submittedSequence: 0,
+        assetBalanceDeltas: [],
+        status: TransactionStatus.CONFIRMED,
+        notes: [],
+        burns: [],
+        mints: [],
+        spends: [],
+        // TODO: Implement transaction type
+        type: TransactionType.RECEIVE,
+      };
     },
   ),
   getTransactions: f.handler.query(
@@ -179,7 +204,6 @@ export const walletHandlers = f.facade<WalletHandlers>({
       return txns.map((txn) => ({
         // TODO: Implement transaction fees
         fee: "",
-        // TODO: Implement transaction timestamp
         timestamp: txn.timestamp,
         // TODO: Implement transaction expiration
         expiration: 0,

@@ -127,7 +127,7 @@ export type WalletHandlers = {
     }) => Transaction[]
   >;
   getTransaction: Query<
-    (args: { accountName: string; hash: string }) => Transaction
+    (args: { accountName: string; hash: string }) => Transaction | null
   >;
   getWalletStatus: Query<() => WalletStatus>;
   importAccount: Mutation<

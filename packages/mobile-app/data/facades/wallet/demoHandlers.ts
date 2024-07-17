@@ -149,10 +149,10 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
     }: {
       accountName: string;
       hash: string;
-    }): Promise<Transaction> => {
+    }): Promise<Transaction | null> => {
       return {
         hash: hash,
-        timestamp: new Date().setDate(new Date().getDate() - 1),
+        timestamp: new Date(new Date().setDate(new Date().getDate() - 1)),
         assetBalanceDeltas: [
           {
             assetId:
@@ -206,7 +206,7 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
       return [
         {
           hash: hash,
-          timestamp: new Date().setDate(new Date().getDate() - 1),
+          timestamp: new Date(new Date().setDate(new Date().getDate() - 1)),
           assetBalanceDeltas: [
             {
               assetId:

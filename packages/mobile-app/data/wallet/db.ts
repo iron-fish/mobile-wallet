@@ -210,7 +210,7 @@ export class WalletDb {
     return await this.db
       .selectFrom("accounts")
       .selectAll()
-      .where("accounts.name", "==", name)
+      .where("accounts.name", "=", name)
       .executeTakeFirst();
   }
 
@@ -224,7 +224,7 @@ export class WalletDb {
   async renameAccount(name: string, newName: string) {
     return await this.db
       .updateTable("accounts")
-      .where("accounts.name", "==", name)
+      .where("accounts.name", "=", name)
       .set("accounts.name", newName)
       .executeTakeFirst();
   }
@@ -238,17 +238,17 @@ export class WalletDb {
     const result = await this.db.transaction().execute(async (db) => {
       this.db
         .deleteFrom("accountNetworkHeads")
-        .where("accountId", "==", account.id)
+        .where("accountId", "=", account.id)
         .executeTakeFirstOrThrow();
 
       await this.db
         .deleteFrom("accountTransactions")
-        .where("accountId", "==", account.id)
+        .where("accountId", "=", account.id)
         .executeTakeFirstOrThrow();
 
       return await this.db
         .deleteFrom("accounts")
-        .where("accounts.id", "==", account.id)
+        .where("accounts.id", "=", account.id)
         .executeTakeFirst();
     });
 
@@ -270,7 +270,7 @@ export class WalletDb {
             exists(
               selectFrom("accountTransactions")
                 .selectAll()
-                .whereRef("transactionHash", "==", "transactions.hash"),
+                .whereRef("transactionHash", "=", "transactions.hash"),
             ),
           ),
         )
@@ -284,8 +284,8 @@ export class WalletDb {
     const result = await this.db
       .selectFrom("accountNetworkHeads")
       .selectAll()
-      .where("accountId", "==", accountId)
-      .where("network", "==", network)
+      .where("accountId", "=", accountId)
+      .where("network", "=", network)
       .executeTakeFirst();
     return result ? { hash: result.hash, sequence: result.sequence } : null;
   }
@@ -294,7 +294,7 @@ export class WalletDb {
     return await this.db
       .selectFrom("accountNetworkHeads")
       .selectAll()
-      .where("network", "==", network)
+      .where("network", "=", network)
       .execute();
   }
 
@@ -306,8 +306,8 @@ export class WalletDb {
   ) {
     const result = await this.db
       .updateTable("accountNetworkHeads")
-      .where("accountId", "==", accountId)
-      .where("network", "==", network)
+      .where("accountId", "=", accountId)
+      .where("network", "=", network)
       .set({
         hash: hash,
         sequence: sequence,
@@ -361,11 +361,35 @@ export class WalletDb {
     });
   }
 
+  async getTransaction(accountId: number, hash: Uint8Array) {
+    return await this.db
+      .selectFrom("accountTransactions")
+      .innerJoin(
+        "transactions",
+        "transactions.hash",
+        "accountTransactions.transactionHash",
+      )
+      .selectAll()
+      .where((eb) =>
+        eb.and([
+          eb("accountId", "=", accountId),
+          eb("transactionHash", "=", hash),
+        ]),
+      )
+      .fullJoin(
+        "transactions",
+        "transactions.hash",
+        "accountTransactions.transactionHash",
+      )
+      .limit(1)
+      .executeTakeFirst();
+  }
+
   async getTransactions(network: Network) {
     return await this.db
       .selectFrom("transactions")
       .selectAll()
-      .where("network", "==", network)
+      .where("network", "=", network)
       .orderBy("timestamp", "asc")
       .execute();
   }
