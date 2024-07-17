@@ -125,6 +125,17 @@ class Wallet {
     await this.state.db.removeAccount(name);
   }
 
+  async getTransaction(accountName: string, transactionHash: Uint8Array) {
+    assertStarted(this.state);
+
+    const account = await this.getAccount(accountName);
+    if (account == null) {
+      throw new Error(`No account found with name ${name}`);
+    }
+
+    return await this.state.db.getTransaction(account.id, transactionHash);
+  }
+
   async getTransactions(network: Network) {
     assertStarted(this.state);
 
