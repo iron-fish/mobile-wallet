@@ -156,14 +156,14 @@ export const walletHandlers = f.facade<WalletHandlers>({
       accountName: string;
       hash: string;
     }): Promise<Transaction | null> => {
-      const txn = await wallet.getTransaction(
-        accountName,
-        Uint8ArrayUtils.fromHex(hash),
-      );
+      const txnHash = Uint8ArrayUtils.fromHex(hash);
+      const txn = await wallet.getTransaction(accountName, txnHash);
 
       if (!txn) {
         return null;
       }
+
+      const notes = await wallet.getTransactionNotes(txnHash);
 
       return {
         // TODO: Implement transaction fees
@@ -176,7 +176,19 @@ export const walletHandlers = f.facade<WalletHandlers>({
         submittedSequence: 0,
         assetBalanceDeltas: [],
         status: TransactionStatus.CONFIRMED,
-        notes: [],
+        notes: notes.map((n) => ({
+          assetId: Uint8ArrayUtils.toHex(n.assetId),
+          // TODO: implement utf8 memo decoding
+          memo: Uint8ArrayUtils.toHex(n.memo),
+          memoHex: Uint8ArrayUtils.toHex(n.memo),
+          owner: Uint8ArrayUtils.toHex(n.owner),
+          sender: Uint8ArrayUtils.toHex(n.sender),
+          value: n.value,
+          // TODO: implement note hash
+          hash: "",
+          // TODO: Implement spent
+          spent: false,
+        })),
         burns: [],
         mints: [],
         spends: [],
@@ -201,7 +213,16 @@ export const walletHandlers = f.facade<WalletHandlers>({
       };
     }): Promise<Transaction[]> => {
       const txns = await wallet.getTransactions(Network.TESTNET);
-      return txns.map((txn) => ({
+
+      // TODO: Make a better query for this
+      const txnsWithNotes = await Promise.all(
+        txns.map(async (txn) => {
+          const notes = await wallet.getTransactionNotes(txn.hash);
+          return { txn, notes };
+        }),
+      );
+
+      return txnsWithNotes.map(({ txn, notes }) => ({
         // TODO: Implement transaction fees
         fee: "",
         timestamp: txn.timestamp,
@@ -215,7 +236,19 @@ export const walletHandlers = f.facade<WalletHandlers>({
         submittedSequence: 0,
         assetBalanceDeltas: [],
         status: TransactionStatus.CONFIRMED,
-        notes: [],
+        notes: notes.map((n) => ({
+          assetId: Uint8ArrayUtils.toHex(n.assetId),
+          // TODO: implement utf8 memo decoding
+          memo: Uint8ArrayUtils.toHex(n.memo),
+          memoHex: Uint8ArrayUtils.toHex(n.memo),
+          owner: Uint8ArrayUtils.toHex(n.owner),
+          sender: Uint8ArrayUtils.toHex(n.sender),
+          value: n.value,
+          // TODO: implement note hash
+          hash: "",
+          // TODO: Implement spent
+          spent: false,
+        })),
         burns: [],
         mints: [],
         spends: [],

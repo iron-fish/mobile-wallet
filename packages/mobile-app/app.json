@@ -24,6 +24,10 @@
             "walletserver.ironfish.network": {
               "NSExceptionAllowsInsecureHTTPLoads": true,
               "NSIncludesSubdomains": true
+            },
+            "testnet-wallet-server.us-west-1.elasticbeanstalk.com": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": false
             }
           }
         }

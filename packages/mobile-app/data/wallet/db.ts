@@ -2,8 +2,9 @@ import { AccountImport } from "@ironfish/sdk/build/src/wallet/walletdb/accountVa
 import { Kysely, Generated, Migrator, sql } from "kysely";
 import { ExpoDialect, ExpoMigrationProvider, SQLiteType } from "kysely-expo";
 import * as SecureStore from "expo-secure-store";
-import { AccountFormat, encodeAccount } from "@ironfish/sdk";
+import { AccountFormat, encodeAccount, Note } from "@ironfish/sdk";
 import { Network } from "../constants";
+import * as Uint8ArrayUtils from "../../utils/uint8Array";
 
 interface AccountsTable {
   id: Generated<number>;
@@ -37,11 +38,37 @@ interface AccountTransactionsTable {
   transactionType: string;
 }
 
+interface NotesTable {
+  id: Generated<number>;
+  accountId: number;
+  transactionHash: Uint8Array;
+  // Building proofs takes a full note, so we'll store the whole thing.
+  // If storage is an issue, we could fall back to re-decrypting the notes
+  // to get the full note.
+  note: Uint8Array;
+  // Note index in the merkle tree could also be derived from the note size on the
+  // transaction, but stored here for convenience.
+  position: number | null;
+  // The rest of the fields are primarily to allow searching/filtering in SQLite.
+  assetId: Uint8Array;
+  sender: Uint8Array;
+  owner: Uint8Array;
+  // SQLite max integer size is signed 64-bit. We'll probably need to sort notes by value
+  // (e.g. we do this in the SDK to spend certain notes first), so we could either cram the value
+  // into a signed integer and special-case large values (assume values <0 are largest), or store
+  // the value as a Uint8Array (I think we do this for the keys in leveldb)
+  value: string;
+  // Depending how we want to search memos, we could store this multiple times. E.g. do we want to
+  // allow searching non-utf8-encoded memos? Like searching binary data as hex
+  memo: Uint8Array;
+}
+
 interface Database {
   accounts: AccountsTable;
   accountNetworkHeads: AccountNetworkHeadsTable;
   transactions: TransactionsTable;
   accountTransactions: AccountTransactionsTable;
+  notes: NotesTable;
 }
 
 export class WalletDb {
@@ -145,6 +172,31 @@ export class WalletDb {
               console.log("created account transactions");
             },
           },
+          ["005_createNotes"]: {
+            up: async (db: Kysely<Database>) => {
+              console.log("creating notes");
+              await db.schema
+                .createTable("notes")
+                .addColumn("id", SQLiteType.Integer, (col) =>
+                  col.primaryKey().autoIncrement(),
+                )
+                .addColumn("transactionHash", SQLiteType.Blob, (col) =>
+                  col.notNull().references("transactions.hash"),
+                )
+                .addColumn("accountId", SQLiteType.Integer, (col) =>
+                  col.notNull().references("accounts.id"),
+                )
+                .addColumn("note", SQLiteType.Blob, (col) => col.notNull())
+                .addColumn("position", SQLiteType.Integer)
+                .addColumn("assetId", SQLiteType.Blob, (col) => col.notNull())
+                .addColumn("sender", SQLiteType.Blob, (col) => col.notNull())
+                .addColumn("owner", SQLiteType.Blob, (col) => col.notNull())
+                .addColumn("value", SQLiteType.String, (col) => col.notNull())
+                .addColumn("memo", SQLiteType.Blob, (col) => col.notNull())
+                .execute();
+              console.log("created notes");
+            },
+          },
         },
       }),
     });
@@ -236,17 +288,21 @@ export class WalletDb {
     }
 
     const result = await this.db.transaction().execute(async (db) => {
-      this.db
-        .deleteFrom("accountNetworkHeads")
+      db.deleteFrom("accountNetworkHeads")
         .where("accountId", "=", account.id)
         .executeTakeFirstOrThrow();
 
-      await this.db
+      await db
         .deleteFrom("accountTransactions")
         .where("accountId", "=", account.id)
         .executeTakeFirstOrThrow();
 
-      return await this.db
+      await db
+        .deleteFrom("notes")
+        .where("accountId", "=", account.id)
+        .executeTakeFirstOrThrow();
+
+      return await db
         .deleteFrom("accounts")
         .where("accounts.id", "=", account.id)
         .executeTakeFirst();
@@ -333,9 +389,10 @@ export class WalletDb {
     network: Network;
     blockSequence: number | null;
     blockHash: Uint8Array | null;
+    notes: { position: number | null; note: Note }[];
     timestamp: Date;
   }) {
-    return await this.db.transaction().execute(async (db) => {
+    await this.db.transaction().execute(async (db) => {
       // One transaction could apply to multiple accounts
       await db
         .insertInto("transactions")
@@ -358,6 +415,23 @@ export class WalletDb {
           transactionType: "receive",
         })
         .executeTakeFirst();
+
+      for (const note of values.notes) {
+        await db
+          .insertInto("notes")
+          .values({
+            accountId: values.accountId,
+            transactionHash: values.hash,
+            note: new Uint8Array(note.note.serialize()),
+            assetId: new Uint8Array(note.note.assetId()),
+            owner: Uint8ArrayUtils.fromHex(note.note.owner()),
+            sender: Uint8ArrayUtils.fromHex(note.note.sender()),
+            value: note.note.value().toString(),
+            memo: new Uint8Array(note.note.memo()),
+            position: note.position,
+          })
+          .executeTakeFirst();
+      }
     });
   }
 
@@ -376,13 +450,16 @@ export class WalletDb {
           eb("transactionHash", "=", hash),
         ]),
       )
-      .fullJoin(
-        "transactions",
-        "transactions.hash",
-        "accountTransactions.transactionHash",
-      )
       .limit(1)
       .executeTakeFirst();
+  }
+
+  async getTransactionNotes(hash: Uint8Array) {
+    return await this.db
+      .selectFrom("notes")
+      .selectAll()
+      .where("transactionHash", "=", hash)
+      .execute();
   }
 
   async getTransactions(network: Network) {

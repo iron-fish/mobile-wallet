@@ -197,7 +197,7 @@ pub async fn decrypt_notes_for_owner(
 
                 return Some(DecryptedNote {
                     index: i as u32,
-                    note: bytes_to_hex(&vec),
+                    note: const_hex::encode(&vec),
                 });
             }
             None

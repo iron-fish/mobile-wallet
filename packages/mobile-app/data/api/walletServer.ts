@@ -6,7 +6,8 @@ import { ForkTester } from "./transformers/forkTester";
 
 const WALLET_SERVER_URLS: Record<Network, string> = {
   [Network.MAINNET]: "http://walletserver.ironfish.network/",
-  [Network.TESTNET]: "http://testnet.walletserver.ironfish.network/",
+  [Network.TESTNET]:
+    "http://testnet-wallet-server.us-west-1.elasticbeanstalk.com/",
 };
 
 /**
