@@ -3,6 +3,7 @@ import { WalletDb } from "./db";
 import {
   AccountFormat,
   LanguageKey,
+  Note,
   decodeAccount,
   encodeAccount,
 } from "@ironfish/sdk";
@@ -130,10 +131,21 @@ class Wallet {
 
     const account = await this.getAccount(accountName);
     if (account == null) {
-      throw new Error(`No account found with name ${name}`);
+      throw new Error(`No account found with name ${accountName}`);
     }
 
     return await this.state.db.getTransaction(account.id, transactionHash);
+  }
+
+  async getTransactionNotes(transactionHash: Uint8Array) {
+    assertStarted(this.state);
+
+    // const account = await this.getAccount(accountName);
+    // if (account == null) {
+    //   throw new Error(`No account found with name ${accountName}`);
+    // }
+
+    return await this.state.db.getTransactionNotes(transactionHash);
   }
 
   async getTransactions(network: Network) {
@@ -145,7 +157,12 @@ class Wallet {
   private async connectBlock(
     block: LightBlock,
     incomingHexKey: string,
-  ): Promise<LightTransaction[]> {
+  ): Promise<
+    {
+      transaction: LightTransaction;
+      notes: { position: number; note: Note }[];
+    }[]
+  > {
     assertStarted(this.state);
 
     const hexOutputs = block.transactions
@@ -158,15 +175,23 @@ class Wallet {
       return [];
     }
 
-    const transactions: Map<string, LightTransaction> = new Map();
+    const startingNoteIndex = block.noteSize - hexOutputs.length;
+
+    const transactions: Map<
+      string,
+      {
+        transaction: LightTransaction;
+        notes: { position: number; note: Note }[];
+      }
+    > = new Map();
     for (const result of results) {
       const output = hexOutputs[result.index];
       const outputBuffer = Uint8ArrayUtils.fromHex(output);
 
       // find a transaction with a matching output
       const transaction = block.transactions.find((transaction) =>
-        transaction.outputs.some((output) =>
-          Uint8ArrayUtils.areEqual(output.note, outputBuffer),
+        transaction.outputs.some((o) =>
+          Uint8ArrayUtils.areEqual(o.note, outputBuffer),
         ),
       );
 
@@ -175,12 +200,20 @@ class Wallet {
         continue;
       }
 
-      console.log(Uint8ArrayUtils.toHex(transaction.hash));
+      const note = new Note(Buffer.from(Uint8ArrayUtils.fromHex(result.note)));
+      const position = startingNoteIndex + result.index;
 
-      transactions.set(Uint8ArrayUtils.toHex(transaction.hash), transaction);
+      const hexHash = Uint8ArrayUtils.toHex(transaction.hash);
+      const txnStore = transactions.get(hexHash);
+      if (txnStore) {
+        txnStore.notes.push({ note, position });
+      } else {
+        transactions.set(hexHash, {
+          transaction,
+          notes: [{ note, position }],
+        });
+      }
     }
-
-    console.log("block seq", block.sequence);
 
     return [...transactions.values()];
   }
@@ -243,7 +276,8 @@ class Wallet {
                   block.hash,
                   block.sequence,
                   new Date(block.timestamp),
-                  transaction,
+                  transaction.transaction,
+                  transaction.notes,
                 );
               }
 

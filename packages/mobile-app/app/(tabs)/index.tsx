@@ -24,6 +24,9 @@ export default function Balances() {
             <Text style={{ fontSize: 14 }}>{transaction.hash}</Text>
             <Text>Block Sequence: {transaction.blockSequence}</Text>
             <Text>Timestamp: {transaction.timestamp.toString()}</Text>
+            <Text>
+              {`Notes (${transaction.notes.length}): ${transaction.notes.map((n) => n.value).join(", ")}`}
+            </Text>
           </View>
         ))}
       </ScrollView>

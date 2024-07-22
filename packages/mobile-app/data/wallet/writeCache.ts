@@ -1,6 +1,8 @@
+import { Note } from "@ironfish/sdk";
 import { LightTransaction } from "../api/lightstreamer";
 import { Network } from "../constants";
 import { WalletDb } from "./db";
+import * as UInt8ArrayUtils from "../../utils/uint8Array";
 
 /**
  * Writing to the database for each connected block for each account has a performance impact on scanning.
@@ -17,6 +19,7 @@ export class WriteCache {
     sequence: number;
     timestamp: Date;
     transaction: LightTransaction;
+    notes: { position: number; note: Note }[];
   }[] = [];
 
   constructor(
@@ -38,6 +41,7 @@ export class WriteCache {
     sequence: number,
     timestamp: Date,
     transaction: LightTransaction,
+    notes: { position: number; note: Note }[],
   ) {
     this.transactions.push({
       accountId,
@@ -45,6 +49,7 @@ export class WriteCache {
       sequence,
       transaction,
       timestamp,
+      notes,
     });
   }
 
@@ -57,9 +62,11 @@ export class WriteCache {
       await this.db.updateAccountHead(k, this.network, v.sequence, v.hash);
     }
 
-    let txn = this.transactions.pop();
+    let txn = this.transactions.shift();
     while (txn) {
-      console.log(`saving transaction for account ID ${txn.accountId}`);
+      console.log(
+        `saving transaction ${UInt8ArrayUtils.toHex(txn.transaction.hash)} for account ID ${txn.accountId}`,
+      );
       await this.db.saveTransaction({
         hash: txn.transaction.hash,
         accountId: txn.accountId,
@@ -67,8 +74,9 @@ export class WriteCache {
         blockSequence: txn.sequence,
         timestamp: txn.timestamp,
         network: this.network,
+        notes: txn.notes,
       });
-      txn = this.transactions.pop();
+      txn = this.transactions.shift();
     }
   }
 }
