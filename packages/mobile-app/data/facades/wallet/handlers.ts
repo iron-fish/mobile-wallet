@@ -163,7 +163,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         return null;
       }
 
-      const notes = await wallet.getTransactionNotes(accountName, txnHash);
+      const notes = await wallet.getTransactionNotes(txnHash);
 
       return {
         // TODO: Implement transaction fees
