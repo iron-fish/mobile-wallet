@@ -1,19 +1,27 @@
 import { StatusBar } from "expo-status-bar";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { Assert } from "@ironfish/sdk";
 import { useFacade } from "../../data/facades";
+import { useEffect, useState } from "react";
 
 export default function Balances() {
   const facade = useFacade();
 
+  const [account, setAccount] = useState<string>("");
+
   const getTransactionsResult = facade.getTransactions.useQuery(
-    { accountName: "", hash: "" },
+    { accountName: account, hash: "" },
     {
       refetchInterval: 1000,
     },
   );
 
-  Assert.isEqual(50, 50);
+  const getAccountsResult = facade.getAccounts.useQuery();
+
+  useEffect(() => {
+    if (getAccountsResult.data) {
+      setAccount(getAccountsResult.data[0].name);
+    }
+  }, [getAccountsResult.data]);
 
   return (
     <View style={styles.container}>

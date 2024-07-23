@@ -116,7 +116,6 @@ export type WalletHandlers = {
   getTransactions: Query<
     (args: {
       accountName: string;
-      hash: string;
       options?: {
         limit?: number;
         offset?: number;

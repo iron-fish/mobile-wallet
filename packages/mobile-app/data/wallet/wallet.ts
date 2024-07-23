@@ -143,10 +143,15 @@ class Wallet {
     return await this.state.db.getTransactionNotes(transactionHash);
   }
 
-  async getTransactions(network: Network) {
+  async getTransactions(accountName: string, network: Network) {
     assertStarted(this.state);
 
-    return await this.state.db.getTransactions(network);
+    const account = await this.getAccount(accountName);
+    if (account == null) {
+      throw new Error(`No account found with name ${accountName}`);
+    }
+
+    return await this.state.db.getTransactions(account.id, network);
   }
 
   private async connectBlock(

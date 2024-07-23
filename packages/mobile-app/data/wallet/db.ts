@@ -5,7 +5,6 @@ import * as SecureStore from "expo-secure-store";
 import { AccountFormat, encodeAccount, Note } from "@ironfish/sdk";
 import { Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
-
 interface AccountsTable {
   id: Generated<number>;
   name: string;
@@ -462,12 +461,19 @@ export class WalletDb {
       .execute();
   }
 
-  async getTransactions(network: Network) {
+  async getTransactions(accountId: number, network: Network) {
     return await this.db
-      .selectFrom("transactions")
+      .selectFrom("accountTransactions")
+      .innerJoin(
+        "transactions",
+        "transactions.hash",
+        "accountTransactions.transactionHash",
+      )
       .selectAll()
-      .where("network", "=", network)
-      .orderBy("timestamp", "asc")
+      .where((eb) =>
+        eb.and([eb("accountId", "=", accountId), eb("network", "=", network)]),
+      )
+      .orderBy("transactions.timestamp", "asc")
       .execute();
   }
 }

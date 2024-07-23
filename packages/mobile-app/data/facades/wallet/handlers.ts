@@ -200,10 +200,8 @@ export const walletHandlers = f.facade<WalletHandlers>({
   getTransactions: f.handler.query(
     async ({
       accountName,
-      hash,
     }: {
       accountName: string;
-      hash: string;
       options?: {
         limit?: number;
         offset?: number;
@@ -212,7 +210,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         address?: string;
       };
     }): Promise<Transaction[]> => {
-      const txns = await wallet.getTransactions(Network.TESTNET);
+      const txns = await wallet.getTransactions(accountName, Network.TESTNET);
 
       // TODO: Make a better query for this
       const txnsWithNotes = await Promise.all(
