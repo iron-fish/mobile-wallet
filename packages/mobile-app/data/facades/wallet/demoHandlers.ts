@@ -191,10 +191,8 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
   getTransactions: f.handler.query(
     async ({
       accountName,
-      hash,
     }: {
       accountName: string;
-      hash: string;
       options?: {
         limit?: number;
         offset?: number;
@@ -205,7 +203,7 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
     }): Promise<Transaction[]> => {
       return [
         {
-          hash: hash,
+          hash: "4343291950e34661d8a89114dd77524ad95e7cb78fe50d29f1c9067adc1c2d4c",
           timestamp: new Date(new Date().setDate(new Date().getDate() - 1)),
           assetBalanceDeltas: [
             {
