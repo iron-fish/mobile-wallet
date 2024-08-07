@@ -9,7 +9,7 @@ export default function Balances() {
   const [account, setAccount] = useState<string>("");
 
   const getTransactionsResult = facade.getTransactions.useQuery(
-    { accountName: account, hash: "" },
+    { accountName: account },
     {
       refetchInterval: 1000,
     },
@@ -18,7 +18,7 @@ export default function Balances() {
   const getAccountsResult = facade.getAccounts.useQuery();
 
   useEffect(() => {
-    if (getAccountsResult.data) {
+    if (getAccountsResult.data?.[0]) {
       setAccount(getAccountsResult.data[0].name);
     }
   }, [getAccountsResult.data]);
