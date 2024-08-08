@@ -2,6 +2,7 @@ import { AccountImport } from "@ironfish/sdk/build/src/wallet/walletdb/accountVa
 import { Kysely, Generated, Migrator, sql } from "kysely";
 import { ExpoDialect, ExpoMigrationProvider, SQLiteType } from "kysely-expo";
 import * as SecureStore from "expo-secure-store";
+import * as FileSystem from "expo-file-system";
 import { AccountFormat, encodeAccount, Note } from "@ironfish/sdk";
 import { Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
@@ -40,6 +41,7 @@ interface AccountTransactionsTable {
 interface NotesTable {
   id: Generated<number>;
   accountId: number;
+  network: Network;
   transactionHash: Uint8Array;
   // Building proofs takes a full note, so we'll store the whole thing.
   // If storage is an issue, we could fall back to re-decrypting the notes
@@ -62,12 +64,50 @@ interface NotesTable {
   memo: Uint8Array;
 }
 
+interface NullifiersTable {
+  noteId: number;
+  nullifier: Uint8Array;
+  transactionHash: Uint8Array | null;
+  accountId: number;
+  network: Network;
+}
+
+interface BalancesTable {
+  id: Generated<number>;
+  accountId: number;
+  network: Network;
+  assetId: Uint8Array;
+  value: string;
+}
+
 interface Database {
   accounts: AccountsTable;
   accountNetworkHeads: AccountNetworkHeadsTable;
   transactions: TransactionsTable;
   accountTransactions: AccountTransactionsTable;
   notes: NotesTable;
+  nullifiers: NullifiersTable;
+  balances: BalancesTable;
+}
+
+class BalanceDeltas {
+  balanceDeltas = new Map<string, bigint>();
+
+  add(assetId: Uint8Array, noteValue: bigint) {
+    const hexAssetId = Uint8ArrayUtils.toHex(assetId);
+    const existingValue = this.balanceDeltas.get(hexAssetId) ?? 0n;
+    this.balanceDeltas.set(hexAssetId, existingValue + noteValue);
+  }
+
+  subtract(assetId: Uint8Array, noteValue: bigint) {
+    const hexAssetId = Uint8ArrayUtils.toHex(assetId);
+    const existingValue = this.balanceDeltas.get(hexAssetId) ?? 0n;
+    this.balanceDeltas.set(hexAssetId, existingValue - noteValue);
+  }
+
+  [Symbol.iterator]() {
+    return this.balanceDeltas.entries();
+  }
 }
 
 export class WalletDb {
@@ -78,6 +118,8 @@ export class WalletDb {
   }
 
   static async init() {
+    console.log(`db: ${FileSystem.documentDirectory + "SQLite/wallet.db"}`);
+
     const db = new Kysely<Database>({
       dialect: new ExpoDialect({
         database: "wallet.db",
@@ -185,6 +227,9 @@ export class WalletDb {
                 .addColumn("accountId", SQLiteType.Integer, (col) =>
                   col.notNull().references("accounts.id"),
                 )
+                .addColumn("network", SQLiteType.String, (col) =>
+                  col.notNull().check(sql`network IN ("mainnet", "testnet")`),
+                )
                 .addColumn("note", SQLiteType.Blob, (col) => col.notNull())
                 .addColumn("position", SQLiteType.Integer)
                 .addColumn("assetId", SQLiteType.Blob, (col) => col.notNull())
@@ -194,6 +239,60 @@ export class WalletDb {
                 .addColumn("memo", SQLiteType.Blob, (col) => col.notNull())
                 .execute();
               console.log("created notes");
+            },
+          },
+          ["006_createNullifiers"]: {
+            up: async (db: Kysely<Database>) => {
+              console.log("creating nullifiers");
+              await db.schema
+                .createTable("nullifiers")
+                .addColumn("noteId", SQLiteType.Number, (col) =>
+                  col.primaryKey().references("notes.id"),
+                )
+                .addColumn("nullifier", SQLiteType.Blob, (col) => col.notNull())
+                .addColumn("transactionHash", SQLiteType.Blob, (col) =>
+                  col.references("transactions.hash"),
+                )
+                .addColumn("accountId", SQLiteType.Integer, (col) =>
+                  col.notNull().references("accounts.id"),
+                )
+                .addColumn("network", SQLiteType.String, (col) =>
+                  col.notNull().check(sql`network IN ("mainnet", "testnet")`),
+                )
+                .execute();
+
+              await db.schema
+                .createIndex("idx_nullifiers_nullifier")
+                .on("nullifiers")
+                .column("nullifier")
+                .execute();
+
+              console.log("created nullifiers");
+            },
+          },
+          ["007_createBalances"]: {
+            up: async (db: Kysely<Database>) => {
+              console.log("creating balances");
+              await db.schema
+                .createTable("balances")
+                .addColumn("id", SQLiteType.Integer, (col) =>
+                  col.primaryKey().autoIncrement(),
+                )
+                .addColumn("accountId", SQLiteType.Integer, (col) =>
+                  col.notNull().references("accounts.id"),
+                )
+                .addColumn("network", SQLiteType.String, (col) =>
+                  col.notNull().check(sql`network IN ("mainnet", "testnet")`),
+                )
+                .addColumn("assetId", SQLiteType.Blob, (col) => col.notNull())
+                .addColumn("value", SQLiteType.String, (col) => col.notNull())
+                .addUniqueConstraint("balances_accountId_network_assetId", [
+                  "accountId",
+                  "network",
+                  "assetId",
+                ])
+                .execute();
+              console.log("created balances");
             },
           },
         },
@@ -297,7 +396,17 @@ export class WalletDb {
         .executeTakeFirstOrThrow();
 
       await db
+        .deleteFrom("nullifiers")
+        .where("accountId", "=", account.id)
+        .executeTakeFirstOrThrow();
+
+      await db
         .deleteFrom("notes")
+        .where("accountId", "=", account.id)
+        .executeTakeFirstOrThrow();
+
+      await db
+        .deleteFrom("balances")
         .where("accountId", "=", account.id)
         .executeTakeFirstOrThrow();
 
@@ -388,9 +497,51 @@ export class WalletDb {
     network: Network;
     blockSequence: number | null;
     blockHash: Uint8Array | null;
-    notes: { position: number | null; note: Note }[];
+    ownerNotes: { position: number | null; note: Note; nullifier: string }[];
+    foundNullifiers: Uint8Array[];
+    spenderNotes: { note: Note }[];
     timestamp: Date;
   }) {
+    const address = (
+      await this.db
+        .selectFrom("accounts")
+        .select("publicAddress")
+        .where("id", "=", values.accountId)
+        .executeTakeFirst()
+    )?.publicAddress;
+    if (address === undefined) {
+      throw new Error(`Account with ID ${values.accountId} not found`);
+    }
+
+    const balanceDeltas = new BalanceDeltas();
+
+    // Note that we can't rely on spenderNotes alone for subtracting from balance deltas
+    // because they don't include transaction fees.
+    if (values.foundNullifiers.length > 0) {
+      const spentNotes = await this.db
+        .selectFrom("notes")
+        .innerJoin("nullifiers", "nullifiers.noteId", "notes.id")
+        .selectAll()
+        .where((eb) =>
+          eb.and([
+            eb("nullifiers.nullifier", "in", values.foundNullifiers),
+            eb("notes.accountId", "=", values.accountId),
+          ]),
+        )
+        .execute();
+
+      if (spentNotes.length !== values.foundNullifiers.length) {
+        console.error("Some nullifiers were not found in the database");
+      }
+
+      for (const note of spentNotes) {
+        balanceDeltas.subtract(note.assetId, BigInt(note.value));
+      }
+    }
+    for (const note of values.ownerNotes) {
+      balanceDeltas.add(note.note.assetId(), note.note.value());
+    }
+
     await this.db.transaction().execute(async (db) => {
       // One transaction could apply to multiple accounts
       await db
@@ -415,11 +566,12 @@ export class WalletDb {
         })
         .executeTakeFirst();
 
-      for (const note of values.notes) {
-        await db
+      for (const note of values.ownerNotes) {
+        const result = await db
           .insertInto("notes")
           .values({
             accountId: values.accountId,
+            network: values.network,
             transactionHash: values.hash,
             note: new Uint8Array(note.note.serialize()),
             assetId: new Uint8Array(note.note.assetId()),
@@ -430,6 +582,82 @@ export class WalletDb {
             position: note.position,
           })
           .executeTakeFirst();
+
+        if (!result.insertId) {
+          throw new Error();
+        }
+
+        await db
+          .insertInto("nullifiers")
+          .values({
+            noteId: Number(result.insertId),
+            nullifier: Uint8ArrayUtils.fromHex(note.nullifier),
+            accountId: values.accountId,
+            network: values.network,
+            transactionHash: null,
+          })
+          .executeTakeFirst();
+      }
+
+      for (const nullifier of values.foundNullifiers) {
+        await db
+          .updateTable("nullifiers")
+          .set("transactionHash", values.hash)
+          .where("nullifier", "=", nullifier)
+          .executeTakeFirstOrThrow();
+      }
+
+      for (const note of values.spenderNotes) {
+        await db
+          .insertInto("notes")
+          .values({
+            accountId: values.accountId,
+            network: values.network,
+            transactionHash: values.hash,
+            note: new Uint8Array(note.note.serialize()),
+            assetId: new Uint8Array(note.note.assetId()),
+            owner: Uint8ArrayUtils.fromHex(note.note.owner()),
+            sender: Uint8ArrayUtils.fromHex(note.note.sender()),
+            value: note.note.value().toString(),
+            memo: new Uint8Array(note.note.memo()),
+            position: null,
+          })
+          .executeTakeFirstOrThrow();
+      }
+
+      for (const delta of balanceDeltas) {
+        // This could be done with the SQLite decimal extension, but it's not available
+        // in the Expo SQLite driver.
+        const existingBalance = BigInt(
+          (
+            await db
+              .selectFrom("balances")
+              .select("value")
+              .where((eb) =>
+                eb.and([
+                  eb("accountId", "=", values.accountId),
+                  eb("network", "=", values.network),
+                  eb("assetId", "=", Uint8ArrayUtils.fromHex(delta[0])),
+                ]),
+              )
+              .executeTakeFirst()
+          )?.value ?? "0",
+        );
+
+        await db
+          .insertInto("balances")
+          .values({
+            accountId: values.accountId,
+            network: values.network,
+            assetId: Uint8ArrayUtils.fromHex(delta[0]),
+            value: (existingBalance + delta[1]).toString(),
+          })
+          .onConflict((oc) =>
+            oc
+              .columns(["accountId", "network", "assetId"])
+              .doUpdateSet({ value: (existingBalance + delta[1]).toString() }),
+          )
+          .executeTakeFirstOrThrow();
       }
     });
   }
@@ -474,6 +702,75 @@ export class WalletDb {
         eb.and([eb("accountId", "=", accountId), eb("network", "=", network)]),
       )
       .orderBy("transactions.timestamp", "asc")
+      .execute();
+  }
+
+  async getUnspentNotes(accountId: number, network: Network) {
+    return await this.db
+      .selectFrom("notes")
+      .leftJoin("nullifiers", "nullifiers.noteId", "notes.id")
+      .selectAll()
+      .where((eb) =>
+        eb.and([
+          eb("notes.accountId", "=", accountId),
+          eb("notes.network", "=", network),
+          // Assumes we don't set note position on sent notes
+          eb("notes.position", "is not", null),
+          eb("nullifiers.transactionHash", "is", null),
+        ]),
+      )
+      .execute();
+  }
+
+  async saveNullifier(
+    nullifier: Uint8Array,
+    network: Network,
+  ): Promise<boolean> {
+    const result = await this.db
+      .selectNoFrom(({ exists, selectFrom }) =>
+        exists(
+          selectFrom("nullifiers")
+            .where((eb) =>
+              eb.and([
+                eb("nullifier", "=", nullifier),
+                eb("network", "=", network),
+              ]),
+            )
+            .select(sql`1`.as("_")),
+        ).as("exists"),
+      )
+      .executeTakeFirstOrThrow();
+    return Boolean(result.exists);
+  }
+
+  async hasNullifier(
+    nullifier: Uint8Array,
+    network: Network,
+  ): Promise<boolean> {
+    const result = await this.db
+      .selectNoFrom(({ exists, selectFrom }) =>
+        exists(
+          selectFrom("nullifiers")
+            .where((eb) =>
+              eb.and([
+                eb("nullifier", "=", nullifier),
+                eb("network", "=", network),
+              ]),
+            )
+            .select(sql`1`.as("_")),
+        ).as("exists"),
+      )
+      .executeTakeFirstOrThrow();
+    return Boolean(result.exists);
+  }
+
+  async getBalances(accountId: number, network: Network) {
+    return await this.db
+      .selectFrom("balances")
+      .selectAll()
+      .where((eb) =>
+        eb.and([eb("accountId", "=", accountId), eb("network", "=", network)]),
+      )
       .execute();
   }
 }
