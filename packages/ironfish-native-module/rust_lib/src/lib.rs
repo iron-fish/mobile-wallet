@@ -12,7 +12,7 @@ use tokio_rayon::rayon::iter::{
 use zune_inflate::DeflateDecoder;
 
 use crate::num::FromPrimitive;
-use ironfish::{keys::Language, serializing::bytes_to_hex, PublicAddress, SaplingKey};
+use ironfish::{keys::Language, serializing::bytes_to_hex, Note, PublicAddress, SaplingKey};
 
 uniffi::setup_scaffolding!();
 
@@ -159,49 +159,118 @@ pub fn read_partial_file(path: String, offset: u32, length: u32) -> Vec<u8> {
 
 #[uniffi::export(async_runtime = "tokio")]
 pub async fn decrypt_notes_for_owner(
-    note_encrypted: Vec<String>,
+    note_encrypteds: Vec<String>,
     incoming_hex_key: String,
 ) -> Result<Vec<DecryptedNote>, EnumError> {
     let incoming_view_key = ironfish::IncomingViewKey::from_hex(&incoming_hex_key)
         .map_err(|e| EnumError::Error { msg: e.to_string() })?;
 
-    let idxes = note_encrypted
+    let idxes = note_encrypteds
         .par_iter()
         .enumerate()
         .filter_map(|(i, output)| {
             let bytes = const_hex::decode(output);
             if bytes.is_err() {
-                println!("error converting hex to bytes");
+                eprintln!("error converting hex to bytes");
                 return None;
             }
 
             let note = ironfish::MerkleNote::read(bytes.unwrap().as_slice());
             if note.is_err() {
-                println!("error reading bytes");
+                eprintln!("error reading bytes");
                 return None;
             }
 
             let dec: Result<ironfish::Note, ironfish::errors::IronfishError> =
                 note.unwrap().decrypt_note_for_owner(&incoming_view_key);
-            if dec.is_ok() {
-                let mut vec = vec![];
-                if dec
-                    .unwrap()
-                    .write(&mut vec)
-                    .map_err(|e| EnumError::Error { msg: e.to_string() })
-                    .is_err()
-                {
-                    println!("error writing bytes");
-                    return None;
-                }
 
-                return Some(DecryptedNote {
-                    index: i as u32,
-                    note: const_hex::encode(&vec),
-                });
+            if dec.is_err() {
+                return None;
             }
-            None
+
+            let mut vec = vec![];
+            if dec
+                .unwrap()
+                .write(&mut vec)
+                .map_err(|e| EnumError::Error { msg: e.to_string() })
+                .is_err()
+            {
+                eprintln!("error writing bytes");
+                return None;
+            }
+
+            Some(DecryptedNote {
+                index: i as u32,
+                note: const_hex::encode(&vec),
+            })
         });
 
     Ok(idxes.collect())
+}
+
+#[uniffi::export(async_runtime = "tokio")]
+pub async fn decrypt_notes_for_spender(
+    note_encrypteds: Vec<String>,
+    outgoing_hex_key: String,
+) -> Result<Vec<DecryptedNote>, EnumError> {
+    let outgoing_view_key = ironfish::OutgoingViewKey::from_hex(&outgoing_hex_key)
+        .map_err(|e| EnumError::Error { msg: e.to_string() })?;
+
+    let idxes = note_encrypteds
+        .par_iter()
+        .enumerate()
+        .filter_map(|(i, output)| {
+            let bytes = const_hex::decode(output);
+            if bytes.is_err() {
+                eprintln!("error converting hex to bytes");
+                return None;
+            }
+
+            let note = ironfish::MerkleNote::read(bytes.unwrap().as_slice());
+            if note.is_err() {
+                eprintln!("error reading bytes");
+                return None;
+            }
+
+            let dec: Result<ironfish::Note, ironfish::errors::IronfishError> =
+                note.unwrap().decrypt_note_for_spender(&outgoing_view_key);
+
+            if dec.is_err() {
+                return None;
+            }
+
+            let mut vec = vec![];
+            if dec
+                .unwrap()
+                .write(&mut vec)
+                .map_err(|e| EnumError::Error { msg: e.to_string() })
+                .is_err()
+            {
+                eprintln!("error writing bytes");
+                return None;
+            }
+
+            Some(DecryptedNote {
+                index: i as u32,
+                note: const_hex::encode(&vec),
+            })
+        });
+
+    Ok(idxes.collect())
+}
+
+#[uniffi::export]
+pub fn nullifier(note: String, position: String, view_key: String) -> Result<String, EnumError> {
+    let view_key = ironfish::ViewKey::from_hex(&view_key)
+        .map_err(|e| EnumError::Error { msg: e.to_string() })?;
+
+    let bytes = const_hex::decode(note).map_err(|e| EnumError::Error { msg: e.to_string() })?;
+
+    let position_u64 = position
+        .parse::<u64>()
+        .map_err(|e| EnumError::Error { msg: e.to_string() })?;
+
+    let note = Note::read(&bytes[..]).map_err(|e| EnumError::Error { msg: e.to_string() })?;
+
+    Ok(const_hex::encode(note.nullifier(&view_key, position_u64).0))
 }

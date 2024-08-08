@@ -1,4 +1,4 @@
-import { generateKey, decryptNotesForOwner } from "ironfish-native-module";
+import * as IronfishNativeModule from "ironfish-native-module";
 import { WalletDb } from "./db";
 import {
   AccountFormat,
@@ -44,7 +44,7 @@ class Wallet {
   async createAccount(name: string) {
     assertStarted(this.state);
 
-    const key = generateKey();
+    const key = IronfishNativeModule.generateKey();
     return await this.state.db.createAccount({
       // TODO: support account birthdays on new accounts
       createdAt: null,
@@ -75,6 +75,12 @@ class Wallet {
     assertStarted(this.state);
 
     return this.state.db.getAccountHeads(network);
+  }
+
+  async getBalances(accountId: number, network: Network) {
+    assertStarted(this.state);
+
+    return this.state.db.getBalances(accountId, network);
   }
 
   async exportAccount(
@@ -154,14 +160,29 @@ class Wallet {
     return await this.state.db.getTransactions(account.id, network);
   }
 
-  private async connectBlock(
+  async getUnspentNotes(accountName: string, network: Network) {
+    assertStarted(this.state);
+
+    const account = await this.getAccount(accountName);
+    if (account == null) {
+      throw new Error(`No account found with name ${accountName}`);
+    }
+
+    return await this.state.db.getUnspentNotes(account.id, network);
+  }
+
+  private async decryptBlockNotesAsOwner(
     block: LightBlock,
     incomingHexKey: string,
+    viewHexKey: string,
   ): Promise<
-    {
-      transaction: LightTransaction;
-      notes: { position: number; note: Note }[];
-    }[]
+    Map<
+      string,
+      {
+        transaction: LightTransaction;
+        notes: { position: number; note: Note; nullifier: string }[];
+      }
+    >
   > {
     assertStarted(this.state);
 
@@ -169,10 +190,13 @@ class Wallet {
       .flatMap((transaction) => transaction.outputs)
       .map((output) => Uint8ArrayUtils.toHex(output.note));
 
-    const results = await decryptNotesForOwner(hexOutputs, incomingHexKey);
+    const results = await IronfishNativeModule.decryptNotesForOwner(
+      hexOutputs,
+      incomingHexKey,
+    );
 
     if (results.length === 0) {
-      return [];
+      return new Map();
     }
 
     const startingNoteIndex = block.noteSize - hexOutputs.length;
@@ -181,7 +205,7 @@ class Wallet {
       string,
       {
         transaction: LightTransaction;
-        notes: { position: number; note: Note }[];
+        notes: { position: number; note: Note; nullifier: string }[];
       }
     > = new Map();
     for (const result of results) {
@@ -202,20 +226,96 @@ class Wallet {
 
       const note = new Note(Buffer.from(Uint8ArrayUtils.fromHex(result.note)));
       const position = startingNoteIndex + result.index;
+      const nullifier = await IronfishNativeModule.nullifier(
+        Uint8ArrayUtils.toHex(note.serialize()),
+        position.toString(),
+        viewHexKey,
+      );
 
       const hexHash = Uint8ArrayUtils.toHex(transaction.hash);
       const txnStore = transactions.get(hexHash);
       if (txnStore) {
-        txnStore.notes.push({ note, position });
+        txnStore.notes.push({ note, position, nullifier });
       } else {
         transactions.set(hexHash, {
           transaction,
-          notes: [{ note, position }],
+          notes: [{ note, position, nullifier }],
         });
       }
     }
 
-    return [...transactions.values()];
+    return transactions;
+  }
+
+  private async decryptNotesAsSpender(
+    transactions: LightTransaction[],
+    outgoingHexKey: string,
+  ): Promise<
+    Map<
+      string,
+      {
+        transaction: LightTransaction;
+        notes: { note: Note }[];
+      }
+    >
+  > {
+    assertStarted(this.state);
+
+    const hexOutputs = transactions
+      .flatMap((transaction) => transaction.outputs)
+      .map((output) => Uint8ArrayUtils.toHex(output.note));
+
+    if (hexOutputs.length === 0) {
+      return new Map();
+    }
+
+    const results = await IronfishNativeModule.decryptNotesForSpender(
+      hexOutputs,
+      outgoingHexKey,
+    );
+
+    if (results.length === 0) {
+      return new Map();
+    }
+
+    const resultTransactions: Map<
+      string,
+      {
+        transaction: LightTransaction;
+        notes: { note: Note }[];
+      }
+    > = new Map();
+    for (const result of results) {
+      const output = hexOutputs[result.index];
+      const outputBuffer = Uint8ArrayUtils.fromHex(output);
+
+      // find a transaction with a matching output
+      const transaction = transactions.find((transaction) =>
+        transaction.outputs.some((o) =>
+          Uint8ArrayUtils.areEqual(o.note, outputBuffer),
+        ),
+      );
+
+      if (!transaction) {
+        console.error("Transaction not found");
+        continue;
+      }
+
+      const note = new Note(Buffer.from(Uint8ArrayUtils.fromHex(result.note)));
+
+      const hexHash = Uint8ArrayUtils.toHex(transaction.hash);
+      const txnStore = resultTransactions.get(hexHash);
+      if (txnStore) {
+        txnStore.notes.push({ note });
+      } else {
+        resultTransactions.set(hexHash, {
+          transaction,
+          notes: [{ note }],
+        });
+      }
+    }
+
+    return resultTransactions;
   }
 
   async scan(network: Network): Promise<boolean> {
@@ -264,28 +364,126 @@ class Wallet {
           for (const account of accounts) {
             const h = cache.getHead(account.id)?.hash ?? null;
 
-            if (h === null || Uint8ArrayUtils.areEqual(h, prevHash)) {
-              const transactions = await this.connectBlock(
-                block,
-                account.decodedAccount.incomingViewKey,
-              );
-
-              for (const transaction of transactions) {
-                cache.pushTransaction(
-                  account.id,
-                  block.hash,
-                  block.sequence,
-                  new Date(block.timestamp),
-                  transaction.transaction,
-                  transaction.notes,
-                );
-              }
-
-              cache.setHead(account.id, {
-                hash: block.hash,
-                sequence: block.sequence,
-              });
+            if (
+              (h === null && block.sequence !== 1) ||
+              (h !== null && !Uint8ArrayUtils.areEqual(h, prevHash))
+            ) {
+              continue;
             }
+
+            const transactionMap = new Map<
+              string,
+              {
+                transaction: LightTransaction;
+                ownerNotes: {
+                  position: number;
+                  note: Note;
+                  nullifier: string;
+                }[];
+                foundNullifiers: Uint8Array[];
+                spenderNotes: {
+                  note: Note;
+                }[];
+              }
+            >();
+
+            const transactions = await this.decryptBlockNotesAsOwner(
+              block,
+              account.decodedAccount.incomingViewKey,
+              account.decodedAccount.viewKey,
+            );
+
+            for (const [hash, transaction] of transactions.entries()) {
+              const txn = transactionMap.get(hash);
+              if (txn) {
+                txn.ownerNotes = txn.ownerNotes.concat(transaction.notes);
+              } else {
+                transactionMap.set(hash, {
+                  transaction: transaction.transaction,
+                  ownerNotes: transaction.notes,
+                  foundNullifiers: [],
+                  spenderNotes: [],
+                });
+              }
+            }
+
+            // Check if you're a sender on the transactions.
+            let transactionsWithSpends = new Set<LightTransaction>();
+            for (const transaction of block.transactions) {
+              for (const nullifier of transaction.spends) {
+                // TODO: It may be possible to check only the first nullifier
+                // in a transaction as a performance optimization, if only
+                // one account can spend notes in a transaction.
+                if (
+                  !(await cache.hasNullifier(nullifier.nf, Network.TESTNET))
+                ) {
+                  continue;
+                }
+
+                transactionsWithSpends.add(transaction);
+                const hexHash = Uint8ArrayUtils.toHex(transaction.hash);
+                const txn = transactionMap.get(hexHash);
+                if (txn) {
+                  txn.foundNullifiers.push(nullifier.nf);
+                } else {
+                  transactionMap.set(hexHash, {
+                    transaction,
+                    ownerNotes: [],
+                    foundNullifiers: [nullifier.nf],
+                    spenderNotes: [],
+                  });
+                }
+              }
+            }
+
+            const decryptedSpendTransactions = await this.decryptNotesAsSpender(
+              [...transactionsWithSpends],
+              account.decodedAccount.outgoingViewKey,
+            );
+
+            for (const [hash, value] of decryptedSpendTransactions.entries()) {
+              const txn = transactionMap.get(hash);
+              if (txn) {
+                // TODO: Only decrypt notes that haven't already been decrypted
+                const ownerSet = new Set(
+                  txn.ownerNotes.map((n) =>
+                    Uint8ArrayUtils.toHex(n.note.serialize()),
+                  ),
+                );
+
+                txn.spenderNotes = txn.spenderNotes.concat(
+                  value.notes.filter(
+                    (n) =>
+                      !ownerSet.has(Uint8ArrayUtils.toHex(n.note.serialize())),
+                  ),
+                );
+              } else {
+                transactionMap.set(hash, {
+                  transaction: value.transaction,
+                  ownerNotes: [],
+                  foundNullifiers: [],
+                  spenderNotes: value.notes,
+                });
+              }
+            }
+
+            for (const transaction of transactionMap.values()) {
+              cache.pushTransaction(
+                account.id,
+                block.hash,
+                block.sequence,
+                new Date(block.timestamp),
+                transaction.transaction,
+                transaction.ownerNotes,
+                transaction.spenderNotes,
+                transaction.foundNullifiers,
+              );
+            }
+
+            cache.setHead(account.id, {
+              hash: block.hash,
+              sequence: block.sequence,
+            });
           }
         });
       },
