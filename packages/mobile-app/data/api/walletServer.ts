@@ -16,8 +16,23 @@ const WALLET_SERVER_URLS: Record<Network, string> = {
 class WalletServer {
   transformers: WalletServerTransformer[] = [ForkTester];
 
+  private latestBlockCache: Map<
+    Network,
+    { time: number; response: GetLatestBlockResponse }
+  > = new Map();
+  private LATEST_BLOCK_CACHE_MS = 5000;
+
   async getLatestBlock(network: Network): Promise<GetLatestBlockResponse> {
     const url = WALLET_SERVER_URLS[network] + "latest-block";
+
+    const cached = this.latestBlockCache.get(network);
+    if (
+      cached &&
+      performance.now() - cached.time < this.LATEST_BLOCK_CACHE_MS
+    ) {
+      return cached.response;
+    }
+
     console.log("requesting latest block");
 
     const fetchResult = await fetch(url);
@@ -26,6 +41,11 @@ class WalletServer {
     for (const transformer of this.transformers) {
       latestBlock = await transformer.getLatestBlock(network, latestBlock);
     }
+
+    this.latestBlockCache.set(network, {
+      time: performance.now(),
+      response: latestBlock,
+    });
 
     return latestBlock;
   }

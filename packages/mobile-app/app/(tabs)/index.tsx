@@ -47,7 +47,10 @@ export default function Balances() {
       </ScrollView>
       <Text style={{ fontWeight: 700, fontSize: 24 }}>Balance</Text>
       {getAccountResult.data && (
-        <Text>{`IRON ${getAccountResult.data.balances.iron.unconfirmed}`}</Text>
+        <>
+          <Text>{`Unconfirmed: IRON ${getAccountResult.data.balances.iron.unconfirmed}`}</Text>
+          <Text>{`Confirmed: IRON ${getAccountResult.data.balances.iron.confirmed}`}</Text>
+        </>
       )}
       <StatusBar style="auto" />
     </View>
