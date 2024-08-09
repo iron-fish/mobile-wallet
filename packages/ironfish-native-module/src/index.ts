@@ -53,45 +53,56 @@ export function isValidPublicAddress(hexAddress: string): boolean {
   return IronfishNativeModule.isValidPublicAddress(hexAddress);
 }
 
-export function unpackGzip(
-  gzipPath: string,
-  outputPath: string,
-): Promise<boolean> {
+export function unpackGzip({
+  gzipPath,
+  outputPath,
+}: {
+  gzipPath: string;
+  outputPath: string;
+}): Promise<boolean> {
   return IronfishNativeModule.unpackGzip(gzipPath, outputPath);
 }
 
-export function readPartialFile(
-  path: string,
-  offset: number,
-  length: number,
-): Promise<Uint8Array> {
+export function readPartialFile({
+  path,
+  offset,
+  length,
+}: {
+  path: string;
+  offset: number;
+  length: number;
+}): Promise<Uint8Array> {
   return IronfishNativeModule.readPartialFile(path, offset, length);
 }
 
 export function decryptNotesForOwner(
-  noteEncrypted: string[],
+  encryptedNotes: string[],
   incomingHexKey: string,
 ): Promise<{ index: number; note: string }[]> {
   return IronfishNativeModule.decryptNotesForOwner(
-    noteEncrypted,
+    encryptedNotes,
     incomingHexKey,
   );
 }
 
 export function decryptNotesForSpender(
-  noteEncrypted: string[],
+  encryptedNotes: string[],
   outgoingHexKey: string,
 ): Promise<{ index: number; note: string }[]> {
   return IronfishNativeModule.decryptNotesForSpender(
-    noteEncrypted,
+    encryptedNotes,
     outgoingHexKey,
   );
 }
 
-export function nullifier(
-  note: string,
-  position: string,
-  viewKey: string,
-): Promise<string> {
-  return IronfishNativeModule.nullifier(note, position, viewKey);
+export function nullifier({
+  note,
+  position,
+  viewHexKey,
+}: {
+  note: string;
+  position: string;
+  viewHexKey: string;
+}): Promise<string> {
+  return IronfishNativeModule.nullifier(note, position, viewHexKey);
 }

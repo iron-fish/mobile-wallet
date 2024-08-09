@@ -106,7 +106,10 @@ class WalletServerChunks {
     if (result.status !== 200) {
       console.warn("Unhandled status code", result.status);
     }
-    await unpackGzip(directory + file + ".gz", directory + file);
+    await unpackGzip({
+      gzipPath: directory + file + ".gz",
+      outputPath: directory + file,
+    });
   }
 
   /**
@@ -159,11 +162,11 @@ class WalletServerChunks {
       const start = ranges[pos][1];
       const end = ranges[endIndex][2];
       // TODO: start the next read while decoding
-      const bytes = await readPartialFile(
-        directory + file,
-        start,
-        end - start + 1,
-      );
+      const bytes = await readPartialFile({
+        path: directory + file,
+        offset: start,
+        length: end - start + 1,
+      });
 
       for (let i = pos; i <= endIndex; i++) {
         const block = LightBlock.decode(

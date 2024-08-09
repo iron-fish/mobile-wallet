@@ -281,11 +281,11 @@ class Wallet {
 
       const note = new Note(Buffer.from(Uint8ArrayUtils.fromHex(result.note)));
       const position = startingNoteIndex + result.index;
-      const nullifier = await IronfishNativeModule.nullifier(
-        Uint8ArrayUtils.toHex(note.serialize()),
-        position.toString(),
+      const nullifier = await IronfishNativeModule.nullifier({
+        note: Uint8ArrayUtils.toHex(note.serialize()),
+        position: position.toString(),
         viewHexKey,
-      );
+      });
 
       const hexHash = Uint8ArrayUtils.toHex(transaction.hash);
       const txnStore = transactions.get(hexHash);
