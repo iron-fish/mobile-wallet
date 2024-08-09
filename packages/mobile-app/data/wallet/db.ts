@@ -38,6 +38,14 @@ interface AccountTransactionsTable {
   transactionType: string;
 }
 
+interface TransactionBalanceDeltasTable {
+  id: Generated<number>;
+  accountId: number;
+  transactionHash: Uint8Array;
+  assetId: Uint8Array;
+  value: string;
+}
+
 interface NotesTable {
   id: Generated<number>;
   accountId: number;
@@ -85,6 +93,7 @@ interface Database {
   accountNetworkHeads: AccountNetworkHeadsTable;
   transactions: TransactionsTable;
   accountTransactions: AccountTransactionsTable;
+  transactionBalanceDeltas: TransactionBalanceDeltasTable;
   notes: NotesTable;
   nullifiers: NullifiersTable;
   balances: BalancesTable;
@@ -293,6 +302,30 @@ export class WalletDb {
                 ])
                 .execute();
               console.log("created balances");
+            },
+          },
+          ["008_createTransactionBalanceDeltas"]: {
+            up: async (db: Kysely<Database>) => {
+              console.log("creating transaction balance deltas");
+              await db.schema
+                .createTable("transactionBalanceDeltas")
+                .addColumn("id", SQLiteType.Integer, (col) =>
+                  col.primaryKey().autoIncrement(),
+                )
+                .addColumn("accountId", SQLiteType.Integer, (col) =>
+                  col.notNull().references("accounts.id"),
+                )
+                .addColumn("transactionHash", SQLiteType.Blob, (col) =>
+                  col.notNull().references("transactions.hash"),
+                )
+                .addColumn("assetId", SQLiteType.Blob, (col) => col.notNull())
+                .addColumn("value", SQLiteType.String, (col) => col.notNull())
+                .addUniqueConstraint(
+                  "transactionbalancedeltas_accountId_hash_assetId",
+                  ["accountId", "transactionHash", "assetId"],
+                )
+                .execute();
+              console.log("created transaction balance deltas");
             },
           },
         },
@@ -658,6 +691,16 @@ export class WalletDb {
               .doUpdateSet({ value: (existingBalance + delta[1]).toString() }),
           )
           .executeTakeFirstOrThrow();
+
+        await db
+          .insertInto("transactionBalanceDeltas")
+          .values({
+            accountId: values.accountId,
+            assetId: Uint8ArrayUtils.fromHex(delta[0]),
+            transactionHash: values.hash,
+            value: delta[1].toString(),
+          })
+          .executeTakeFirstOrThrow();
       }
     });
   }
@@ -770,6 +813,31 @@ export class WalletDb {
       .selectAll()
       .where((eb) =>
         eb.and([eb("accountId", "=", accountId), eb("network", "=", network)]),
+      )
+      .execute();
+  }
+
+  async getTransactionBalanceDeltasBySequence(
+    accountId: number,
+    network: Network,
+    startSequence: number,
+    endSequence: number,
+  ) {
+    return await this.db
+      .selectFrom("transactionBalanceDeltas")
+      .innerJoin(
+        "transactions",
+        "transactions.hash",
+        "transactionBalanceDeltas.transactionHash",
+      )
+      .selectAll()
+      .where((eb) =>
+        eb.and([
+          eb("transactions.blockSequence", ">=", startSequence),
+          eb("transactions.blockSequence", "<=", endSequence),
+          eb("transactions.network", "=", network),
+          eb("transactionBalanceDeltas.accountId", "=", accountId),
+        ]),
       )
       .execute();
   }
