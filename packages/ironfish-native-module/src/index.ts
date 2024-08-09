@@ -77,3 +77,21 @@ export function decryptNotesForOwner(
     incomingHexKey,
   );
 }
+
+export function decryptNotesForSpender(
+  noteEncrypted: string[],
+  outgoingHexKey: string,
+): Promise<{ index: number; note: string }[]> {
+  return IronfishNativeModule.decryptNotesForSpender(
+    noteEncrypted,
+    outgoingHexKey,
+  );
+}
+
+export function nullifier(
+  note: string,
+  position: string,
+  viewKey: string,
+): Promise<string> {
+  return IronfishNativeModule.nullifier(note, position, viewKey);
+}

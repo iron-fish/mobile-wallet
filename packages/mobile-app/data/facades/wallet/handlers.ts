@@ -1,6 +1,7 @@
 import { f } from "data-facade";
 import {
   Account,
+  AccountBalance,
   AccountSettings,
   Output,
   Transaction,
@@ -77,21 +78,43 @@ export const walletHandlers = f.facade<WalletHandlers>({
       if (!account) {
         throw new Error(`Account ${name} does not exist`);
       }
+
+      const balances = await wallet.getBalances(account.id, Network.TESTNET);
+
+      const ironBalance: AccountBalance = {
+        assetId:
+          "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+        // TODO: Implement available balance in Wallet
+        available: "0",
+        // TODO: Implement confirmed balance in Wallet
+        confirmed: "0",
+        // TODO: Implement pending balance in Wallet
+        pending: "0",
+        unconfirmed: "0",
+      };
+      const customBalances: AccountBalance[] = [];
+
+      for (const balance of balances) {
+        if (Uint8ArrayUtils.toHex(balance.assetId) === ironBalance.assetId) {
+          ironBalance.unconfirmed = balance.value;
+        } else {
+          customBalances.push({
+            assetId: Uint8ArrayUtils.toHex(balance.assetId),
+            available: "0",
+            confirmed: "0",
+            pending: "0",
+            unconfirmed: balance.value,
+          });
+        }
+      }
+
       const result: Account = {
         name: account.name,
         viewOnly: account.viewOnly,
         publicAddress: account.publicAddress,
-        // TODO: Implement balances in Wallet
         balances: {
-          iron: {
-            assetId:
-              "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
-            available: "0",
-            confirmed: "0",
-            pending: "0",
-            unconfirmed: "0",
-          },
-          custom: [],
+          iron: ironBalance,
+          custom: customBalances,
         },
         // TODO: Implement account syncing in Wallet
         head: null,

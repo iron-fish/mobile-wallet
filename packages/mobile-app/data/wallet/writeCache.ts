@@ -19,8 +19,12 @@ export class WriteCache {
     sequence: number;
     timestamp: Date;
     transaction: LightTransaction;
-    notes: { position: number; note: Note }[];
+    ownerNotes: { position: number; note: Note; nullifier: string }[];
+    spenderNotes: { note: Note }[];
+    foundNullifiers: Uint8Array[];
   }[] = [];
+
+  readonly nullifierSet = new Set<string>();
 
   constructor(
     readonly db: WalletDb,
@@ -41,7 +45,9 @@ export class WriteCache {
     sequence: number,
     timestamp: Date,
     transaction: LightTransaction,
-    notes: { position: number; note: Note }[],
+    ownerNotes: { position: number; note: Note; nullifier: string }[],
+    spenderNotes: { note: Note }[],
+    foundNullifiers: Uint8Array[],
   ) {
     this.transactions.push({
       accountId,
@@ -49,8 +55,14 @@ export class WriteCache {
       sequence,
       transaction,
       timestamp,
-      notes,
+      ownerNotes,
+      spenderNotes,
+      foundNullifiers,
     });
+
+    for (const n of ownerNotes) {
+      this.nullifierSet.add(n.nullifier);
+    }
   }
 
   /**
@@ -62,8 +74,8 @@ export class WriteCache {
       await this.db.updateAccountHead(k, this.network, v.sequence, v.hash);
     }
 
-    let txn = this.transactions.shift();
-    while (txn) {
+    let txn;
+    while ((txn = this.transactions.shift())) {
       console.log(
         `saving transaction ${UInt8ArrayUtils.toHex(txn.transaction.hash)} for account ID ${txn.accountId}`,
       );
@@ -74,9 +86,25 @@ export class WriteCache {
         blockSequence: txn.sequence,
         timestamp: txn.timestamp,
         network: this.network,
-        notes: txn.notes,
+        ownerNotes: txn.ownerNotes,
+        foundNullifiers: txn.foundNullifiers,
+        spenderNotes: txn.spenderNotes,
       });
-      txn = this.transactions.shift();
+
+      for (const n of txn.ownerNotes) {
+        this.nullifierSet.delete(n.nullifier);
+      }
     }
+  }
+
+  async hasNullifier(
+    nullifier: Uint8Array,
+    network: Network,
+  ): Promise<boolean> {
+    if (this.nullifierSet.has(UInt8ArrayUtils.toHex(nullifier))) {
+      return true;
+    }
+
+    return await this.db.hasNullifier(nullifier, network);
   }
 }
