@@ -12,6 +12,7 @@ import { Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
 import { LightBlock, LightTransaction } from "../api/lightstreamer";
 import { WriteCache } from "./writeCache";
+import { WalletServerApi } from "../api/walletServer";
 
 type StartedState = { type: "STARTED"; db: WalletDb };
 type WalletState = { type: "STOPPED" } | { type: "LOADING" } | StartedState;
@@ -80,7 +81,61 @@ class Wallet {
   async getBalances(accountId: number, network: Network) {
     assertStarted(this.state);
 
-    return this.state.db.getBalances(accountId, network);
+    const unconfirmed = await this.state.db.getBalances(accountId, network);
+
+    const deltas = await this.getUnconfirmedDeltas(accountId, network);
+    const confirmed: { assetId: Uint8Array; value: string }[] = unconfirmed.map(
+      (balance) => {
+        const assetDeltas = deltas.filter((d) =>
+          Uint8ArrayUtils.areEqual(d.assetId, balance.assetId),
+        );
+
+        return {
+          assetId: balance.assetId,
+          value: assetDeltas
+            .reduce((a, b) => {
+              return a - BigInt(b.value);
+            }, BigInt(balance.value))
+            .toString(),
+        };
+      },
+    );
+
+    // Caution, this makes the assumption that unconfirmed and confirmed are ordered the same
+    const balanceReturns = [];
+    for (let i = 0; i < unconfirmed.length; i++) {
+      balanceReturns.push({
+        assetId: unconfirmed[i].assetId,
+        confirmed: confirmed[i].value,
+        unconfirmed: unconfirmed[i].value,
+      });
+    }
+
+    return balanceReturns;
+  }
+
+  /**
+   * Returns transaction balance deltas from head - confirmationRange + 1 to head, inclusive.
+   */
+  private async getUnconfirmedDeltas(accountId: number, network: Network) {
+    assertStarted(this.state);
+
+    const chainHead = (await WalletServerApi.getLatestBlock(network)).sequence;
+    // TODO: Make confirmation range configurable
+    const confirmationRange = 2;
+
+    if (confirmationRange <= 0) {
+      return [];
+    }
+
+    const deltas = await this.state.db.getTransactionBalanceDeltasBySequence(
+      accountId,
+      network,
+      chainHead - confirmationRange + 1,
+      chainHead,
+    );
+
+    return deltas;
   }
 
   async exportAccount(

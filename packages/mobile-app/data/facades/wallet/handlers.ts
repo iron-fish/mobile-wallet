@@ -86,24 +86,24 @@ export const walletHandlers = f.facade<WalletHandlers>({
           "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
         // TODO: Implement available balance in Wallet
         available: "0",
-        // TODO: Implement confirmed balance in Wallet
-        confirmed: "0",
         // TODO: Implement pending balance in Wallet
         pending: "0",
         unconfirmed: "0",
+        confirmed: "0",
       };
       const customBalances: AccountBalance[] = [];
 
       for (const balance of balances) {
         if (Uint8ArrayUtils.toHex(balance.assetId) === ironBalance.assetId) {
-          ironBalance.unconfirmed = balance.value;
+          ironBalance.unconfirmed = balance.unconfirmed;
+          ironBalance.confirmed = balance.confirmed;
         } else {
           customBalances.push({
             assetId: Uint8ArrayUtils.toHex(balance.assetId),
             available: "0",
-            confirmed: "0",
             pending: "0",
-            unconfirmed: balance.value,
+            confirmed: balance.confirmed,
+            unconfirmed: balance.unconfirmed,
           });
         }
       }
