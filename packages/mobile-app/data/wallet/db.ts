@@ -6,6 +6,7 @@ import * as FileSystem from "expo-file-system";
 import { AccountFormat, encodeAccount, Note } from "@ironfish/sdk";
 import { Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
+import { TransactionType } from "../facades/wallet/types";
 interface AccountsTable {
   id: Generated<number>;
   name: string;
@@ -34,8 +35,7 @@ interface AccountTransactionsTable {
   id: Generated<number>;
   accountId: number;
   transactionHash: Uint8Array;
-  // TODO: narrow this further, like Network
-  transactionType: string;
+  type: TransactionType;
 }
 
 interface TransactionBalanceDeltasTable {
@@ -215,8 +215,8 @@ export class WalletDb {
                 .addColumn("accountId", SQLiteType.Integer, (col) =>
                   col.notNull().references("accounts.id"),
                 )
-                .addColumn("transactionType", SQLiteType.String, (col) =>
-                  col.notNull(),
+                .addColumn("type", SQLiteType.String, (col) =>
+                  col.notNull().check(sql`type IN ("receive", "send")`),
                 )
                 .execute();
               console.log("created account transactions");
@@ -575,6 +575,14 @@ export class WalletDb {
       balanceDeltas.add(note.note.assetId(), note.note.value());
     }
 
+    // Intended to match the logic in ironfish sdk's getTransactionType
+    const allNotes = [...values.ownerNotes, ...values.spenderNotes];
+    const transactionType =
+      values.foundNullifiers.length !== 0 ||
+      allNotes[0].note.sender() === address
+        ? TransactionType.SEND
+        : TransactionType.RECEIVE;
+
     await this.db.transaction().execute(async (db) => {
       // One transaction could apply to multiple accounts
       await db
@@ -594,8 +602,7 @@ export class WalletDb {
         .values({
           accountId: values.accountId,
           transactionHash: values.hash,
-          // TODO: implement transaction type
-          transactionType: "receive",
+          type: transactionType,
         })
         .executeTakeFirst();
 
@@ -749,6 +756,7 @@ export class WalletDb {
   }
 
   async getUnspentNotes(accountId: number, network: Network) {
+    // TODO: Consider the confirmation range
     return await this.db
       .selectFrom("notes")
       .leftJoin("nullifiers", "nullifiers.noteId", "notes.id")

@@ -500,6 +500,8 @@ class Wallet {
               const txn = transactionMap.get(hash);
               if (txn) {
                 // TODO: Only decrypt notes that haven't already been decrypted
+                // If making this change, make sure to update balance delta calculation
+                // in saveTransaction.
                 const ownerSet = new Set(
                   txn.ownerNotes.map((n) =>
                     Uint8ArrayUtils.toHex(n.note.serialize()),
