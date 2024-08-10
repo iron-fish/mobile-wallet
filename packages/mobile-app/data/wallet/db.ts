@@ -181,6 +181,10 @@ export class WalletDb {
                   col.notNull(),
                 )
                 .addColumn("hash", SQLiteType.Blob, (col) => col.notNull())
+                .addUniqueConstraint("accountnetworkheads_accountId_network", [
+                  "accountId",
+                  "network",
+                ])
                 .execute();
               console.log("created accountNetworkHeads");
             },
@@ -419,7 +423,13 @@ export class WalletDb {
     }
 
     const result = await this.db.transaction().execute(async (db) => {
-      db.deleteFrom("accountNetworkHeads")
+      await db
+        .deleteFrom("transactionBalanceDeltas")
+        .where("accountId", "=", account.id)
+        .executeTakeFirstOrThrow();
+
+      await db
+        .deleteFrom("accountNetworkHeads")
         .where("accountId", "=", account.id)
         .executeTakeFirstOrThrow();
 
@@ -520,21 +530,48 @@ export class WalletDb {
           hash: hash,
           sequence: sequence,
         })
+        .onConflict((oc) =>
+          oc.columns(["accountId", "network"]).doUpdateSet({
+            hash: hash,
+            sequence: sequence,
+          }),
+        )
         .executeTakeFirst();
     }
   }
 
-  async saveTransaction(values: {
-    hash: Uint8Array;
+  async saveBlock(values: {
     accountId: number;
     network: Network;
-    blockSequence: number | null;
-    blockHash: Uint8Array | null;
-    ownerNotes: { position: number | null; note: Note; nullifier: string }[];
-    foundNullifiers: Uint8Array[];
-    spenderNotes: { note: Note }[];
-    timestamp: Date;
+    blockSequence: number;
+    blockHash: Uint8Array;
+    transactions: {
+      hash: Uint8Array;
+      ownerNotes: { position: number | null; note: Note; nullifier: string }[];
+      foundNullifiers: Uint8Array[];
+      spenderNotes: { note: Note }[];
+      timestamp: Date;
+    }[];
   }) {
+    if (values.transactions.length === 0) {
+      await this.db
+        .insertInto("accountNetworkHeads")
+        .values({
+          accountId: values.accountId,
+          network: values.network,
+          hash: values.blockHash,
+          sequence: values.blockSequence,
+        })
+        .onConflict((oc) =>
+          oc.columns(["accountId", "network"]).doUpdateSet({
+            hash: values.blockHash,
+            sequence: values.blockSequence,
+          }),
+        )
+        .executeTakeFirstOrThrow();
+      return;
+    }
+
     const address = (
       await this.db
         .selectFrom("accounts")
@@ -546,168 +583,186 @@ export class WalletDb {
       throw new Error(`Account with ID ${values.accountId} not found`);
     }
 
-    const balanceDeltas = new BalanceDeltas();
-
-    // Note that we can't rely on spenderNotes alone for subtracting from balance deltas
-    // because they don't include transaction fees.
-    if (values.foundNullifiers.length > 0) {
-      const spentNotes = await this.db
-        .selectFrom("notes")
-        .innerJoin("nullifiers", "nullifiers.noteId", "notes.id")
-        .selectAll()
-        .where((eb) =>
-          eb.and([
-            eb("nullifiers.nullifier", "in", values.foundNullifiers),
-            eb("notes.accountId", "=", values.accountId),
-          ]),
-        )
-        .execute();
-
-      if (spentNotes.length !== values.foundNullifiers.length) {
-        console.error("Some nullifiers were not found in the database");
-      }
-
-      for (const note of spentNotes) {
-        balanceDeltas.subtract(note.assetId, BigInt(note.value));
-      }
-    }
-    for (const note of values.ownerNotes) {
-      balanceDeltas.add(note.note.assetId(), note.note.value());
-    }
-
-    // Intended to match the logic in ironfish sdk's getTransactionType
-    const allNotes = [...values.ownerNotes, ...values.spenderNotes];
-    const transactionType =
-      values.foundNullifiers.length !== 0 ||
-      allNotes[0].note.sender() === address
-        ? TransactionType.SEND
-        : TransactionType.RECEIVE;
-
     await this.db.transaction().execute(async (db) => {
-      // One transaction could apply to multiple accounts
       await db
-        .insertInto("transactions")
-        .values({
-          hash: values.hash,
-          network: values.network,
-          blockSequence: values.blockSequence,
-          blockHash: values.blockHash,
-          timestamp: values.timestamp,
-        })
-        .onConflict((oc) => oc.column("hash").doNothing())
-        .executeTakeFirstOrThrow();
-
-      await db
-        .insertInto("accountTransactions")
+        .insertInto("accountNetworkHeads")
         .values({
           accountId: values.accountId,
-          transactionHash: values.hash,
-          type: transactionType,
+          network: values.network,
+          hash: values.blockHash,
+          sequence: values.blockSequence,
         })
-        .executeTakeFirst();
+        .onConflict((oc) =>
+          oc.columns(["accountId", "network"]).doUpdateSet({
+            hash: values.blockHash,
+            sequence: values.blockSequence,
+          }),
+        )
+        .executeTakeFirstOrThrow();
 
-      for (const note of values.ownerNotes) {
-        const result = await db
-          .insertInto("notes")
-          .values({
-            accountId: values.accountId,
-            network: values.network,
-            transactionHash: values.hash,
-            note: new Uint8Array(note.note.serialize()),
-            assetId: new Uint8Array(note.note.assetId()),
-            owner: Uint8ArrayUtils.fromHex(note.note.owner()),
-            sender: Uint8ArrayUtils.fromHex(note.note.sender()),
-            value: note.note.value().toString(),
-            memo: new Uint8Array(note.note.memo()),
-            position: note.position,
-          })
-          .executeTakeFirst();
+      for (const txn of values.transactions) {
+        // Intended to match the logic in ironfish sdk's getTransactionType
+        const allNotes = [...txn.ownerNotes, ...txn.spenderNotes];
+        const transactionType =
+          txn.foundNullifiers.length !== 0 ||
+          allNotes[0].note.sender() === address
+            ? TransactionType.SEND
+            : TransactionType.RECEIVE;
 
-        if (!result.insertId) {
-          throw new Error();
+        const balanceDeltas = new BalanceDeltas();
+
+        // Note that we can't rely on spenderNotes alone for subtracting from balance deltas
+        // because they don't include transaction fees.
+        if (txn.foundNullifiers.length > 0) {
+          const spentNotes = await db
+            .selectFrom("notes")
+            .innerJoin("nullifiers", "nullifiers.noteId", "notes.id")
+            .selectAll()
+            .where((eb) =>
+              eb.and([
+                eb("nullifiers.nullifier", "in", txn.foundNullifiers),
+                eb("notes.accountId", "=", values.accountId),
+              ]),
+            )
+            .execute();
+
+          if (spentNotes.length !== txn.foundNullifiers.length) {
+            console.error("Some nullifiers were not found in the database");
+          }
+
+          for (const note of spentNotes) {
+            balanceDeltas.subtract(note.assetId, BigInt(note.value));
+          }
+        }
+        for (const note of txn.ownerNotes) {
+          balanceDeltas.add(note.note.assetId(), note.note.value());
         }
 
+        // One transaction could apply to multiple accounts
         await db
-          .insertInto("nullifiers")
+          .insertInto("transactions")
           .values({
-            noteId: Number(result.insertId),
-            nullifier: Uint8ArrayUtils.fromHex(note.nullifier),
-            accountId: values.accountId,
+            hash: txn.hash,
             network: values.network,
-            transactionHash: null,
+            blockSequence: values.blockSequence,
+            blockHash: values.blockHash,
+            timestamp: txn.timestamp,
           })
-          .executeTakeFirst();
-      }
-
-      for (const nullifier of values.foundNullifiers) {
-        await db
-          .updateTable("nullifiers")
-          .set("transactionHash", values.hash)
-          .where("nullifier", "=", nullifier)
+          .onConflict((oc) => oc.column("hash").doNothing())
           .executeTakeFirstOrThrow();
-      }
 
-      for (const note of values.spenderNotes) {
         await db
-          .insertInto("notes")
+          .insertInto("accountTransactions")
           .values({
             accountId: values.accountId,
-            network: values.network,
-            transactionHash: values.hash,
-            note: new Uint8Array(note.note.serialize()),
-            assetId: new Uint8Array(note.note.assetId()),
-            owner: Uint8ArrayUtils.fromHex(note.note.owner()),
-            sender: Uint8ArrayUtils.fromHex(note.note.sender()),
-            value: note.note.value().toString(),
-            memo: new Uint8Array(note.note.memo()),
-            position: null,
+            transactionHash: txn.hash,
+            type: transactionType,
           })
           .executeTakeFirstOrThrow();
-      }
 
-      for (const delta of balanceDeltas) {
-        // This could be done with the SQLite decimal extension, but it's not available
-        // in the Expo SQLite driver.
-        const existingBalance = BigInt(
-          (
-            await db
-              .selectFrom("balances")
-              .select("value")
-              .where((eb) =>
-                eb.and([
-                  eb("accountId", "=", values.accountId),
-                  eb("network", "=", values.network),
-                  eb("assetId", "=", Uint8ArrayUtils.fromHex(delta[0])),
-                ]),
-              )
-              .executeTakeFirst()
-          )?.value ?? "0",
-        );
+        for (const note of txn.ownerNotes) {
+          const result = await db
+            .insertInto("notes")
+            .values({
+              accountId: values.accountId,
+              network: values.network,
+              transactionHash: txn.hash,
+              note: new Uint8Array(note.note.serialize()),
+              assetId: new Uint8Array(note.note.assetId()),
+              owner: Uint8ArrayUtils.fromHex(note.note.owner()),
+              sender: Uint8ArrayUtils.fromHex(note.note.sender()),
+              value: note.note.value().toString(),
+              memo: new Uint8Array(note.note.memo()),
+              position: note.position,
+            })
+            .executeTakeFirst();
 
-        await db
-          .insertInto("balances")
-          .values({
-            accountId: values.accountId,
-            network: values.network,
-            assetId: Uint8ArrayUtils.fromHex(delta[0]),
-            value: (existingBalance + delta[1]).toString(),
-          })
-          .onConflict((oc) =>
-            oc
-              .columns(["accountId", "network", "assetId"])
-              .doUpdateSet({ value: (existingBalance + delta[1]).toString() }),
-          )
-          .executeTakeFirstOrThrow();
+          if (!result.insertId) {
+            throw new Error();
+          }
 
-        await db
-          .insertInto("transactionBalanceDeltas")
-          .values({
-            accountId: values.accountId,
-            assetId: Uint8ArrayUtils.fromHex(delta[0]),
-            transactionHash: values.hash,
-            value: delta[1].toString(),
-          })
-          .executeTakeFirstOrThrow();
+          await db
+            .insertInto("nullifiers")
+            .values({
+              noteId: Number(result.insertId),
+              nullifier: Uint8ArrayUtils.fromHex(note.nullifier),
+              accountId: values.accountId,
+              network: values.network,
+              transactionHash: null,
+            })
+            .executeTakeFirst();
+        }
+
+        for (const nullifier of txn.foundNullifiers) {
+          await db
+            .updateTable("nullifiers")
+            .set("transactionHash", txn.hash)
+            .where("nullifier", "=", nullifier)
+            .executeTakeFirstOrThrow();
+        }
+
+        for (const note of txn.spenderNotes) {
+          await db
+            .insertInto("notes")
+            .values({
+              accountId: values.accountId,
+              network: values.network,
+              transactionHash: txn.hash,
+              note: new Uint8Array(note.note.serialize()),
+              assetId: new Uint8Array(note.note.assetId()),
+              owner: Uint8ArrayUtils.fromHex(note.note.owner()),
+              sender: Uint8ArrayUtils.fromHex(note.note.sender()),
+              value: note.note.value().toString(),
+              memo: new Uint8Array(note.note.memo()),
+              position: null,
+            })
+            .executeTakeFirstOrThrow();
+        }
+
+        for (const delta of balanceDeltas) {
+          // This could be done with the SQLite decimal extension, but it's not available
+          // in the Expo SQLite driver.
+          const existingBalance = BigInt(
+            (
+              await db
+                .selectFrom("balances")
+                .select("value")
+                .where((eb) =>
+                  eb.and([
+                    eb("accountId", "=", values.accountId),
+                    eb("network", "=", values.network),
+                    eb("assetId", "=", Uint8ArrayUtils.fromHex(delta[0])),
+                  ]),
+                )
+                .executeTakeFirst()
+            )?.value ?? "0",
+          );
+
+          await db
+            .insertInto("balances")
+            .values({
+              accountId: values.accountId,
+              network: values.network,
+              assetId: Uint8ArrayUtils.fromHex(delta[0]),
+              value: (existingBalance + delta[1]).toString(),
+            })
+            .onConflict((oc) =>
+              oc.columns(["accountId", "network", "assetId"]).doUpdateSet({
+                value: (existingBalance + delta[1]).toString(),
+              }),
+            )
+            .executeTakeFirstOrThrow();
+
+          await db
+            .insertInto("transactionBalanceDeltas")
+            .values({
+              accountId: values.accountId,
+              assetId: Uint8ArrayUtils.fromHex(delta[0]),
+              transactionHash: txn.hash,
+              value: delta[1].toString(),
+            })
+            .executeTakeFirstOrThrow();
+        }
       }
     });
   }

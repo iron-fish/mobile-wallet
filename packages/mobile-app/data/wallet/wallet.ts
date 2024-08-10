@@ -541,23 +541,17 @@ class Wallet {
               }
             }
 
-            for (const transaction of transactionMap.values()) {
-              cache.pushTransaction(
-                account.id,
-                block.hash,
-                block.sequence,
-                new Date(block.timestamp),
-                transaction.transaction,
-                transaction.ownerNotes,
-                transaction.spenderNotes,
-                transaction.foundNullifiers,
-              );
-            }
-
-            cache.setHead(account.id, {
-              hash: block.hash,
-              sequence: block.sequence,
-            });
+            cache.writeBlock(
+              account.id,
+              { hash: block.hash, sequence: block.sequence },
+              [...transactionMap.values()].map((txn) => ({
+                hash: txn.transaction.hash,
+                timestamp: new Date(block.timestamp),
+                ownerNotes: txn.ownerNotes,
+                spenderNotes: txn.spenderNotes,
+                foundNullifiers: txn.foundNullifiers,
+              })),
+            );
           }
         });
       },
