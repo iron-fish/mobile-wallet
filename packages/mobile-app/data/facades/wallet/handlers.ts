@@ -5,7 +5,6 @@ import {
   AccountSettings,
   Output,
   Transaction,
-  TransactionType,
   WalletHandlers,
   WalletStatus,
 } from "./types";
@@ -215,8 +214,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         burns: [],
         mints: [],
         spends: [],
-        // TODO: Implement transaction type
-        type: TransactionType.RECEIVE,
+        type: txn.type,
       };
     },
   ),
@@ -273,8 +271,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         burns: [],
         mints: [],
         spends: [],
-        // TODO: Implement transaction type when accountName is implemented
-        type: TransactionType.RECEIVE,
+        type: txn.type,
       }));
     },
   ),
