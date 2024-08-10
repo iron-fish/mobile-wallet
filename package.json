@@ -6,6 +6,7 @@
   "scripts": {
     "lint": "npm run lint --workspaces --if-present -- --max-warnings=0",
     "lint:fix": "npm run lint --workspaces --if-present -- --fix --max-warnings=0",
+    "typecheck": "npm run typecheck --workspaces --if-present",
     "postinstall": "git submodule update --init --recursive"
   },
   "devDependencies": {

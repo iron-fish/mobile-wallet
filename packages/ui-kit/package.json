@@ -16,7 +16,8 @@
   ],
   "scripts": {
     "build": "tamagui-build --skip-types",
-    "watch": "tamagui-build --skip-types --watch"
+    "watch": "tamagui-build --skip-types --watch",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@tamagui/config": "1.102.1",
