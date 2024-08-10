@@ -84,7 +84,7 @@ export type Burn = {
 };
 
 export type WalletStatus = {
-  status: "SYNCING" | "PAUSED";
+  status: "SCANNING" | "PAUSED" | "IDLE";
   latestKnownBlock: number;
 };
 

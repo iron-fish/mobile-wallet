@@ -122,6 +122,7 @@ class BlockchainClass {
     start: { hash: Uint8Array; sequence: number },
     end: { hash: Uint8Array; sequence: number },
     onBlock: (block: LightBlock) => unknown,
+    abort: AbortSignal,
   ) {
     await this.lockRequest(async () => {
       const manifest = await WalletServerChunksApi.getChunksManifest(network);
@@ -131,6 +132,8 @@ class BlockchainClass {
       let lastHash: null | Uint8Array = null;
 
       const onBlockInner = (block: LightBlock) => {
+        if (abort.aborted) return;
+
         // TODO: Errors thrown here don't propagate
         if (!lastHash && !Uint8ArrayUtils.areEqual(block.hash, start.hash)) {
           console.error(
@@ -170,8 +173,13 @@ class BlockchainClass {
           chunk.range.start <= end.sequence,
       );
       for (const chunk of finalizedChunks) {
+        if (abort.aborted) break;
+
         await WalletServerChunksApi.getChunkBlockAndByteRanges(network, chunk);
+
+        if (abort.aborted) break;
         readPromise = readPromise.then(async () => {
+          if (abort.aborted) return;
           await WalletServerChunksApi.readChunkBlocks(
             network,
             chunk,
@@ -187,6 +195,8 @@ class BlockchainClass {
       const downloadSize = 100;
 
       for (let i = serverStart; i <= lastSequence; i += downloadSize) {
+        if (abort.aborted) break;
+
         const endIndex = Math.min(i + downloadSize - 1, lastSequence);
         console.log("fetching blocks from wallet server", i, endIndex);
         const download = await WalletServerApi.getBlockRange(
@@ -194,7 +204,11 @@ class BlockchainClass {
           i,
           endIndex,
         );
+
+        if (abort.aborted) break;
+
         readPromise = readPromise.then(async () => {
+          if (abort.aborted) return;
           await this.readWalletServerBlocks(download, onBlockInner);
         });
       }
