@@ -214,7 +214,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         burns: [],
         mints: [],
         spends: [],
-        type: txn.transactionType,
+        type: txn.type,
       };
     },
   ),
@@ -271,7 +271,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         burns: [],
         mints: [],
         spends: [],
-        type: txn.transactionType,
+        type: txn.type,
       }));
     },
   ),
