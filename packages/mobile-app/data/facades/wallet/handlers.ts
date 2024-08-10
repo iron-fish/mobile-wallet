@@ -18,6 +18,7 @@ import {
   LanguageUtils,
   TransactionStatus,
 } from "@ironfish/sdk";
+import { WalletServerApi } from "../../api/walletServer";
 
 export const walletHandlers = f.facade<WalletHandlers>({
   createAccount: f.handler.mutation(
@@ -276,8 +277,8 @@ export const walletHandlers = f.facade<WalletHandlers>({
     },
   ),
   getWalletStatus: f.handler.query(async (): Promise<WalletStatus> => {
-    // TODO: Implement getWalletStatus
-    return { status: "PAUSED", latestKnownBlock: 0 };
+    const block = await WalletServerApi.getLatestBlock(Network.TESTNET);
+    return { status: wallet.scanState.type, latestKnownBlock: block.sequence };
   }),
   importAccount: f.handler.mutation(
     async ({
@@ -312,7 +313,9 @@ export const walletHandlers = f.facade<WalletHandlers>({
       };
     },
   ),
-  pauseSyncing: f.handler.mutation(async () => {}),
+  pauseSyncing: f.handler.mutation(async () => {
+    wallet.pauseScan();
+  }),
   removeAccount: f.handler.mutation(async ({ name }: { name: string }) => {
     await wallet.removeAccount(name);
   }),
@@ -321,7 +324,9 @@ export const walletHandlers = f.facade<WalletHandlers>({
       await wallet.renameAccount(name, newName);
     },
   ),
-  resumeSyncing: f.handler.mutation(async () => {}),
+  resumeSyncing: f.handler.mutation(async () => {
+    wallet.scan(Network.TESTNET);
+  }),
   sendTransaction: f.handler.mutation(
     async (args: {
       accountName: string;

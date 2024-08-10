@@ -16,6 +16,13 @@ import { WalletServerApi } from "../api/walletServer";
 
 type StartedState = { type: "STARTED"; db: WalletDb };
 type WalletState = { type: "STOPPED" } | { type: "LOADING" } | StartedState;
+type ScanState =
+  // Not scanning, and a scan can be started
+  | { type: "IDLE" }
+  // Not scanning, and a scan cannot be started
+  | { type: "PAUSED" }
+  // Scanning
+  | { type: "SCANNING"; abort: AbortController };
 
 function assertStarted(state: WalletState): asserts state is StartedState {
   if (state.type !== "STARTED") {
@@ -25,6 +32,7 @@ function assertStarted(state: WalletState): asserts state is StartedState {
 
 class Wallet {
   state: WalletState = { type: "STOPPED" };
+  scanState: ScanState = { type: "IDLE" };
 
   async start() {
     if (this.state.type !== "STOPPED") {
@@ -376,13 +384,17 @@ class Wallet {
   async scan(network: Network): Promise<boolean> {
     assertStarted(this.state);
 
+    if (this.scanState.type === "SCANNING") {
+      return false;
+    }
+    const abort = new AbortController();
+    this.scanState = { type: "SCANNING", abort };
+
     const cache = new WriteCache(this.state.db, network);
 
     let blockProcess = Promise.resolve();
     let performanceTimer = performance.now();
     let finished = false;
-
-    // todo: lock scanning
 
     const dbAccounts = await this.state.db.getAccounts();
     let accounts = dbAccounts.map((account) => {
@@ -410,8 +422,13 @@ class Wallet {
 
     const chainProcessor = new ChainProcessor({
       network,
+      abort: abort.signal,
       onAdd: (block) => {
         blockProcess = blockProcess.then(async () => {
+          if (abort.signal.aborted) {
+            return;
+          }
+
           assertStarted(this.state);
 
           const prevHash = block.previousBlockHash;
@@ -546,6 +563,10 @@ class Wallet {
       },
       onRemove: (block) => {
         blockProcess = blockProcess.then(() => {
+          if (abort.signal.aborted) {
+            return;
+          }
+
           console.log(`Removing block ${block.sequence}`);
 
           for (const account of accounts) {
@@ -585,10 +606,23 @@ class Wallet {
       finished = true;
       clearTimeout(saveLoopTimeout);
       await saveLoop();
+      if (this.scanState.abort.signal.aborted) {
+        this.scanState = this.scanState = this.scanState.abort.signal.aborted
+          ? { type: "PAUSED" }
+          : { type: "IDLE" };
+      }
       console.log(`finished in ${performance.now() - performanceTimer}ms`);
     }
 
     return hashChanged;
+  }
+
+  pauseScan() {
+    if (this.scanState.type === "SCANNING") {
+      this.scanState.abort.abort();
+    } else if (this.scanState.type === "IDLE") {
+      this.scanState = { type: "PAUSED" };
+    }
   }
 }
 

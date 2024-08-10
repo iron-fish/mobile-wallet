@@ -19,21 +19,24 @@ import * as Uint8ArrayUtils from "../utils/uint8Array";
  */
 export class ChainProcessor {
   readonly network: Network;
+  abort: AbortSignal;
   head: Readonly<{ hash: Uint8Array; sequence: number }> | null = null;
   onAdd: (block: LightBlock) => unknown;
   onRemove: (block: LightBlock) => unknown;
 
   constructor(options: {
     network: Network;
+    abort: AbortSignal;
     onAdd: (block: LightBlock) => unknown;
     onRemove: (block: LightBlock) => unknown;
   }) {
     this.network = options.network;
+    this.abort = options.abort;
     this.onAdd = options.onAdd;
     this.onRemove = options.onRemove;
   }
 
-  async update({ signal }: { signal?: AbortSignal } = {}): Promise<{
+  async update(): Promise<{
     hashChanged: boolean;
   }> {
     const oldHash = this.head;
@@ -65,6 +68,9 @@ export class ChainProcessor {
     }
 
     for (const block of result.blocksToRemove) {
+      if (this.abort.aborted)
+        return { hashChanged: !oldHash || this.head.hash !== oldHash.hash };
+
       this.onRemove(block);
       this.head = {
         hash: block.previousBlockHash,
@@ -72,10 +78,16 @@ export class ChainProcessor {
       };
     }
 
-    await Blockchain.iterateTo(this.network, this.head, chainHead, (block) => {
-      this.onAdd(block);
-      this.head = { hash: block.hash, sequence: block.sequence };
-    });
+    await Blockchain.iterateTo(
+      this.network,
+      this.head,
+      chainHead,
+      (block) => {
+        this.onAdd(block);
+        this.head = { hash: block.hash, sequence: block.sequence };
+      },
+      this.abort,
+    );
 
     return { hashChanged: !oldHash || this.head.hash !== oldHash.hash };
   }
