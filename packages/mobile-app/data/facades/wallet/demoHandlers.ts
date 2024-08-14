@@ -70,7 +70,7 @@ const ACCOUNTS: Account[] = [
 ];
 
 const WALLET_STATUS: WalletStatus = {
-  status: "SYNCING",
+  status: "SCANNING",
   latestKnownBlock: 523142,
 };
 
@@ -293,7 +293,7 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
     },
   ),
   resumeSyncing: f.handler.mutation(async () => {
-    WALLET_STATUS.status = "SYNCING";
+    WALLET_STATUS.status = "SCANNING";
   }),
   sendTransaction: f.handler.mutation(
     async (args: {

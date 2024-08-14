@@ -1,5 +1,4 @@
 import { Note } from "@ironfish/sdk";
-import { LightTransaction } from "../api/lightstreamer";
 import { Network } from "../constants";
 import { WalletDb } from "./db";
 import * as UInt8ArrayUtils from "../../utils/uint8Array";
@@ -13,14 +12,20 @@ export class WriteCache {
   readonly heads: Map<number, { hash: Uint8Array; sequence: number }> =
     new Map();
 
-  readonly transactions: {
+  private writeQueue: {
     accountId: number;
-    hash: Uint8Array;
     sequence: number;
-    timestamp: Date;
-    transaction: LightTransaction;
-    notes: { position: number; note: Note }[];
+    hash: Uint8Array;
+    transactions: {
+      hash: Uint8Array;
+      timestamp: Date;
+      ownerNotes: { position: number; note: Note; nullifier: string }[];
+      spenderNotes: { note: Note }[];
+      foundNullifiers: Uint8Array[];
+    }[];
   }[] = [];
+
+  readonly nullifierSet = new Set<string>();
 
   constructor(
     readonly db: WalletDb,
@@ -35,48 +40,79 @@ export class WriteCache {
     this.heads.set(id, head);
   }
 
-  pushTransaction(
+  writeBlock(
     accountId: number,
-    hash: Uint8Array,
-    sequence: number,
-    timestamp: Date,
-    transaction: LightTransaction,
-    notes: { position: number; note: Note }[],
+    block: { hash: Uint8Array; sequence: number },
+    transactions: {
+      hash: Uint8Array;
+      timestamp: Date;
+      ownerNotes: { position: number; note: Note; nullifier: string }[];
+      spenderNotes: { note: Note }[];
+      foundNullifiers: Uint8Array[];
+    }[],
   ) {
-    this.transactions.push({
+    this.heads.set(accountId, block);
+
+    const existing = this.writeQueue.findLast((w) => w.accountId === accountId);
+    if (
+      transactions.length === 0 &&
+      existing &&
+      existing.transactions.length === 0
+    ) {
+      existing.hash = block.hash;
+      existing.sequence = block.sequence;
+      return;
+    }
+
+    this.writeQueue.push({
       accountId,
-      hash,
-      sequence,
-      transaction,
-      timestamp,
-      notes,
+      sequence: block.sequence,
+      hash: block.hash,
+      transactions,
     });
+
+    for (const n of transactions.flatMap((t) => t.ownerNotes)) {
+      this.nullifierSet.add(n.nullifier);
+    }
   }
 
   /**
    * Writes the cache to the database.
    */
   async write() {
-    for (const [k, v] of this.heads) {
-      console.log(`updating account ID ${k} head to ${v.sequence}`);
-      await this.db.updateAccountHead(k, this.network, v.sequence, v.hash);
+    if (!this.writeQueue.length) return;
+
+    // Reset the write queue so new cached writes aren't added while
+    // we're writing to the database.
+    // TODO: Handle errors if the write fails. The account head should probably be frozen
+    // until the write is successful.
+    const writeQueue = this.writeQueue;
+    this.writeQueue = [];
+
+    let w;
+    while ((w = writeQueue.shift())) {
+      await this.db.saveBlock({
+        accountId: w.accountId,
+        network: this.network,
+        blockHash: w.hash,
+        blockSequence: w.sequence,
+        transactions: w.transactions,
+      });
+
+      for (const n of w.transactions.flatMap((t) => t.ownerNotes)) {
+        this.nullifierSet.delete(n.nullifier);
+      }
+    }
+  }
+
+  async hasNullifier(
+    nullifier: Uint8Array,
+    network: Network,
+  ): Promise<boolean> {
+    if (this.nullifierSet.has(UInt8ArrayUtils.toHex(nullifier))) {
+      return true;
     }
 
-    let txn = this.transactions.shift();
-    while (txn) {
-      console.log(
-        `saving transaction ${UInt8ArrayUtils.toHex(txn.transaction.hash)} for account ID ${txn.accountId}`,
-      );
-      await this.db.saveTransaction({
-        hash: txn.transaction.hash,
-        accountId: txn.accountId,
-        blockHash: txn.hash,
-        blockSequence: txn.sequence,
-        timestamp: txn.timestamp,
-        network: this.network,
-        notes: txn.notes,
-      });
-      txn = this.transactions.shift();
-    }
+    return await this.db.hasNullifier(nullifier, network);
   }
 }

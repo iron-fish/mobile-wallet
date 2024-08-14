@@ -1,11 +1,7 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": true,
-    "baseUrl": "src",
-    "paths": {
-      "@ironfish/ui": ["src/index.ts"]
-    }
+    "noEmit": true
   },
-  "include": ["src", "docs"]
+  "include": ["src"]
 }

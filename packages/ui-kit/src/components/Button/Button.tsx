@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacityProps,
 } from "react-native";
+import { MergeProps } from "@/utils/types";
 
 const styles = StyleSheet.create({
   button: {
@@ -14,7 +15,7 @@ const styles = StyleSheet.create({
     height: 55,
     paddingVertical: 14,
     paddingHorizontal: 32,
-    backgroundColor: "#000000",
+    backgroundColor: "#000",
   },
   text: {
     color: "#fff",
@@ -22,9 +23,12 @@ const styles = StyleSheet.create({
   },
 });
 
-export type Props = TouchableOpacityProps & {
-  label: string;
-};
+export type Props = MergeProps<
+  TouchableOpacityProps,
+  {
+    label: string;
+  }
+>;
 
 export function Button({ label, ...props }: Props) {
   return (

@@ -15,6 +15,13 @@ export default function Balances() {
     },
   );
 
+  const getAccountResult = facade.getAccount.useQuery(
+    { name: account },
+    {
+      refetchInterval: 1000,
+    },
+  );
+
   const getAccountsResult = facade.getAccounts.useQuery();
 
   useEffect(() => {
@@ -38,6 +45,13 @@ export default function Balances() {
           </View>
         ))}
       </ScrollView>
+      <Text style={{ fontWeight: 700, fontSize: 24 }}>Balance</Text>
+      {getAccountResult.data && (
+        <>
+          <Text>{`Unconfirmed: IRON ${getAccountResult.data.balances.iron.unconfirmed}`}</Text>
+          <Text>{`Confirmed: IRON ${getAccountResult.data.balances.iron.confirmed}`}</Text>
+        </>
+      )}
       <StatusBar style="auto" />
     </View>
   );

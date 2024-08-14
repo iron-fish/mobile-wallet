@@ -1,10 +1,10 @@
 import { f } from "data-facade";
 import {
   Account,
+  AccountBalance,
   AccountSettings,
   Output,
   Transaction,
-  TransactionType,
   WalletHandlers,
   WalletStatus,
 } from "./types";
@@ -18,6 +18,7 @@ import {
   LanguageUtils,
   TransactionStatus,
 } from "@ironfish/sdk";
+import { WalletServerApi } from "../../api/walletServer";
 
 export const walletHandlers = f.facade<WalletHandlers>({
   createAccount: f.handler.mutation(
@@ -77,21 +78,43 @@ export const walletHandlers = f.facade<WalletHandlers>({
       if (!account) {
         throw new Error(`Account ${name} does not exist`);
       }
+
+      const balances = await wallet.getBalances(account.id, Network.TESTNET);
+
+      const ironBalance: AccountBalance = {
+        assetId:
+          "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+        // TODO: Implement available balance in Wallet
+        available: "0",
+        // TODO: Implement pending balance in Wallet
+        pending: "0",
+        unconfirmed: "0",
+        confirmed: "0",
+      };
+      const customBalances: AccountBalance[] = [];
+
+      for (const balance of balances) {
+        if (Uint8ArrayUtils.toHex(balance.assetId) === ironBalance.assetId) {
+          ironBalance.unconfirmed = balance.unconfirmed;
+          ironBalance.confirmed = balance.confirmed;
+        } else {
+          customBalances.push({
+            assetId: Uint8ArrayUtils.toHex(balance.assetId),
+            available: "0",
+            pending: "0",
+            confirmed: balance.confirmed,
+            unconfirmed: balance.unconfirmed,
+          });
+        }
+      }
+
       const result: Account = {
         name: account.name,
         viewOnly: account.viewOnly,
         publicAddress: account.publicAddress,
-        // TODO: Implement balances in Wallet
         balances: {
-          iron: {
-            assetId:
-              "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
-            available: "0",
-            confirmed: "0",
-            pending: "0",
-            unconfirmed: "0",
-          },
-          custom: [],
+          iron: ironBalance,
+          custom: customBalances,
         },
         // TODO: Implement account syncing in Wallet
         head: null,
@@ -192,8 +215,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         burns: [],
         mints: [],
         spends: [],
-        // TODO: Implement transaction type
-        type: TransactionType.RECEIVE,
+        type: txn.type,
       };
     },
   ),
@@ -250,14 +272,13 @@ export const walletHandlers = f.facade<WalletHandlers>({
         burns: [],
         mints: [],
         spends: [],
-        // TODO: Implement transaction type when accountName is implemented
-        type: TransactionType.RECEIVE,
+        type: txn.type,
       }));
     },
   ),
   getWalletStatus: f.handler.query(async (): Promise<WalletStatus> => {
-    // TODO: Implement getWalletStatus
-    return { status: "PAUSED", latestKnownBlock: 0 };
+    const block = await WalletServerApi.getLatestBlock(Network.TESTNET);
+    return { status: wallet.scanState.type, latestKnownBlock: block.sequence };
   }),
   importAccount: f.handler.mutation(
     async ({
@@ -292,7 +313,9 @@ export const walletHandlers = f.facade<WalletHandlers>({
       };
     },
   ),
-  pauseSyncing: f.handler.mutation(async () => {}),
+  pauseSyncing: f.handler.mutation(async () => {
+    wallet.pauseScan();
+  }),
   removeAccount: f.handler.mutation(async ({ name }: { name: string }) => {
     await wallet.removeAccount(name);
   }),
@@ -301,7 +324,9 @@ export const walletHandlers = f.facade<WalletHandlers>({
       await wallet.renameAccount(name, newName);
     },
   ),
-  resumeSyncing: f.handler.mutation(async () => {}),
+  resumeSyncing: f.handler.mutation(async () => {
+    wallet.scan(Network.TESTNET);
+  }),
   sendTransaction: f.handler.mutation(
     async (args: {
       accountName: string;

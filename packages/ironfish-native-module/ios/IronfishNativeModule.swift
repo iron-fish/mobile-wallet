@@ -91,14 +91,28 @@ public class IronfishNativeModule: Module {
       return readPartialFile(path: path, offset: offset, length: length)
     }
 
-    AsyncFunction("decryptNotesForOwner") { (noteEncrypted: [String], incomingHexKey: String, promise: Promise) in
+    AsyncFunction("decryptNotesForOwner") { (noteEncrypteds: [String], incomingHexKey: String, promise: Promise) in
       Task {
-        let decryptedNotes = try await decryptNotesForOwner(noteEncrypted: noteEncrypted, incomingHexKey: incomingHexKey)
+        let decryptedNotes = try await decryptNotesForOwner(noteEncrypteds: noteEncrypteds, incomingHexKey: incomingHexKey)
         let expoOutputs = decryptedNotes.map { note in
           ExpoOutput(index: note.index, note: Field(wrappedValue: note.note))
         }
         promise.resolve(expoOutputs)
       }
+    }
+
+    AsyncFunction("decryptNotesForSpender") { (noteEncrypteds: [String], outgoingHexKey: String, promise: Promise) in
+      Task {
+        let decryptedNotes = try await decryptNotesForSpender(noteEncrypteds: noteEncrypteds, outgoingHexKey: outgoingHexKey)
+        let expoOutputs = decryptedNotes.map { note in
+          ExpoOutput(index: note.index, note: Field(wrappedValue: note.note))
+        }
+        promise.resolve(expoOutputs)
+      }
+    }
+
+    AsyncFunction("nullifier") { (note: String, position: String, viewKey: String) throws -> String in
+      return try nullifier(note: note, position: position, viewKey: viewKey)
     }
   }
 }
