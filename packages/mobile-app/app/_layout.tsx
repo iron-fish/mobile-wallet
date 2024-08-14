@@ -8,7 +8,6 @@ import { Text } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { useColorScheme } from "react-native";
-import { UIKitProvider } from "@ironfish/ui";
 import { FacadeProvider, useFacade } from "../data/facades";
 import { useEffect, useState } from "react";
 
@@ -46,22 +45,20 @@ export default function Layout() {
   const scheme = useColorScheme();
   return (
     <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
-      <UIKitProvider colorScheme={scheme || "light"}>
-        <QueryClientProvider client={queryClient}>
-          <FacadeProvider>
-            <DatabaseLoader loading={<Text>Loading databases...</Text>}>
-              <Stack>
-                <Stack.Screen
-                  name="(tabs)"
-                  options={{
-                    headerShown: false,
-                  }}
-                />
-              </Stack>
-            </DatabaseLoader>
-          </FacadeProvider>
-        </QueryClientProvider>
-      </UIKitProvider>
+      <QueryClientProvider client={queryClient}>
+        <FacadeProvider>
+          <DatabaseLoader loading={<Text>Loading databases...</Text>}>
+            <Stack>
+              <Stack.Screen
+                name="(tabs)"
+                options={{
+                  headerShown: false,
+                }}
+              />
+            </Stack>
+          </DatabaseLoader>
+        </FacadeProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

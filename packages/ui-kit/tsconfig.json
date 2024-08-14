@@ -1,18 +1,11 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "module": "esnext",
-    "lib": ["dom", "esnext"],
-    "importHelpers": true,
-    "declaration": true,
-    "sourceMap": true,
-    "strict": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
-    "jsx": "react",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "baseUrl": "src",
+    "paths": {
+      "@ironfish/ui": ["src/index.ts"]
+    }
   },
-  "include": ["src/**/*"]
+  "include": ["src", "docs"]
 }
