@@ -1,10 +1,16 @@
 import { Button } from "@ironfish/ui";
-import { ScrollView } from "react-native";
+import { View } from "react-native";
 
 export default function UiKit() {
   return (
-    <ScrollView>
-      <Button label="Hello World" />
-    </ScrollView>
+    <View
+      style={{
+        gap: 10,
+        padding: 10,
+      }}
+    >
+      <Button label="Medium button" />
+      <Button label="Small button" size="sm" />
+    </View>
   );
 }
