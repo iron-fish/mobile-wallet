@@ -767,6 +767,75 @@ export class WalletDb {
     });
   }
 
+  async removeBlock(values: {
+    accountId: number;
+    network: Network;
+    blockHash: Uint8Array;
+    blockSequence: number;
+    prevBlockHash: Uint8Array;
+  }) {
+    return await this.db.transaction().execute(async (db) => {
+      await db
+        .insertInto("accountNetworkHeads")
+        .values({
+          accountId: values.accountId,
+          network: values.network,
+          hash: values.prevBlockHash,
+          sequence: values.blockSequence - 1,
+        })
+        .onConflict((oc) =>
+          oc.columns(["accountId", "network"]).doUpdateSet({
+            hash: values.prevBlockHash,
+            sequence: values.blockSequence - 1,
+          }),
+        )
+        .executeTakeFirstOrThrow();
+
+      // Update balances
+      const balanceDeltas = await db
+        .selectFrom("transactionBalanceDeltas")
+        .selectAll()
+        .innerJoin(
+          "transactions",
+          "transactions.hash",
+          "transactionBalanceDeltas.transactionHash",
+        )
+        .where("transactions.blockHash", "==", values.blockHash)
+        .execute();
+
+      await db
+        .deleteFrom("notes")
+        .innerJoin("transactions", "transactions.hash", "notes.transactionHash")
+        .where("transactions.blockHash", "==", values.blockHash)
+        .executeTakeFirstOrThrow();
+
+      await db
+        .deleteFrom("nullifiers")
+        .innerJoin(
+          "transactions",
+          "transactions.hash",
+          "nullifiers.transactionHash",
+        )
+        .where("transactions.blockHash", "==", values.blockHash)
+        .executeTakeFirstOrThrow();
+
+      await db
+        .deleteFrom("accountTransactions")
+        .innerJoin(
+          "transactions",
+          "transactions.hash",
+          "accountTransactions.transactionHash",
+        )
+        .where("transactions.blockHash", "==", values.blockHash)
+        .executeTakeFirstOrThrow();
+
+      await db
+        .deleteFrom("transactions")
+        .where("blockHash", "==", values.blockHash)
+        .executeTakeFirstOrThrow();
+    });
+  }
+
   async getTransaction(accountId: number, hash: Uint8Array) {
     return await this.db
       .selectFrom("accountTransactions")

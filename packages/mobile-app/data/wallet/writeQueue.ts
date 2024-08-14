@@ -3,27 +3,43 @@ import { Network } from "../constants";
 import { WalletDb } from "./db";
 import * as UInt8ArrayUtils from "../../utils/uint8Array";
 
+enum DBWriteType {
+  ADD,
+  REMOVE,
+}
+
+type DBWrite =
+  | {
+      type: DBWriteType.ADD;
+      accountId: number;
+      sequence: number;
+      hash: Uint8Array;
+      transactions: {
+        hash: Uint8Array;
+        timestamp: Date;
+        ownerNotes: { position: number; note: Note; nullifier: string }[];
+        spenderNotes: { note: Note }[];
+        foundNullifiers: Uint8Array[];
+      }[];
+    }
+  | {
+      type: DBWriteType.REMOVE;
+      accountId: number;
+      sequence: number;
+      hash: Uint8Array;
+      prevHash: Uint8Array;
+    };
+
 /**
  * Writing to the database for each connected block for each account has a performance impact on scanning.
  * Typically we'll just be incrementing the account head, so we can cache the updated heads and persist them
  * at intervals.
  */
-export class WriteCache {
+export class WriteQueue {
   readonly heads: Map<number, { hash: Uint8Array; sequence: number }> =
     new Map();
 
-  private writeQueue: {
-    accountId: number;
-    sequence: number;
-    hash: Uint8Array;
-    transactions: {
-      hash: Uint8Array;
-      timestamp: Date;
-      ownerNotes: { position: number; note: Note; nullifier: string }[];
-      spenderNotes: { note: Note }[];
-      foundNullifiers: Uint8Array[];
-    }[];
-  }[] = [];
+  private writeQueue: DBWrite[] = [];
 
   readonly nullifierSet = new Set<string>();
 
@@ -57,6 +73,7 @@ export class WriteCache {
     if (
       transactions.length === 0 &&
       existing &&
+      existing.type === DBWriteType.ADD &&
       existing.transactions.length === 0
     ) {
       existing.hash = block.hash;
@@ -65,6 +82,7 @@ export class WriteCache {
     }
 
     this.writeQueue.push({
+      type: DBWriteType.ADD,
       accountId,
       sequence: block.sequence,
       hash: block.hash,
@@ -76,8 +94,26 @@ export class WriteCache {
     }
   }
 
+  removeBlock(
+    accountId: number,
+    block: { hash: Uint8Array; sequence: number; prevHash: Uint8Array },
+  ) {
+    this.heads.set(accountId, {
+      hash: block.prevHash,
+      sequence: block.sequence - 1,
+    });
+
+    this.writeQueue.push({
+      type: DBWriteType.REMOVE,
+      accountId,
+      sequence: block.sequence,
+      hash: block.hash,
+      prevHash: block.prevHash,
+    });
+  }
+
   /**
-   * Writes the cache to the database.
+   * Writes the queue to the database.
    */
   async write() {
     if (!this.writeQueue.length) return;
@@ -91,16 +127,26 @@ export class WriteCache {
 
     let w;
     while ((w = writeQueue.shift())) {
-      await this.db.saveBlock({
-        accountId: w.accountId,
-        network: this.network,
-        blockHash: w.hash,
-        blockSequence: w.sequence,
-        transactions: w.transactions,
-      });
+      if (w.type === DBWriteType.ADD) {
+        await this.db.saveBlock({
+          accountId: w.accountId,
+          network: this.network,
+          blockHash: w.hash,
+          blockSequence: w.sequence,
+          transactions: w.transactions,
+        });
 
-      for (const n of w.transactions.flatMap((t) => t.ownerNotes)) {
-        this.nullifierSet.delete(n.nullifier);
+        for (const n of w.transactions.flatMap((t) => t.ownerNotes)) {
+          this.nullifierSet.delete(n.nullifier);
+        }
+      } else if (w.type === DBWriteType.REMOVE) {
+        await this.db.removeBlock({
+          accountId: w.accountId,
+          network: this.network,
+          blockHash: w.hash,
+          blockSequence: w.sequence,
+          prevBlockHash: w.prevHash,
+        });
       }
     }
   }

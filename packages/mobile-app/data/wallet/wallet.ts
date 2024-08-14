@@ -11,7 +11,7 @@ import { ChainProcessor } from "../chainProcessor";
 import { Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
 import { LightBlock, LightTransaction } from "../api/lightstreamer";
-import { WriteCache } from "./writeCache";
+import { WriteQueue } from "./writeQueue";
 import { WalletServerApi } from "../api/walletServer";
 
 type StartedState = { type: "STARTED"; db: WalletDb };
@@ -390,7 +390,7 @@ class Wallet {
     const abort = new AbortController();
     this.scanState = { type: "SCANNING", abort };
 
-    const cache = new WriteCache(this.state.db, network);
+    const cache = new WriteQueue(this.state.db, network);
 
     let blockProcess = Promise.resolve();
     let performanceTimer = performance.now();
@@ -567,12 +567,11 @@ class Wallet {
             const h = cache.getHead(account.id)?.hash ?? null;
 
             if (h && Uint8ArrayUtils.areEqual(h, block.hash)) {
-              // TODO: Implement disconnect block
-              cache.setHead(account.id, {
+              cache.removeBlock(account.id, {
                 hash: block.previousBlockHash,
                 sequence: block.sequence - 1,
+                prevHash: block.previousBlockHash,
               });
-              // TODO: Remove transactions
             }
           }
         });
