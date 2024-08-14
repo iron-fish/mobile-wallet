@@ -1,5 +1,4 @@
 import type { StorybookConfig } from "@storybook/react-webpack5";
-import path from "path";
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
@@ -20,7 +19,6 @@ const config: StorybookConfig = {
       config.resolve.alias = {
         ...config.resolve?.alias,
         "react-native": "react-native-web",
-        "@ironfish/ui": path.resolve(__dirname, "../src/index.ts"),
       };
     }
     return config;
