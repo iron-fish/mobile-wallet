@@ -1,6 +1,5 @@
-import { View, Text, ScrollView, TextInput } from "react-native";
+import { View, Text, ScrollView, TextInput, Button } from "react-native";
 import { useFacade } from "../../data/facades";
-import { Button } from "@ironfish/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import { AccountFormat } from "@ironfish/sdk";
@@ -49,9 +48,8 @@ export default function Transact() {
               await removeAccount.mutateAsync({ name: account.name });
               console.log("Removed Account", account.name);
             }}
-          >
-            Remove Account
-          </Button>
+            title="Remove Account"
+          />
           <Button
             onPress={async () => {
               const otherResult = await exportAccount.mutateAsync({
@@ -60,9 +58,8 @@ export default function Transact() {
               });
               console.log("Exported Account:", otherResult);
             }}
-          >
-            Export Account
-          </Button>
+            title="Export Account"
+          />
         </View>
       ))}
       <Button
@@ -70,9 +67,8 @@ export default function Transact() {
           const otherResult = await createAccount.mutateAsync({ name: "dave" });
           console.log("Created Account:", otherResult);
         }}
-      >
-        Create Account
-      </Button>
+        title="Create Account"
+      />
       <TextInput
         value={importAccountText}
         onChangeText={setImportAccountText}
@@ -86,9 +82,8 @@ export default function Transact() {
           });
           console.log("Imported Account:", otherResult);
         }}
-      >
-        Import Account
-      </Button>
+        title="Import Account"
+      />
     </ScrollView>
   );
 }

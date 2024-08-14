@@ -16,6 +16,12 @@
     },
     "ios": {
       "dependsOn": ["pod-sim"]
+    },
+    "lint": {
+      "dependsOn": ["^build"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
     }
   }
 }

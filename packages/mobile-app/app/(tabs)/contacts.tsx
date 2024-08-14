@@ -1,5 +1,4 @@
-import { Button } from "@ironfish/ui";
-import { View, Text } from "react-native";
+import { View, Text, Button } from "react-native";
 
 import { useFacade } from "../../data/facades";
 
@@ -26,16 +25,14 @@ export default function Contacts() {
         onPress={async () => {
           await resumeSyncing.mutateAsync(undefined);
         }}
-      >
-        Resume Syncing
-      </Button>
+        title="Resume Syncing"
+      />
       <Button
         onPress={async () => {
           await pauseSyncing.mutateAsync(undefined);
         }}
-      >
-        Pause Syncing
-      </Button>
+        title="Pause Syncing"
+      />
     </View>
   );
 }

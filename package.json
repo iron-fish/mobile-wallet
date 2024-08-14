@@ -4,9 +4,9 @@
   "license": "MPL-2.0",
   "private": true,
   "scripts": {
-    "lint": "npm run lint --workspaces --if-present -- --max-warnings=0",
-    "lint:fix": "npm run lint --workspaces --if-present -- --fix --max-warnings=0",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "nx run-many -t lint --max-warnings=0",
+    "lint:fix": "nx run-many -t lint --fix --max-warnings=0",
+    "typecheck": "nx run-many -t typecheck",
     "postinstall": "git submodule update --init --recursive"
   },
   "devDependencies": {
