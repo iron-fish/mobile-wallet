@@ -42,7 +42,7 @@ export type Props = MergeProps<
   TouchableOpacityProps,
   {
     label: string;
-    size: "md" | "sm";
+    size?: "md" | "sm";
   }
 >;
 
