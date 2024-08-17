@@ -30,7 +30,7 @@ function assertStarted(state: WalletState): asserts state is StartedState {
   }
 }
 
-class Wallet {
+export class Wallet {
   state: WalletState = { type: "STOPPED" };
   scanState: ScanState = { type: "IDLE" };
 

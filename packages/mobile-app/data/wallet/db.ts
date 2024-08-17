@@ -803,30 +803,133 @@ export class WalletDb {
         .where("transactions.blockHash", "==", values.blockHash)
         .execute();
 
+      if (balanceDeltas.length > 0) {
+        console.log("balances");
+
+        const balances = await db
+          .selectFrom("balances")
+          .selectAll()
+          .where((eb) =>
+            eb.and([
+              eb("accountId", "=", values.accountId),
+              eb("network", "=", values.network),
+            ]),
+          )
+          .execute();
+
+        const balanceMap = new Map(
+          balances.map((b) => [
+            Uint8ArrayUtils.toHex(b.assetId),
+            BigInt(b.value),
+          ]),
+        );
+
+        for (const delta of balanceDeltas) {
+          const assetId = Uint8ArrayUtils.toHex(delta.assetId);
+          const existingBalance = balanceMap.get(assetId);
+          if (existingBalance === undefined) {
+            console.error(`Existing balance not found for asset ${assetId}`);
+          }
+          balanceMap.set(
+            assetId,
+            (existingBalance ?? 0n) - BigInt(delta.value),
+          );
+        }
+
+        for (const [assetId, value] of balanceMap) {
+          await db
+            .insertInto("balances")
+            .values({
+              accountId: values.accountId,
+              network: values.network,
+              assetId: Uint8ArrayUtils.fromHex(assetId),
+              value: value.toString(),
+            })
+            .onConflict((oc) =>
+              oc.columns(["accountId", "network", "assetId"]).doUpdateSet({
+                value: value.toString(),
+              }),
+            )
+            .executeTakeFirstOrThrow();
+        }
+
+        await db
+          .deleteFrom("transactionBalanceDeltas")
+          .where((eb) =>
+            eb(
+              "transactionBalanceDeltas.transactionHash",
+              "in",
+              eb
+                .selectFrom("transactions")
+                .where("blockHash", "==", values.blockHash)
+                .select("transactions.hash"),
+            ),
+          )
+          .execute();
+      }
+
+      // If nullifiers were created in this transaction, remove them
       await db
-        .deleteFrom("notes")
-        .innerJoin("transactions", "transactions.hash", "notes.transactionHash")
-        .where("transactions.blockHash", "==", values.blockHash)
+        .deleteFrom("nullifiers")
+        .where((eb) =>
+          eb(
+            "nullifiers.noteId",
+            "in",
+            eb
+              .selectFrom("notes")
+              .innerJoin(
+                "transactions",
+                "transactions.hash",
+                "notes.transactionHash",
+              )
+              .where("transactions.blockHash", "==", values.blockHash)
+              .select("notes.id"),
+          ),
+        )
+        .executeTakeFirstOrThrow();
+
+      // If nullifiers were found in this transaction, mark them as unfound
+      await db
+        .updateTable("nullifiers")
+        .where((eb) =>
+          eb(
+            "nullifiers.transactionHash",
+            "in",
+            eb
+              .selectFrom("transactions")
+              .where("blockHash", "==", values.blockHash)
+              .select("transactions.hash"),
+          ),
+        )
+        .set("transactionHash", null)
         .executeTakeFirstOrThrow();
 
       await db
-        .deleteFrom("nullifiers")
-        .innerJoin(
-          "transactions",
-          "transactions.hash",
-          "nullifiers.transactionHash",
+        .deleteFrom("notes")
+        .where((eb) =>
+          eb(
+            "notes.transactionHash",
+            "in",
+            eb
+              .selectFrom("transactions")
+              .where("blockHash", "==", values.blockHash)
+              .select("transactions.hash"),
+          ),
         )
-        .where("transactions.blockHash", "==", values.blockHash)
         .executeTakeFirstOrThrow();
 
       await db
         .deleteFrom("accountTransactions")
-        .innerJoin(
-          "transactions",
-          "transactions.hash",
-          "accountTransactions.transactionHash",
+        .where((eb) =>
+          eb(
+            "accountTransactions.transactionHash",
+            "in",
+            eb
+              .selectFrom("transactions")
+              .select("transactions.hash")
+              .where("blockHash", "==", values.blockHash),
+          ),
         )
-        .where("transactions.blockHash", "==", values.blockHash)
         .executeTakeFirstOrThrow();
 
       await db
