@@ -1,5 +1,5 @@
 import React from "react";
-import { Platform, Text } from "react-native";
+import { Platform } from "react-native";
 import * as ArrowLeftBottom from "./svg/arrow-left-bottom.svg";
 
 const ICONS_MAP = {
@@ -13,7 +13,7 @@ type Props = {
   color?: string;
 };
 
-export function Icon({ name, color = "pink" }: Props) {
+export function Icon({ name, color }: Props) {
   const IconComponent = Platform.select({
     native: () => ICONS_MAP[name].default,
     default: () => ICONS_MAP[name].ReactComponent,
