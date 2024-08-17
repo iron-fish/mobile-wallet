@@ -103,6 +103,20 @@ export class WriteQueue {
       sequence: block.sequence - 1,
     });
 
+    // There are several unresolved cases with removing blocks, but removing more than a couple
+    // blocks should be very uncommon, so they're listed here:
+    //
+    // * We could remove multiple blocks at a time. Again, the chain shouldn't generally be
+    //   removing more than a couple blocks unless something is wrong.
+    //
+    // * To be totally correct, the nullifier set should only include nullifiers between the DB
+    //   head and the writeQueue head, so we should remove nullifiers when we queue up a REMOVE.
+    //   However, we're only using the nullifierSet for checking existence, and assuming that the wallet
+    //   server validated the blocks correctly, these nullifiers should never be spent until they're readded
+    //   (probably by the same transaction on a different block). However, the nullifiers may not ever be
+    //   readded, which would cause them to get stuck in our nullifier set forever.
+    //
+    // * Related to the above, we could merge ADDs and REMOVEs if they apply to the same block.
     this.writeQueue.push({
       type: DBWriteType.REMOVE,
       accountId,
