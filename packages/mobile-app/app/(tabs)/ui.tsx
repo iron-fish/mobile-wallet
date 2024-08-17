@@ -9,8 +9,26 @@ export default function UiKit() {
         padding: 10,
       }}
     >
-      <Button label="Medium button" />
-      <Button label="Small button" size="sm" />
+      {/* Solid */}
+      <Button label="Click me" />
+
+      {/* Solid with icon */}
+      <Button iconLeft="arrow-left-bottom" label="Click me" />
+
+      {/* Solid small */}
+      <Button label="Click me" size="sm" />
+
+      {/* Solid disabled */}
+      <Button iconLeft="arrow-left-bottom" label="Click me" disabled />
+
+      {/* Outline */}
+      <Button label="Click me" variant="outline" />
+
+      {/* Outline with icon */}
+      <Button iconLeft="arrow-left-bottom" label="Click me" variant="outline" />
+
+      {/* Outline small */}
+      <Button label="Click me" size="sm" variant="outline" />
     </View>
   );
 }
