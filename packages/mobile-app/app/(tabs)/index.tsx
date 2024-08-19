@@ -2,6 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFacade } from "../../data/facades";
 import { useEffect, useState } from "react";
+import { LinkButton } from "../../components/LinkButton";
 
 export default function Balances() {
   const facade = useFacade();
@@ -24,6 +25,10 @@ export default function Balances() {
 
   const getAccountsResult = facade.getAccounts.useQuery();
 
+  const getWalletStatusResult = facade.getWalletStatus.useQuery(undefined, {
+    refetchInterval: 1000,
+  });
+
   useEffect(() => {
     if (getAccountsResult.data?.[0]) {
       setAccount(getAccountsResult.data[0].name);
@@ -32,6 +37,37 @@ export default function Balances() {
 
   return (
     <View style={styles.container}>
+      <View style={{ display: "flex", flexDirection: "row" }}>
+        <LinkButton href="/menu/" title="Menu" />
+        <LinkButton
+          href="/accountSelect/"
+          title={getAccountResult.data?.name ?? "Account 1"}
+        />
+        <LinkButton
+          href={`/accountSettings/?accountName=${getAccountResult.data?.name}`}
+          title="Account Settings"
+        />
+      </View>
+      <Text>You're currently on Testnet</Text>
+      {getAccountResult.data && (
+        <>
+          <Text>{`${getAccountResult.data.balances.iron.confirmed}`}</Text>
+          <Text>{`$IRON`}</Text>
+        </>
+      )}
+      {getWalletStatusResult.data &&
+        getWalletStatusResult.data.status === "SCANNING" && (
+          // TODO: Only show this if the wallet is behind a certain number of blocks to avoid flickering
+          <>
+            <Text>{`Blocks Scanned: ${getAccountResult.data?.head?.sequence ?? "--"} / ${getWalletStatusResult.data.latestKnownBlock}`}</Text>
+            <Text>Your balances may currently be inaccurate.</Text>
+            <Text>Learn More</Text>
+          </>
+        )}
+      <View style={{ display: "flex", flexDirection: "row" }}>
+        <LinkButton href="/send/" title="Send" />
+        <LinkButton href="/address/" title="Receive" />
+      </View>
       <Text style={{ fontWeight: 700, fontSize: 24 }}>Transactions</Text>
       <ScrollView>
         {getTransactionsResult.data?.map((transaction) => (
@@ -45,13 +81,6 @@ export default function Balances() {
           </View>
         ))}
       </ScrollView>
-      <Text style={{ fontWeight: 700, fontSize: 24 }}>Balance</Text>
-      {getAccountResult.data && (
-        <>
-          <Text>{`Unconfirmed: IRON ${getAccountResult.data.balances.iron.unconfirmed}`}</Text>
-          <Text>{`Confirmed: IRON ${getAccountResult.data.balances.iron.confirmed}`}</Text>
-        </>
-      )}
       <StatusBar style="auto" />
     </View>
   );

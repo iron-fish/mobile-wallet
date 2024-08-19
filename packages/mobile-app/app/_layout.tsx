@@ -4,7 +4,12 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
-import { Text } from "react-native";
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+} from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { useColorScheme } from "react-native";
@@ -13,13 +18,7 @@ import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
-function DatabaseLoader({
-  loading,
-  children,
-}: {
-  loading: React.ReactNode;
-  children?: React.ReactNode;
-}) {
+function DatabaseLoader({ children }: { children?: React.ReactNode }) {
   const facade = useFacade();
   const [status, setStatus] = useState<string>("loading");
   const { mutateAsync: loadDatabases } = facade.loadDatabases.useMutation();
@@ -33,7 +32,12 @@ function DatabaseLoader({
   }, [loadDatabases]);
 
   if (status === "loading") {
-    return loading;
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" />
+        <Text>Loading databases...</Text>
+      </SafeAreaView>
+    );
   } else if (status === "loaded") {
     return children;
   } else {
@@ -47,7 +51,7 @@ export default function Layout() {
     <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
       <QueryClientProvider client={queryClient}>
         <FacadeProvider>
-          <DatabaseLoader loading={<Text>Loading databases...</Text>}>
+          <DatabaseLoader>
             <Stack>
               <Stack.Screen
                 name="(tabs)"
@@ -62,3 +66,13 @@ export default function Layout() {
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    gap: 16,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
