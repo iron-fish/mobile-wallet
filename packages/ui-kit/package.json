@@ -4,10 +4,12 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "dev": "tsc -p tsconfig.build.json --watch",
+    "clean": "rimraf dist icons",
+    "build": "npm run clean && tsc -p tsconfig.build.json && npm run copy-icons",
+    "dev": "npm run clean && npm run copy-icons && tsc -p tsconfig.build.json --watch",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
+    "copy-icons": "cpx 'src/components/Icon/**/*.svg' dist/components/Icon",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -20,23 +22,26 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^1.6.1",
+    "@newhighsco/storybook-addon-svgr": "^2.0.24",
     "@storybook/addon-essentials": "^8.2.9",
     "@storybook/addon-interactions": "^8.2.9",
     "@storybook/addon-links": "^8.2.9",
     "@storybook/addon-onboarding": "^8.2.9",
     "@storybook/addon-webpack5-compiler-swc": "^1.0.5",
     "@storybook/blocks": "^8.2.9",
-    "@storybook/react-webpack5": "^8.2.9",
     "@storybook/react": "^8.2.9",
+    "@storybook/react-webpack5": "^8.2.9",
     "@storybook/test": "^8.2.9",
     "@types/react": "~18.2.79",
     "babel-loader": "^9.1.3",
     "babel-plugin-react-native-web": "^0.19.12",
-    "eslint-plugin-storybook": "^0.8.0",
+    "cpx": "^1.5.0",
     "eslint": "8.56.0",
+    "eslint-plugin-storybook": "^0.8.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.74.3",
+    "rimraf": "^6.0.1",
     "storybook": "^8.2.9",
     "typescript": "5.1.3"
   }
