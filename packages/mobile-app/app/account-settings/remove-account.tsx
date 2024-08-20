@@ -13,10 +13,8 @@ export default function RemoveAccount() {
   const { accountName } = useLocalSearchParams<{ accountName: string }>();
 
   const removeAccount = facade.removeAccount.useMutation({
-    onSuccess: () => {
-      qc.invalidateQueries({
-        queryKey: ["getAccounts"],
-      });
+    onSuccess: async () => {
+      await qc.invalidateQueries();
     },
   });
 

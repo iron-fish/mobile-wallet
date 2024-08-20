@@ -74,6 +74,18 @@ export class Wallet {
     return this.state.db.getAccount(name);
   }
 
+  async getActiveAccount() {
+    assertStarted(this.state);
+
+    return this.state.db.getActiveAccount();
+  }
+
+  async setActiveAccount(name: string) {
+    assertStarted(this.state);
+
+    return this.state.db.setActiveAccount(name);
+  }
+
   async getAccounts() {
     assertStarted(this.state);
 

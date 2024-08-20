@@ -15,6 +15,14 @@ interface AccountsTable {
   viewOnly: boolean;
 }
 
+/**
+ * Table with a singleton row marking the active account.
+ */
+interface ActiveAccountTable {
+  id: number;
+  accountId: number | null;
+}
+
 interface AccountNetworkHeadsTable {
   id: Generated<number>;
   accountId: number;
@@ -90,6 +98,7 @@ interface BalancesTable {
 
 interface Database {
   accounts: AccountsTable;
+  activeAccount: ActiveAccountTable;
   accountNetworkHeads: AccountNetworkHeadsTable;
   transactions: TransactionsTable;
   accountTransactions: AccountTransactionsTable;
@@ -332,6 +341,29 @@ export class WalletDb {
               console.log("created transaction balance deltas");
             },
           },
+          ["009_createActiveAccount"]: {
+            up: async (db: Kysely<Database>) => {
+              console.log("creating active account");
+              await db.schema
+                .createTable("activeAccount")
+                .addColumn("id", SQLiteType.Integer, (col) =>
+                  col
+                    .primaryKey()
+                    .notNull()
+                    .defaultTo(1)
+                    .check(sql`id = 1`),
+                )
+                .addColumn("accountId", SQLiteType.Integer, (col) =>
+                  col.references("accounts.id"),
+                )
+                .execute();
+              await db
+                .insertInto("activeAccount")
+                .values({ id: 1, accountId: null })
+                .execute();
+              console.log("created active account");
+            },
+          },
         },
       }),
     });
@@ -367,10 +399,24 @@ export class WalletDb {
       viewOnly: account.spendingKey === null,
     };
 
-    const result = await this.db
-      .insertInto("accounts")
-      .values(accountValues)
-      .executeTakeFirst();
+    const result = await this.db.transaction().execute(async (db) => {
+      const result = await db
+        .insertInto("accounts")
+        .values(accountValues)
+        .executeTakeFirstOrThrow();
+
+      if (result.insertId === undefined) {
+        throw new Error("Failed to insert account");
+      }
+
+      // Assumes you always want to change active accounts when adding a new one
+      await db
+        .updateTable("activeAccount")
+        .set("accountId", Number(result.insertId))
+        .execute();
+
+      return result;
+    });
 
     if (account.spendingKey) {
       await SecureStore.setItemAsync(
@@ -390,13 +436,24 @@ export class WalletDb {
   }
 
   async getAccounts() {
-    return await this.db.selectFrom("accounts").selectAll().execute();
+    return await this.db
+      .selectFrom("accounts")
+      .leftJoin("activeAccount", "accounts.id", "activeAccount.accountId")
+      .selectAll("accounts")
+      .select((eb) => [
+        eb("activeAccount.accountId", "is not", null).as("active"),
+      ])
+      .execute();
   }
 
   async getAccount(name: string) {
     return await this.db
       .selectFrom("accounts")
-      .selectAll()
+      .leftJoin("activeAccount", "accounts.id", "activeAccount.accountId")
+      .selectAll("accounts")
+      .select((eb) => [
+        eb("activeAccount.accountId", "is not", null).as("active"),
+      ])
       .where("accounts.name", "=", name)
       .executeTakeFirst();
   }
@@ -453,6 +510,17 @@ export class WalletDb {
         .where("accountId", "=", account.id)
         .executeTakeFirstOrThrow();
 
+      await db
+        .updateTable("activeAccount")
+        .set((eb) => ({
+          accountId: eb
+            .selectFrom("accounts")
+            .select("id")
+            .where("id", "!=", account.id)
+            .limit(1),
+        }))
+        .execute();
+
       return await db
         .deleteFrom("accounts")
         .where("accounts.id", "=", account.id)
@@ -485,6 +553,37 @@ export class WalletDb {
     }
 
     return result;
+  }
+
+  async getActiveAccount() {
+    return await this.db
+      .selectFrom("activeAccount")
+      .innerJoin("accounts", "accounts.id", "activeAccount.accountId")
+      .select([
+        "accounts.id",
+        "accounts.name",
+        "accounts.publicAddress",
+        "accounts.viewOnly",
+        "accounts.viewOnlyAccount",
+      ])
+      // Should always be true
+      .select((eb) => [
+        eb("activeAccount.accountId", "==", eb.ref("accounts.id")).as("active"),
+      ])
+      .executeTakeFirst();
+  }
+
+  async setActiveAccount(name: string) {
+    const result = await this.db
+      .updateTable("activeAccount")
+      .from("accounts")
+      .set((eb) => ({
+        accountId: eb.ref("accounts.id"),
+      }))
+      .where("accounts.name", "=", name)
+      .executeTakeFirstOrThrow();
+
+    return result.numUpdatedRows > 0;
   }
 
   async getAccountHead(accountId: number, network: Network) {

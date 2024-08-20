@@ -1,5 +1,11 @@
 import { StatusBar } from "expo-status-bar";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useFacade } from "../../data/facades";
 import { useEffect, useState } from "react";
 import { LinkButton } from "../../components/LinkButton";
@@ -17,23 +23,37 @@ export default function Balances() {
   );
 
   const getAccountResult = facade.getAccount.useQuery(
-    { name: account },
+    {},
     {
       refetchInterval: 1000,
     },
   );
-
-  const getAccountsResult = facade.getAccounts.useQuery();
 
   const getWalletStatusResult = facade.getWalletStatus.useQuery(undefined, {
     refetchInterval: 1000,
   });
 
   useEffect(() => {
-    if (getAccountsResult.data?.[0]) {
-      setAccount(getAccountsResult.data[0].name);
+    if (getAccountResult.data) {
+      setAccount(getAccountResult.data.name);
     }
-  }, [getAccountsResult.data]);
+  }, [getAccountResult.data]);
+
+  if (getAccountResult.isLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (getAccountResult.data === null) {
+    return (
+      <View style={styles.container}>
+        <LinkButton title="Onboarding" href="/onboarding/" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
