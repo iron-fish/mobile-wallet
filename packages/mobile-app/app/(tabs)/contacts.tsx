@@ -1,6 +1,9 @@
 import { View, Text, Button } from "react-native";
 
 import { useFacade } from "../../data/facades";
+import { wallet } from "../../data/wallet/wallet";
+import { Network } from "../../data/constants";
+import { reverseScan } from "../../data/debug/reverseScan";
 
 export default function Contacts() {
   const facade = useFacade();
@@ -32,6 +35,12 @@ export default function Contacts() {
           await pauseSyncing.mutateAsync(undefined);
         }}
         title="Pause Syncing"
+      />
+      <Button
+        onPress={async () => {
+          await reverseScan(wallet, Network.TESTNET);
+        }}
+        title="Remove Blocks"
       />
     </View>
   );
