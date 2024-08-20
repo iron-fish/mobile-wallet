@@ -22,7 +22,7 @@ export default function AccountSelect() {
           <Text>{`${account.balances.iron.confirmed} $IRON`}</Text>
         </View>
       ))}
-      <LinkButton title="Add Account" href="/addAccount/" />
+      <LinkButton title="Add Account" href="/add-account/" />
     </View>
   );
 }

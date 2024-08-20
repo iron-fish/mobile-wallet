@@ -9,7 +9,7 @@ export default function ImportEncoded() {
   const router = useRouter();
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [accountName, setAccountName] = useState("Test");
+  const [accountName, setAccountName] = useState("Account Name");
   const [encodedAccount, setEncodedAccount] = useState("");
 
   const facade = useFacade();

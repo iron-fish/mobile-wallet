@@ -26,13 +26,13 @@ export default function AccountSettings() {
     <View style={styles.container}>
       <LinkButton
         title={`${getAccountResult.data?.name} (${getAccountResult.data?.balances.iron.confirmed} $IRON)`}
-        href="/accountSelect"
+        href="/account-select/"
       />
-      <LinkButton title="Account Name" href="/accountSettings/accountName" />
+      <LinkButton title="Account Name" href="/account-settings/account-name" />
       <LinkButton title="Address" href="/address" />
       <LinkButton
         title="Export Account"
-        href="/accountSettings/exportAccount/"
+        href="/account-settings/export-account/"
       />
       <View
         style={{ display: "flex", flexDirection: "row", alignItems: "center" }}
@@ -42,9 +42,9 @@ export default function AccountSettings() {
       </View>
       <LinkButton
         title="Remove Account"
-        href={`/accountSettings/removeAccount/?accountName=${getAccountResult.data?.name}`}
+        href={`/account-settings/remove-account/?accountName=${getAccountResult.data?.name}`}
       />
-      <LinkButton title="Add Account" href="/addAccount/" />
+      <LinkButton title="Add Account" href="/add-account/" />
       <StatusBar style="auto" />
     </View>
   );

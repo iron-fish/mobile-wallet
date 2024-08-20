@@ -10,10 +10,10 @@ export default function AddAccount() {
     <View style={styles.container}>
       <Button title="Close" onPress={() => router.dismissAll()} />
       <Text>Add a new account</Text>
-      <LinkButton title="Create new account" href="/addAccount/create/" />
+      <LinkButton title="Create new account" href="/add-account/create/" />
       <Text>Import an existing account</Text>
       <Text>Mnemonic Phrase</Text>
-      <LinkButton title="Encoded Key" href="/addAccount/importEncoded/" />
+      <LinkButton title="Encoded Key" href="/add-account/import-encoded/" />
       <Text>File</Text>
       <StatusBar style="auto" />
     </View>

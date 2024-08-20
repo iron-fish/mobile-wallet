@@ -40,11 +40,11 @@ export default function Balances() {
       <View style={{ display: "flex", flexDirection: "row" }}>
         <LinkButton href="/menu/" title="Menu" />
         <LinkButton
-          href="/accountSelect/"
+          href="/account-select/"
           title={getAccountResult.data?.name ?? "Account 1"}
         />
         <LinkButton
-          href={`/accountSettings/?accountName=${getAccountResult.data?.name}`}
+          href={`/account-settings/?accountName=${getAccountResult.data?.name}`}
           title="Account Settings"
         />
       </View>
