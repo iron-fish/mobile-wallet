@@ -38,15 +38,17 @@ type DBWrite =
 export class WriteQueue {
   readonly heads: Map<number, { hash: Uint8Array; sequence: number }> =
     new Map();
+  readonly db: WalletDb;
+  readonly network: Network;
 
   private writeQueue: DBWrite[] = [];
 
   readonly nullifierSet = new Set<string>();
 
-  constructor(
-    readonly db: WalletDb,
-    readonly network: Network,
-  ) {}
+  constructor(db: WalletDb, network: Network) {
+    this.db = db;
+    this.network = network;
+  }
 
   getHead(id: number): { hash: Uint8Array; sequence: number } | undefined {
     return this.heads.get(id);
