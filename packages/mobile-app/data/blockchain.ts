@@ -1,9 +1,9 @@
-import { LightBlock } from "./api/lightstreamer";
-import { WalletServerApi } from "./api/walletServer";
+import { LightBlock } from "./walletServerApi/lightstreamer";
+import { WalletServerApi } from "./walletServerApi/walletServer";
 import { Network } from "./constants";
 import * as Uint8ArrayUtils from "../utils/uint8Array";
 import { RecentBlocks } from "./recentBlocks";
-import { WalletServerChunksApi } from "./api/walletServerChunks";
+import { WalletServerChunksApi } from "./walletServerApi/walletServerChunks";
 
 /**
  * Uses WalletServerApi and WalletServerChunksApi to download blocks from the wallet server

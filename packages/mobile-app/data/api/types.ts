@@ -1,30 +1,22 @@
-import { Network } from "../constants";
-import { LightBlock } from "./lightstreamer";
+export interface SerializedAsset {
+  object: "asset";
+  created_transaction_hash: string;
+  created_transaction_timestamp: string;
+  id: number;
+  identifier: string;
+  metadata: string;
+  name: string;
+  creator: string;
+  owner: string;
+  supply: string;
+  verified_metadata: SerializedVerifiedAssetMetadata | null;
+}
 
-export type GetLatestBlockResponse = {
-  sequence: number;
-  hash: string;
-};
-
-export interface WalletServerTransformer {
-  getLatestBlock(
-    network: Network,
-    result: GetLatestBlockResponse,
-  ): Promise<GetLatestBlockResponse>;
-  getBlockByHash(
-    network: Network,
-    hash: string,
-    result: LightBlock,
-  ): Promise<LightBlock>;
-  getBlockBySequence(
-    network: Network,
-    sequence: number,
-    result: LightBlock,
-  ): Promise<LightBlock>;
-  getBlockRange(
-    network: Network,
-    start: number,
-    end: number,
-    result: string[],
-  ): Promise<string[]>;
+export interface SerializedVerifiedAssetMetadata {
+  created_at: string;
+  updated_at: string;
+  symbol: string;
+  decimals?: number;
+  logo_uri?: string;
+  website?: string;
 }

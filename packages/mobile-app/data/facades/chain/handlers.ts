@@ -2,22 +2,35 @@ import { f } from "data-facade";
 import { Asset, ChainHandlers } from "./types";
 
 import { isValidPublicAddress } from "ironfish-native-module";
+import { IronFishApi } from "../../api/api";
+import { Network } from "../../constants";
 
 export const chainHandlers = f.facade<ChainHandlers>({
   getAsset: f.handler.query(
     async ({ assetId }: { assetId: string }): Promise<Asset> => {
-      // TODO: Implement asset fetching or storage
+      const asset = await IronFishApi.getAsset(Network.TESTNET, assetId);
+
       return {
         id: assetId,
-        name: "$IRON",
-        createdTransactionHash: "hash",
-        creator: "creator",
-        metadata: "metadata",
-        owner: "owner",
-        nonce: 0,
-        // TODO: Implement asset verification
-        verification: { status: "unknown" },
-        supply: "0",
+        name: asset.name,
+        createdTransactionHash: asset.created_transaction_hash,
+        createdTransactionTimestamp: asset.created_transaction_timestamp,
+        creator: asset.creator,
+        metadata: asset.metadata,
+        owner: asset.owner,
+        verification:
+          asset.verified_metadata === null
+            ? { status: "unverified" }
+            : {
+                status: "verified",
+                createdAt: asset.verified_metadata.created_at,
+                updatedAt: asset.verified_metadata.updated_at,
+                symbol: asset.verified_metadata.symbol,
+                decimals: asset.verified_metadata.decimals,
+                logoURI: asset.verified_metadata.logo_uri,
+                website: asset.verified_metadata.website,
+              },
+        supply: asset.supply,
       };
     },
   ),

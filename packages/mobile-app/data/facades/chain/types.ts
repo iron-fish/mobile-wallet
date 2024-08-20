@@ -1,6 +1,8 @@
 import { Mutation, Query } from "data-facade";
 
 export type VerifiedAssetMetadata = {
+  createdAt: string;
+  updatedAt: string;
   symbol: string;
   decimals?: number;
   logoURI?: string;
@@ -14,11 +16,11 @@ export type AssetVerification =
 export type Asset = {
   id: string;
   name: string;
-  nonce: number;
   owner: string;
   creator: string;
   metadata: string;
   createdTransactionHash: string;
+  createdTransactionTimestamp: string;
   verification: AssetVerification;
   supply?: string;
 };

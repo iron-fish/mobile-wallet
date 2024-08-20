@@ -10,9 +10,9 @@ import {
 import { ChainProcessor } from "../chainProcessor";
 import { Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
-import { LightBlock, LightTransaction } from "../api/lightstreamer";
+import { LightBlock, LightTransaction } from "../walletServerApi/lightstreamer";
 import { WriteQueue } from "./writeQueue";
-import { WalletServerApi } from "../api/walletServer";
+import { WalletServerApi } from "../walletServerApi/walletServer";
 
 type StartedState = { type: "STARTED"; db: WalletDb };
 type WalletState = { type: "STOPPED" } | { type: "LOADING" } | StartedState;

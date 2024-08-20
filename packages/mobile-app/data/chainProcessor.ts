@@ -1,6 +1,6 @@
-import { LightBlock } from "./api/lightstreamer";
+import { LightBlock } from "./walletServerApi/lightstreamer";
 import { Network } from "./constants";
-import { WalletServerApi } from "./api/walletServer";
+import { WalletServerApi } from "./walletServerApi/walletServer";
 import { Blockchain } from "./blockchain";
 import * as Uint8ArrayUtils from "../utils/uint8Array";
 

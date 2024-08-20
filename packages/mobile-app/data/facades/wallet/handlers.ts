@@ -18,7 +18,7 @@ import {
   LanguageUtils,
   TransactionStatus,
 } from "@ironfish/sdk";
-import { WalletServerApi } from "../../api/walletServer";
+import { WalletServerApi } from "../../walletServerApi/walletServer";
 
 export const walletHandlers = f.facade<WalletHandlers>({
   createAccount: f.handler.mutation(

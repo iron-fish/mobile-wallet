@@ -1,6 +1,6 @@
 import * as FileSystem from "expo-file-system";
 import { Network } from "./constants";
-import { LightBlock } from "./api/lightstreamer";
+import { LightBlock } from "./walletServerApi/lightstreamer";
 import * as Uint8ArrayUtils from "../utils/uint8Array";
 
 /**
