@@ -90,10 +90,6 @@ export class Wallet {
 
     const accounts = await this.state.db.getAccountsWithHeads(network);
 
-    for (const account of accounts) {
-      await this.getBalances(account.id, network);
-    }
-
     return await Promise.all(
       accounts.map(async (a) => {
         const balances = await this.getBalances(a.id, network);

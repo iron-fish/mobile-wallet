@@ -666,7 +666,7 @@ export class WalletDb {
 
   async getAccountsWithHeads(network: Network) {
     const result = await this.db.transaction().execute(async (db) => {
-      const accountPromise = this.db
+      const accountPromise = db
         .selectFrom("accounts")
         .leftJoin("activeAccount", "accounts.id", "activeAccount.accountId")
         .selectAll("accounts")
