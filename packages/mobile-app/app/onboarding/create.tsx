@@ -4,13 +4,12 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useFacade } from "../../data/facades";
 
-export default function CreateAccount() {
+export default function OnboardingCreate() {
   const router = useRouter();
   const facade = useFacade();
-
   const createAccount = facade.createAccount.useMutation();
 
-  const [accountName, setAccountName] = useState("Test");
+  const [accountName, setAccountName] = useState("Account Name");
 
   return (
     <View style={styles.container}>

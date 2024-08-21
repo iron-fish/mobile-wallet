@@ -10,13 +10,23 @@ import {
   StyleSheet,
   Text,
 } from "react-native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  MutationCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 
 import { useColorScheme } from "react-native";
 import { FacadeProvider, useFacade } from "../data/facades";
 import { useEffect, useState } from "react";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries();
+    },
+  }),
+});
 
 function DatabaseLoader({ children }: { children?: React.ReactNode }) {
   const facade = useFacade();

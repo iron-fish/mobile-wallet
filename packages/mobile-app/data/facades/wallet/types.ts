@@ -11,6 +11,7 @@ export type Account = {
   viewOnly: boolean;
   balances: { iron: AccountBalance; custom: AccountBalance[] };
   settings: AccountSettings;
+  active: boolean;
 };
 
 export type AccountBalance = {
@@ -102,8 +103,9 @@ export type WalletHandlers = {
       language?: LanguageKey;
     }) => string
   >;
-  getAccount: Query<(args: { name: string }) => Account>;
+  getAccount: Query<(args: { name?: string }) => Account | null>;
   getAccounts: Query<() => Account[]>;
+  setActiveAccount: Mutation<(args: { name: string }) => boolean>;
   getEstimatedFees: Query<
     (args: { accountName: string; outputs: Output[] }) => {
       slow: string;

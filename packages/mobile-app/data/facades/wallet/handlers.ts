@@ -44,6 +44,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         settings: {
           balanceAutoHide: false,
         },
+        active: true,
       };
     },
   ),
@@ -73,10 +74,14 @@ export const walletHandlers = f.facade<WalletHandlers>({
     },
   ),
   getAccount: f.handler.query(
-    async ({ name }: { name: string }): Promise<Account> => {
-      const account = await wallet.getAccount(name);
+    async ({ name }: { name?: string }): Promise<Account | null> => {
+      const account =
+        name === undefined
+          ? await wallet.getActiveAccount()
+          : await wallet.getAccount(name);
+
       if (!account) {
-        throw new Error(`Account ${name} does not exist`);
+        return null;
       }
 
       const balances = await wallet.getBalances(account.id, Network.TESTNET);
@@ -122,6 +127,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         settings: {
           balanceAutoHide: false,
         },
+        active: !!account.active,
       };
       return result;
     },
@@ -134,6 +140,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         h,
       ]),
     );
+
     return accounts.map((a): Account => {
       const h = heads.get(a.id);
       let head = null;
@@ -162,8 +169,12 @@ export const walletHandlers = f.facade<WalletHandlers>({
         settings: {
           balanceAutoHide: false,
         },
+        active: !!a.active,
       };
     });
+  }),
+  setActiveAccount: f.handler.mutation(async ({ name }: { name: string }) => {
+    return await wallet.setActiveAccount(name);
   }),
   getEstimatedFees: f.handler.query(
     async (args: { accountName: string; outputs: Output[] }) => {
@@ -310,6 +321,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         settings: {
           balanceAutoHide: false,
         },
+        active: true,
       };
     },
   ),

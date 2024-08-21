@@ -1,13 +1,17 @@
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View, Text } from "react-native";
+import { LinkButton } from "../../components/LinkButton";
 
 export default function Onboarding() {
   return (
     <View style={styles.container}>
       <Text>Welcome to Iron Fish</Text>
       <Text>Let's Make Web3 Private</Text>
-      <Text>Create Account</Text>
-      <Text>I already have an account</Text>
+      <LinkButton title="Create Account" href="/onboarding/create/" />
+      <LinkButton
+        title="I already have an account"
+        href="/onboarding/import-encoded/"
+      />
       <StatusBar style="auto" />
     </View>
   );

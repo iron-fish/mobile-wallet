@@ -2,23 +2,15 @@ import { StatusBar } from "expo-status-bar";
 import { Button, Modal, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useFacade } from "../../data/facades";
 
 export default function RemoveAccount() {
   const router = useRouter();
   const facade = useFacade();
-  const qc = useQueryClient();
 
   const { accountName } = useLocalSearchParams<{ accountName: string }>();
 
-  const removeAccount = facade.removeAccount.useMutation({
-    onSuccess: () => {
-      qc.invalidateQueries({
-        queryKey: ["getAccounts"],
-      });
-    },
-  });
+  const removeAccount = facade.removeAccount.useMutation();
 
   const [modalVisible, setModalVisible] = useState(false);
 

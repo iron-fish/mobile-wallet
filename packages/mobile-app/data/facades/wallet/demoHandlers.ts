@@ -30,6 +30,7 @@ const ACCOUNTS: Account[] = [
       custom: [],
     },
     settings: { balanceAutoHide: false },
+    active: true,
   },
   {
     name: "bob",
@@ -48,6 +49,7 @@ const ACCOUNTS: Account[] = [
       custom: [],
     },
     settings: { balanceAutoHide: false },
+    active: false,
   },
   {
     name: "carol",
@@ -66,6 +68,7 @@ const ACCOUNTS: Account[] = [
       custom: [],
     },
     settings: { balanceAutoHide: false },
+    active: false,
   },
 ];
 
@@ -103,8 +106,10 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
       },
       viewOnly: false,
       settings: { balanceAutoHide: false },
+      active: true,
     };
     console.log("createAccount", account);
+    ACCOUNTS.filter((a) => a.active).forEach((a) => (a.active = false));
     ACCOUNTS.push(account);
     return account;
   }),
@@ -125,10 +130,10 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
       return JSON.stringify(account);
     },
   ),
-  getAccount: f.handler.query(async ({ name }: { name: string }) => {
+  getAccount: f.handler.query(async ({ name }: { name?: string }) => {
     const account = ACCOUNTS.find((a) => a.name === name);
     if (account === undefined) {
-      throw new Error(`No account found with name ${name}`);
+      return null;
     }
     return account;
   }),
@@ -136,6 +141,15 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
     const accounts = await getAccounts(ACCOUNTS.length);
     console.log("getAccounts", accounts);
     return accounts;
+  }),
+  setActiveAccount: f.handler.mutation(async ({ name }: { name: string }) => {
+    const newAccount = ACCOUNTS.find((a) => a.name === name);
+    if (!newAccount) {
+      return false;
+    }
+    ACCOUNTS.filter((a) => a.active).forEach((a) => (a.active = false));
+    newAccount.active = true;
+    return true;
   }),
   getEstimatedFees: f.handler.query(
     async (args: { accountName: string; outputs: Output[] }) => {
@@ -264,8 +278,10 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
           custom: [],
         },
         settings: { balanceAutoHide: false },
+        active: true,
       };
       console.log("importAccount", account);
+      ACCOUNTS.filter((a) => a.active).forEach((a) => (a.active = false));
       ACCOUNTS.push(importedAccount);
       return importedAccount;
     },

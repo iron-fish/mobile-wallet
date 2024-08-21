@@ -12,13 +12,25 @@ export default function AccountSelect() {
     refetchInterval: 1000,
   });
 
+  const setActiveAccount = facade.setActiveAccount.useMutation();
+
   return (
     <View style={styles.container}>
       <Button title="Close" onPress={() => router.dismissAll()} />
       <StatusBar style="auto" />
       {getAccountsResult.data?.map((account) => (
         <View key={account.name}>
-          <Text>{account.name}</Text>
+          <Button
+            onPress={async () => {
+              const result = await setActiveAccount.mutateAsync({
+                name: account.name,
+              });
+              console.log(`setActiveAccount: ${result}`);
+              router.dismissAll();
+            }}
+            title={account.name}
+          />
+          {account.active && <Text>Active</Text>}
           <Text>{`${account.balances.iron.confirmed} $IRON`}</Text>
         </View>
       ))}
