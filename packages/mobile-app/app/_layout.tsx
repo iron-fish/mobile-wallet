@@ -19,6 +19,7 @@ import {
 import { useColorScheme } from "react-native";
 import { FacadeProvider, useFacade } from "../data/facades";
 import { useEffect, useState } from "react";
+import { ColorScheme } from "@ironfish/tackle-box";
 
 const queryClient = new QueryClient({
   mutationCache: new MutationCache({
@@ -59,20 +60,22 @@ export default function Layout() {
   const scheme = useColorScheme();
   return (
     <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
-      <QueryClientProvider client={queryClient}>
-        <FacadeProvider>
-          <DatabaseLoader>
-            <Stack>
-              <Stack.Screen
-                name="(tabs)"
-                options={{
-                  headerShown: false,
-                }}
-              />
-            </Stack>
-          </DatabaseLoader>
-        </FacadeProvider>
-      </QueryClientProvider>
+      <ColorScheme scheme={scheme === "dark" ? "_dark" : "_light"}>
+        <QueryClientProvider client={queryClient}>
+          <FacadeProvider>
+            <DatabaseLoader>
+              <Stack>
+                <Stack.Screen
+                  name="(tabs)"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+              </Stack>
+            </DatabaseLoader>
+          </FacadeProvider>
+        </QueryClientProvider>
+      </ColorScheme>
     </ThemeProvider>
   );
 }
