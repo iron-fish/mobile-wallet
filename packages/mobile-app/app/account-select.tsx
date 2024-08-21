@@ -2,23 +2,17 @@ import { StatusBar } from "expo-status-bar";
 import { Button, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { LinkButton } from "../components/LinkButton";
-import { useQueryClient } from "@tanstack/react-query";
 import { useFacade } from "../data/facades";
 
 export default function AccountSelect() {
   const router = useRouter();
   const facade = useFacade();
-  const qc = useQueryClient();
 
   const getAccountsResult = facade.getAccounts.useQuery(undefined, {
     refetchInterval: 1000,
   });
 
-  const setActiveAccount = facade.setActiveAccount.useMutation({
-    onSuccess: async () => {
-      await qc.invalidateQueries();
-    },
-  });
+  const setActiveAccount = facade.setActiveAccount.useMutation();
 
   return (
     <View style={styles.container}>

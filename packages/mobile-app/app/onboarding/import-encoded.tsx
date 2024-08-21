@@ -1,4 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
 import { Button, Modal, StyleSheet, Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -13,13 +12,8 @@ export default function OnboardingImportEncoded() {
   const [encodedAccount, setEncodedAccount] = useState("");
 
   const facade = useFacade();
-  const qc = useQueryClient();
 
-  const importAccount = facade.importAccount.useMutation({
-    onSuccess: async () => {
-      await qc.invalidateQueries();
-    },
-  });
+  const importAccount = facade.importAccount.useMutation();
 
   return (
     <View style={styles.container}>
