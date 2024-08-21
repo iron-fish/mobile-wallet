@@ -37,7 +37,7 @@ export function Button({
     onPressOut,
   });
 
-  const { colorScheme } = useColorScheme();
+  const colorScheme = useColorScheme();
 
   return (
     <Pressable

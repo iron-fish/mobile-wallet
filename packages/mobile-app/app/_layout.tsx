@@ -60,7 +60,7 @@ export default function Layout() {
   const scheme = useColorScheme();
   return (
     <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
-      <ColorScheme scheme={scheme === "dark" ? "_dark" : "_light"}>
+      <ColorScheme value={scheme === "dark" ? "_dark" : "_light"}>
         <QueryClientProvider client={queryClient}>
           <FacadeProvider>
             <DatabaseLoader>

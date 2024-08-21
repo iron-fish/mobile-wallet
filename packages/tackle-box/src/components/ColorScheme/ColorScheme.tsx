@@ -1,36 +1,17 @@
-import React, {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useState,
-} from "react";
+import React, { createContext, ReactNode, useContext } from "react";
 
 type Scheme = "_light" | "_dark";
 
-const ColorSchemeContext = createContext<{
-  colorScheme: Scheme;
-  toggleColorScheme?: () => void;
-}>({
-  colorScheme: "_light",
-  toggleColorScheme: () => {},
-});
+const ColorSchemeContext = createContext<Scheme>("_light");
 
 type Props = {
   children: ReactNode;
-  scheme?: Scheme;
+  value?: Scheme;
 };
 
-export function ColorScheme({ children, scheme }: Props) {
-  const [globalScheme, setGlobalScheme] = useState<Scheme>("_light");
-  const toggleColorScheme = useCallback(() => {
-    setGlobalScheme((prev) => (prev === "_light" ? "_dark" : "_light"));
-  }, []);
-
+export function ColorScheme({ children, value }: Props) {
   return (
-    <ColorSchemeContext.Provider
-      value={{ colorScheme: scheme ?? globalScheme, toggleColorScheme }}
-    >
+    <ColorSchemeContext.Provider value={value ?? "_light"}>
       {children}
     </ColorSchemeContext.Provider>
   );

@@ -15,7 +15,7 @@ const preview: Preview = {
     (Story, { context }) => {
       const isDarkMode = context.globals?.backgrounds?.value === "#333333";
       return (
-        <ColorScheme scheme={isDarkMode ? "_dark" : "_light"}>
+        <ColorScheme value={isDarkMode ? "_dark" : "_light"}>
           <Story />
         </ColorScheme>
       );
