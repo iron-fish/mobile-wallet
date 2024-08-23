@@ -87,8 +87,8 @@ export default function Balances() {
             <Text>Your balances may currently be inaccurate.</Text>
             <Text>Learn More</Text>
             <Button
-              onPress={async () => {
-                await pauseSyncing.mutateAsync(undefined);
+              onPress={() => {
+                pauseSyncing.mutate(undefined);
               }}
               title="Pause"
             />
@@ -102,8 +102,8 @@ export default function Balances() {
             <Text>Your balances may currently be inaccurate.</Text>
             <Text>Learn More</Text>
             <Button
-              onPress={async () => {
-                await resumeSyncing.mutateAsync(undefined);
+              onPress={() => {
+                resumeSyncing.mutate(undefined);
               }}
               title="Resume"
             />
