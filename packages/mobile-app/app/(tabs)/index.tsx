@@ -72,7 +72,7 @@ export default function Balances() {
       {getAccountResult.data && (
         <>
           <Text>{`${getAccountResult.data.balances.iron.confirmed}`}</Text>
-          <Text>{`$IRON`}</Text>
+          <Text>{`${getAccountResult.data.balances.iron.asset.verified_metadata ? `${getAccountResult.data.balances.iron.asset.verified_metadata.symbol} (Verified)` : `${getAccountResult.data.balances.iron.asset.name} (Not Verified)`}`}</Text>
         </>
       )}
       {getWalletStatusResult.data &&

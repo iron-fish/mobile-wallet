@@ -1,5 +1,6 @@
 import { AccountFormat, LanguageKey, TransactionStatus } from "@ironfish/sdk";
 import { Query, Mutation } from "data-facade";
+import { SerializedAsset } from "../../api/types";
 
 export type Account = {
   name: string;
@@ -15,7 +16,7 @@ export type Account = {
 };
 
 export type AccountBalance = {
-  assetId: string;
+  asset: SerializedAsset;
   confirmed: string;
   unconfirmed: string;
   pending: string;

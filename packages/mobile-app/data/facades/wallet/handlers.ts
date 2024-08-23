@@ -1,7 +1,6 @@
 import { f } from "data-facade";
 import {
   Account,
-  AccountBalance,
   AccountSettings,
   Output,
   Transaction,
@@ -19,19 +18,28 @@ import {
   TransactionStatus,
 } from "@ironfish/sdk";
 import { WalletServerApi } from "../../walletServerApi/walletServer";
+import { IronFishApi } from "../../api/api";
+
+const IRON_ASSET_ID_HEX =
+  "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c";
 
 export const walletHandlers = f.facade<WalletHandlers>({
   createAccount: f.handler.mutation(
     async ({ name }: { name: string }): Promise<Account> => {
       const account = await wallet.createAccount(name);
+
+      const ironAsset = await IronFishApi.getAsset(
+        Network.TESTNET,
+        IRON_ASSET_ID_HEX,
+      );
+
       return {
         name: account.name,
         viewOnly: account.viewOnly,
         publicAddress: account.publicAddress,
         balances: {
           iron: {
-            assetId:
-              "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+            asset: ironAsset,
             available: "0",
             confirmed: "0",
             pending: "0",
@@ -86,32 +94,34 @@ export const walletHandlers = f.facade<WalletHandlers>({
 
       const balances = await wallet.getBalances(account.id, Network.TESTNET);
 
-      const ironBalance: AccountBalance = {
-        assetId:
-          "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
-        // TODO: Implement available balance in Wallet
-        available: "0",
-        // TODO: Implement pending balance in Wallet
-        pending: "0",
-        unconfirmed: "0",
-        confirmed: "0",
-      };
-      const customBalances: AccountBalance[] = [];
-
-      for (const balance of balances) {
-        if (Uint8ArrayUtils.toHex(balance.assetId) === ironBalance.assetId) {
-          ironBalance.unconfirmed = balance.unconfirmed;
-          ironBalance.confirmed = balance.confirmed;
-        } else {
-          customBalances.push({
-            assetId: Uint8ArrayUtils.toHex(balance.assetId),
+      const balancesWithAssets = await Promise.all(
+        balances.map(async (b) => {
+          const asset = await IronFishApi.getAsset(
+            Network.TESTNET,
+            Uint8ArrayUtils.toHex(b.assetId),
+          );
+          return {
+            asset,
             available: "0",
             pending: "0",
-            confirmed: balance.confirmed,
-            unconfirmed: balance.unconfirmed,
-          });
-        }
-      }
+            confirmed: b.confirmed,
+            unconfirmed: b.unconfirmed,
+          };
+        }),
+      );
+
+      const ironBalance = balancesWithAssets.find(
+        (b) => b.asset.identifier === IRON_ASSET_ID_HEX,
+      ) ?? {
+        asset: await IronFishApi.getAsset(Network.TESTNET, IRON_ASSET_ID_HEX),
+        available: "0",
+        pending: "0",
+        confirmed: "0",
+        unconfirmed: "0",
+      };
+      const customBalances = balancesWithAssets.filter(
+        (b) => b.asset.identifier !== IRON_ASSET_ID_HEX,
+      );
 
       const result: Account = {
         name: account.name,
@@ -141,6 +151,11 @@ export const walletHandlers = f.facade<WalletHandlers>({
       ]),
     );
 
+    const ironAsset = await IronFishApi.getAsset(
+      Network.TESTNET,
+      IRON_ASSET_ID_HEX,
+    );
+
     return accounts.map((a): Account => {
       const h = heads.get(a.id);
       let head = null;
@@ -155,8 +170,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         // TODO: Implement balances in Wallet
         balances: {
           iron: {
-            assetId:
-              "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+            asset: ironAsset,
             available: "0",
             confirmed: "0",
             pending: "0",
