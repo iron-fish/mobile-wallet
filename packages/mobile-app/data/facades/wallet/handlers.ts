@@ -77,14 +77,12 @@ export const walletHandlers = f.facade<WalletHandlers>({
     async ({ name }: { name?: string }): Promise<Account | null> => {
       const account =
         name === undefined
-          ? await wallet.getActiveAccount()
-          : await wallet.getAccount(name);
+          ? await wallet.getActiveAccountWithHeadAndBalances(Network.TESTNET)
+          : await wallet.getAccountWithHeadAndBalances(Network.TESTNET, name);
 
       if (!account) {
         return null;
       }
-
-      const balances = await wallet.getBalances(account.id, Network.TESTNET);
 
       const ironBalance: AccountBalance = {
         assetId:
@@ -98,14 +96,16 @@ export const walletHandlers = f.facade<WalletHandlers>({
       };
       const customBalances: AccountBalance[] = [];
 
-      for (const balance of balances) {
+      for (const balance of account.balances) {
         if (Uint8ArrayUtils.toHex(balance.assetId) === ironBalance.assetId) {
           ironBalance.unconfirmed = balance.unconfirmed;
           ironBalance.confirmed = balance.confirmed;
         } else {
           customBalances.push({
             assetId: Uint8ArrayUtils.toHex(balance.assetId),
+            // TODO: Implement available balance in Wallet
             available: "0",
+            // TODO: Implement pending balance in Wallet
             pending: "0",
             confirmed: balance.confirmed,
             unconfirmed: balance.unconfirmed,
@@ -121,8 +121,12 @@ export const walletHandlers = f.facade<WalletHandlers>({
           iron: ironBalance,
           custom: customBalances,
         },
-        // TODO: Implement account syncing in Wallet
-        head: null,
+        head: account.head
+          ? {
+              hash: Uint8ArrayUtils.toHex(account.head.hash),
+              sequence: account.head.sequence,
+            }
+          : null,
         // TODO: Implement account settings in Wallet
         settings: {
           balanceAutoHide: false,
@@ -133,38 +137,54 @@ export const walletHandlers = f.facade<WalletHandlers>({
     },
   ),
   getAccounts: f.handler.query(async () => {
-    const accounts = await wallet.getAccounts();
-    const heads = new Map(
-      (await wallet.getAccountHeads(Network.TESTNET)).map((h) => [
-        h.accountId,
-        h,
-      ]),
+    const accounts = await wallet.getAccountsWithHeadAndBalances(
+      Network.TESTNET,
     );
 
     return accounts.map((a): Account => {
-      const h = heads.get(a.id);
-      let head = null;
-      if (h) {
-        head = { hash: Uint8ArrayUtils.toHex(h.hash), sequence: h.sequence };
+      const customBalances: AccountBalance[] = [];
+      const ironBalance = {
+        assetId:
+          "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+        // TODO: Implement available balance in Wallet
+        available: "0",
+        // TODO: Implement pending balance in Wallet
+        pending: "0",
+        unconfirmed: "0",
+        confirmed: "0",
+      };
+
+      for (const balance of a.balances) {
+        if (Uint8ArrayUtils.toHex(balance.assetId) === ironBalance.assetId) {
+          ironBalance.unconfirmed = balance.unconfirmed;
+          ironBalance.confirmed = balance.confirmed;
+        } else {
+          customBalances.push({
+            assetId: Uint8ArrayUtils.toHex(balance.assetId),
+            // TODO: Implement available balance in Wallet
+            available: "0",
+            // TODO: Implement pending balance in Wallet
+            pending: "0",
+            unconfirmed: balance.unconfirmed,
+            confirmed: balance.confirmed,
+          });
+        }
       }
 
       return {
         name: a.name,
         viewOnly: a.viewOnly,
         publicAddress: a.publicAddress,
-        // TODO: Implement balances in Wallet
         balances: {
-          iron: {
-            assetId:
-              "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
-            available: "0",
-            confirmed: "0",
-            pending: "0",
-            unconfirmed: "0",
-          },
-          custom: [],
+          iron: ironBalance,
+          custom: customBalances,
         },
-        head,
+        head: a.head
+          ? {
+              hash: Uint8ArrayUtils.toHex(a.head.hash),
+              sequence: a.head.sequence,
+            }
+          : null,
         // TODO: Implement account settings in Wallet
         settings: {
           balanceAutoHide: false,

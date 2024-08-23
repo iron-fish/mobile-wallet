@@ -29,27 +29,28 @@ export async function reverseScan(
   let performanceTimer = performance.now();
   let finished = false;
 
-  const dbAccounts = await wallet.state.db.getAccounts();
-  let accounts = dbAccounts.map((account) => {
-    return {
-      ...account,
-      decodedAccount: decodeAccount(account.viewOnlyAccount, {
-        name: account.name,
+  const dbAccounts = await wallet.state.db.getAccountsWithHeads(network);
+  let latestHead: {
+    hash: Uint8Array;
+    sequence: number;
+  } | null = null;
+  let accounts = [];
+  for (const dbAccount of dbAccounts) {
+    accounts.push({
+      ...dbAccount,
+      decodedAccount: decodeAccount(dbAccount.viewOnlyAccount, {
+        name: dbAccount.name,
       }),
-    };
-  });
-  const accountHeads = await wallet.state.db.getAccountHeads(network);
-  let latestHead: { hash: Uint8Array; sequence: number } | null = null;
-  for (const h of accountHeads) {
-    if (
-      latestHead === null ||
-      (latestHead && h.sequence > latestHead.sequence)
-    ) {
-      latestHead = h;
+    });
+
+    if (dbAccount.head === null) continue;
+
+    if (latestHead === null || latestHead.sequence > dbAccount.head.sequence) {
+      latestHead = dbAccount.head;
     }
-    cache.setHead(h.accountId, {
-      hash: h.hash,
-      sequence: h.sequence,
+    cache.setHead(dbAccount.id, {
+      hash: dbAccount.head.hash,
+      sequence: dbAccount.head.sequence,
     });
   }
 
