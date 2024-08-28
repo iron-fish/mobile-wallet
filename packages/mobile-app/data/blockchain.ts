@@ -64,22 +64,26 @@ class BlockchainClass {
       !cached ||
       cached.updatedAt < performance.now() - LATEST_BLOCK_UPDATE_MS
     ) {
-      const latestBlockPromise = WalletServerApi.getLatestBlock(network)
-        .then((response) => {
+      const latestBlockPromise = WalletServerApi.getLatestBlock(network).then(
+        (response) => {
           this.latestBlocks.set(network, {
             type: "LOADED",
             updatedAt: performance.now(),
             response,
           });
           return response;
-        })
-        .catch((e) => {
-          this.latestBlocks.delete(network);
-        });
+        },
+      );
+
+      latestBlockPromise.catch(() => {
+        this.latestBlocks.delete(network);
+      });
+
       this.latestBlocks.set(network, {
         type: "LOADING",
         request: latestBlockPromise,
       });
+
       return latestBlockPromise;
     }
 
