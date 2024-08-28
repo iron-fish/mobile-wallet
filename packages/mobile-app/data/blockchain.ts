@@ -33,7 +33,7 @@ class BlockchainClass {
   private isRequesting = false;
 
   /**
-   * Ongoing asset loads, indexed by network and hex-encoded asset identifier.
+   * latestBlock requests/cached responses, indexed by network.
    */
   private latestBlocks: Map<Network, LatestBlockRequest> = new Map();
 

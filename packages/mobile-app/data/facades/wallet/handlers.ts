@@ -93,7 +93,9 @@ export const walletHandlers = f.facade<WalletHandlers>({
           assetId: Uint8ArrayUtils.toHex(b.assetId),
           confirmed: b.confirmed,
           unconfirmed: b.unconfirmed,
+          // TODO: Implement pending balance in Wallet
           pending: "0",
+          // TODO: Implement available balance in Wallet
           available: "0",
         };
       });
@@ -145,7 +147,9 @@ export const walletHandlers = f.facade<WalletHandlers>({
           assetId: Uint8ArrayUtils.toHex(b.assetId),
           confirmed: b.confirmed,
           unconfirmed: b.unconfirmed,
+          // TODO: Implement pending balance in Wallet
           pending: "0",
+          // TODO: Implement available balance in Wallet
           available: "0",
         };
       });
