@@ -4,15 +4,11 @@ import { Asset, ChainHandlers } from "./types";
 import { isValidPublicAddress } from "ironfish-native-module";
 import { Network } from "../../constants";
 import { wallet } from "../../wallet/wallet";
-import * as Uint8ArrayUtils from "../../../utils/uint8Array";
 
 export const chainHandlers = f.facade<ChainHandlers>({
   getAsset: f.handler.query(
     async ({ assetId }: { assetId: string }): Promise<Asset | null> => {
-      const asset = await wallet.getAsset(
-        Network.TESTNET,
-        Uint8ArrayUtils.fromHex(assetId),
-      );
+      const asset = await wallet.getAsset(Network.TESTNET, assetId);
 
       if (!asset) {
         return null;

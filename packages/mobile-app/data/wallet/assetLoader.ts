@@ -22,9 +22,9 @@ export class AssetLoader {
   };
 
   /**
-   * Ongoing asset loads, indexed by network and hex-encoded asset identifier.
+   * Ongoing asset requests, indexed by network and hex-encoded asset identifier.
    */
-  private readonly assetLoads = {
+  private readonly assetPromises = {
     [Network.MAINNET]: new Map<string, Promise<SerializedAsset>>(),
     [Network.TESTNET]: new Map<string, Promise<SerializedAsset>>(),
   };
@@ -37,12 +37,15 @@ export class AssetLoader {
    * Reads asset from the database, returning undefined if no asset exists.
    * Fetches asset from the API in the background if the asset is out-of-date.
    */
-  async getAsset(network: Network, assetId: Uint8Array) {
-    const asset = await this.db.getAsset(network, assetId);
+  async getAsset(network: Network, assetId: string) {
+    const asset = await this.db.getAsset(
+      network,
+      Uint8ArrayUtils.fromHex(assetId),
+    );
 
     // If out-of-date, queue a new fetch that updates the asset when it returns
     if (!asset || asset.updatedAt.valueOf() < Date.now() - ASSET_UPDATE_MS) {
-      this.loadAsset(network, Uint8ArrayUtils.toHex(assetId));
+      this.loadAsset(network, assetId);
     }
 
     // Return current asset immediately
@@ -56,21 +59,19 @@ export class AssetLoader {
   preloadAsset(network: Network, assetId: string): void {
     if (
       this.preloadedAssets[network].has(assetId) ||
-      this.assetLoads[network].has(assetId)
+      this.assetPromises[network].has(assetId)
     ) {
       return;
     }
 
-    this.loadAsset(network, assetId).catch((e) => {
-      console.error(`Failed to preload asset ${assetId}:`);
-    });
+    this.loadAsset(network, assetId);
   }
 
   private loadAsset(
     network: Network,
     assetId: string,
   ): Promise<SerializedAsset> {
-    const assetLoad = this.assetLoads[network].get(assetId);
+    const assetLoad = this.assetPromises[network].get(assetId);
     if (assetLoad) {
       return assetLoad;
     }
@@ -82,10 +83,14 @@ export class AssetLoader {
         return asset;
       })
       .finally(() => {
-        this.assetLoads[network].delete(assetId);
+        this.assetPromises[network].delete(assetId);
       });
 
-    this.assetLoads[network].set(assetId, newAssetLoad);
+    newAssetLoad.catch(() => {
+      console.error(`Failed to preload asset ${assetId}:`);
+    });
+
+    this.assetPromises[network].set(assetId, newAssetLoad);
 
     return newAssetLoad;
   }

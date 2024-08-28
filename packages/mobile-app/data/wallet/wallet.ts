@@ -677,7 +677,7 @@ export class Wallet {
     }
   }
 
-  async getAsset(network: Network, assetId: Uint8Array) {
+  async getAsset(network: Network, assetId: string) {
     assertStarted(this.state);
 
     return this.state.assetLoader.getAsset(network, assetId);
