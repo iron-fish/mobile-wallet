@@ -69,34 +69,66 @@ export class Wallet {
     });
   }
 
+  async getAccountWithHeadAndBalances(network: Network, name: string) {
+    assertStarted(this.state);
+
+    const account = await this.state.db.getAccountWithHead(name, network);
+
+    if (!account) return;
+
+    const balancesPromise = this.getBalances(account.id, network);
+
+    const balances = await balancesPromise;
+
+    return {
+      ...account,
+      balances,
+    };
+  }
+
+  async getAccountsWithHeadAndBalances(network: Network) {
+    assertStarted(this.state);
+
+    const accounts = await this.state.db.getAccountsWithHeads(network);
+
+    return await Promise.all(
+      accounts.map(async (a) => {
+        const balances = await this.getBalances(a.id, network);
+        return {
+          ...a,
+          balances,
+        };
+      }),
+    );
+  }
+
   async getAccount(name: string) {
     assertStarted(this.state);
 
     return this.state.db.getAccount(name);
   }
 
-  async getActiveAccount() {
+  async getActiveAccountWithHeadAndBalances(network: Network) {
     assertStarted(this.state);
 
-    return this.state.db.getActiveAccount();
+    const account = await this.state.db.getActiveAccountWithHead(network);
+
+    if (!account) return;
+
+    const balancesPromise = this.getBalances(account.id, network);
+
+    const balances = await balancesPromise;
+
+    return {
+      ...account,
+      balances,
+    };
   }
 
   async setActiveAccount(name: string) {
     assertStarted(this.state);
 
     return this.state.db.setActiveAccount(name);
-  }
-
-  async getAccounts() {
-    assertStarted(this.state);
-
-    return this.state.db.getAccounts();
-  }
-
-  async getAccountHeads(network: Network) {
-    assertStarted(this.state);
-
-    return this.state.db.getAccountHeads(network);
   }
 
   async getBalances(accountId: number, network: Network) {
@@ -211,7 +243,7 @@ export class Wallet {
   async getTransaction(accountName: string, transactionHash: Uint8Array) {
     assertStarted(this.state);
 
-    const account = await this.getAccount(accountName);
+    const account = await this.state.db.getAccount(accountName);
     if (account == null) {
       throw new Error(`No account found with name ${accountName}`);
     }
@@ -228,7 +260,7 @@ export class Wallet {
   async getTransactions(accountName: string, network: Network) {
     assertStarted(this.state);
 
-    const account = await this.getAccount(accountName);
+    const account = await this.state.db.getAccount(accountName);
     if (account == null) {
       throw new Error(`No account found with name ${accountName}`);
     }
@@ -239,7 +271,7 @@ export class Wallet {
   async getUnspentNotes(accountName: string, network: Network) {
     assertStarted(this.state);
 
-    const account = await this.getAccount(accountName);
+    const account = await this.state.db.getAccount(accountName);
     if (account == null) {
       throw new Error(`No account found with name ${accountName}`);
     }
@@ -409,27 +441,31 @@ export class Wallet {
     let performanceTimer = performance.now();
     let finished = false;
 
-    const dbAccounts = await this.state.db.getAccounts();
-    let accounts = dbAccounts.map((account) => {
-      return {
-        ...account,
-        decodedAccount: decodeAccount(account.viewOnlyAccount, {
-          name: account.name,
+    const dbAccounts = await this.state.db.getAccountsWithHeads(network);
+    let earliestHead: {
+      hash: Uint8Array;
+      sequence: number;
+    } | null = null;
+    let accounts = [];
+    for (const dbAccount of dbAccounts) {
+      accounts.push({
+        ...dbAccount,
+        decodedAccount: decodeAccount(dbAccount.viewOnlyAccount, {
+          name: dbAccount.name,
         }),
-      };
-    });
-    const accountHeads = await this.state.db.getAccountHeads(network);
-    let earliestHead = null;
-    for (const h of accountHeads) {
+      });
+
+      if (dbAccount.head === null) continue;
+
       if (
         earliestHead === null ||
-        (earliestHead && h.sequence < earliestHead.sequence)
+        dbAccount.head.sequence < earliestHead.sequence
       ) {
-        earliestHead = h;
+        earliestHead = dbAccount.head;
       }
-      cache.setHead(h.accountId, {
-        hash: h.hash,
-        sequence: h.sequence,
+      cache.setHead(dbAccount.id, {
+        hash: dbAccount.head.hash,
+        sequence: dbAccount.head.sequence,
       });
     }
 

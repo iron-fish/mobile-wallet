@@ -79,8 +79,8 @@ export const walletHandlers = f.facade<WalletHandlers>({
     async ({ name }: { name?: string }): Promise<Account | null> => {
       const account =
         name === undefined
-          ? await wallet.getActiveAccount()
-          : await wallet.getAccount(name);
+          ? await wallet.getActiveAccountWithHeadAndBalances(Network.TESTNET)
+          : await wallet.getAccountWithHeadAndBalances(Network.TESTNET, name);
 
       if (!account) {
         return null;
@@ -119,8 +119,12 @@ export const walletHandlers = f.facade<WalletHandlers>({
           iron: ironBalance,
           custom: customBalances,
         },
-        // TODO: Implement account syncing in Wallet
-        head: null,
+        head: account.head
+          ? {
+              hash: Uint8ArrayUtils.toHex(account.head.hash),
+              sequence: account.head.sequence,
+            }
+          : null,
         // TODO: Implement account settings in Wallet
         settings: {
           balanceAutoHide: false,
@@ -131,37 +135,48 @@ export const walletHandlers = f.facade<WalletHandlers>({
     },
   ),
   getAccounts: f.handler.query(async () => {
-    const accounts = await wallet.getAccounts();
-    const heads = new Map(
-      (await wallet.getAccountHeads(Network.TESTNET)).map((h) => [
-        h.accountId,
-        h,
-      ]),
+    const accounts = await wallet.getAccountsWithHeadAndBalances(
+      Network.TESTNET,
     );
 
     return accounts.map((a): Account => {
-      const h = heads.get(a.id);
-      let head = null;
-      if (h) {
-        head = { hash: Uint8ArrayUtils.toHex(h.hash), sequence: h.sequence };
-      }
+      const balances = a.balances.map((b) => {
+        return {
+          assetId: Uint8ArrayUtils.toHex(b.assetId),
+          confirmed: b.confirmed,
+          unconfirmed: b.unconfirmed,
+          pending: "0",
+          available: "0",
+        };
+      });
+
+      const ironBalance = balances.find(
+        (b) => b.assetId === IRON_ASSET_ID_HEX,
+      ) ?? {
+        assetId: IRON_ASSET_ID_HEX,
+        confirmed: "0",
+        unconfirmed: "0",
+        pending: "0",
+        available: "0",
+      };
+      const customBalances = balances.filter(
+        (b) => b.assetId !== IRON_ASSET_ID_HEX,
+      );
 
       return {
         name: a.name,
         viewOnly: a.viewOnly,
         publicAddress: a.publicAddress,
-        // TODO: Implement balances in Wallet
         balances: {
-          iron: {
-            assetId: IRON_ASSET_ID_HEX,
-            available: "0",
-            confirmed: "0",
-            pending: "0",
-            unconfirmed: "0",
-          },
-          custom: [],
+          iron: ironBalance,
+          custom: customBalances,
         },
-        head,
+        head: a.head
+          ? {
+              hash: Uint8ArrayUtils.toHex(a.head.hash),
+              sequence: a.head.sequence,
+            }
+          : null,
         // TODO: Implement account settings in Wallet
         settings: {
           balanceAutoHide: false,

@@ -500,17 +500,6 @@ export class WalletDb {
     };
   }
 
-  async getAccounts() {
-    return await this.db
-      .selectFrom("accounts")
-      .leftJoin("activeAccount", "accounts.id", "activeAccount.accountId")
-      .selectAll("accounts")
-      .select((eb) => [
-        eb("activeAccount.accountId", "is not", null).as("active"),
-      ])
-      .execute();
-  }
-
   async getAccount(name: string) {
     return await this.db
       .selectFrom("accounts")
@@ -620,24 +609,6 @@ export class WalletDb {
     return result;
   }
 
-  async getActiveAccount() {
-    return await this.db
-      .selectFrom("activeAccount")
-      .innerJoin("accounts", "accounts.id", "activeAccount.accountId")
-      .select([
-        "accounts.id",
-        "accounts.name",
-        "accounts.publicAddress",
-        "accounts.viewOnly",
-        "accounts.viewOnlyAccount",
-      ])
-      // Should always be true
-      .select((eb) => [
-        eb("activeAccount.accountId", "==", eb.ref("accounts.id")).as("active"),
-      ])
-      .executeTakeFirst();
-  }
-
   async setActiveAccount(name: string) {
     const result = await this.db
       .updateTable("activeAccount")
@@ -649,24 +620,6 @@ export class WalletDb {
       .executeTakeFirstOrThrow();
 
     return result.numUpdatedRows > 0;
-  }
-
-  async getAccountHead(accountId: number, network: Network) {
-    const result = await this.db
-      .selectFrom("accountNetworkHeads")
-      .selectAll()
-      .where("accountId", "=", accountId)
-      .where("network", "=", network)
-      .executeTakeFirst();
-    return result ? { hash: result.hash, sequence: result.sequence } : null;
-  }
-
-  async getAccountHeads(network: Network) {
-    return await this.db
-      .selectFrom("accountNetworkHeads")
-      .selectAll()
-      .where("network", "=", network)
-      .execute();
   }
 
   async updateAccountHead(
@@ -702,6 +655,114 @@ export class WalletDb {
         )
         .executeTakeFirst();
     }
+  }
+
+  async getActiveAccountWithHead(network: Network) {
+    return await this.db.transaction().execute(async (db) => {
+      const account = await db
+        .selectFrom("activeAccount")
+        .innerJoin("accounts", "accounts.id", "activeAccount.accountId")
+        .select([
+          "accounts.id",
+          "accounts.name",
+          "accounts.publicAddress",
+          "accounts.viewOnly",
+          "accounts.viewOnlyAccount",
+        ])
+        // Should always be true
+        .select((eb) => [
+          eb("activeAccount.accountId", "==", eb.ref("accounts.id")).as(
+            "active",
+          ),
+        ])
+        .executeTakeFirst();
+
+      if (!account) return;
+
+      const head = await db
+        .selectFrom("accountNetworkHeads")
+        .select(["sequence", "hash"])
+        .where((eb) =>
+          eb.and([
+            eb("network", "=", network),
+            eb("accountId", "==", account.id),
+          ]),
+        )
+        .executeTakeFirst();
+
+      return {
+        ...account,
+        head: head ?? null,
+      };
+    });
+  }
+
+  async getAccountWithHead(name: string, network: Network) {
+    return await this.db.transaction().execute(async (db) => {
+      const account = await db
+        .selectFrom("accounts")
+        .leftJoin("activeAccount", "accounts.id", "activeAccount.accountId")
+        .selectAll("accounts")
+        .select((eb) => [
+          eb("activeAccount.accountId", "is not", null).as("active"),
+        ])
+        .where("accounts.name", "=", name)
+        .executeTakeFirst();
+
+      if (!account) return;
+
+      const head = await db
+        .selectFrom("accountNetworkHeads")
+        .select(["sequence", "hash"])
+        .where((eb) =>
+          eb.and([
+            eb("network", "=", network),
+            eb("accountId", "==", account.id),
+          ]),
+        )
+        .executeTakeFirst();
+
+      return {
+        ...account,
+        head: head ?? null,
+      };
+    });
+  }
+
+  async getAccountsWithHeads(network: Network) {
+    const result = await this.db.transaction().execute(async (db) => {
+      const accountPromise = db
+        .selectFrom("accounts")
+        .leftJoin("activeAccount", "accounts.id", "activeAccount.accountId")
+        .selectAll("accounts")
+        .select((eb) => [
+          eb("activeAccount.accountId", "is not", null).as("active"),
+        ])
+        .execute();
+
+      const headPromise = db
+        .selectFrom("accountNetworkHeads")
+        .selectAll()
+        .where("network", "=", network)
+        .execute();
+
+      return {
+        accounts: await accountPromise,
+        heads: await headPromise,
+      };
+    });
+
+    const headsMap = new Map(
+      result.heads.map((head) => [
+        head.accountId,
+        { hash: head.hash, sequence: head.sequence },
+      ]),
+    );
+
+    return result.accounts.map((account) => ({
+      ...account,
+      head: headsMap.get(account.id) ?? null,
+    }));
   }
 
   async saveBlock(values: {

@@ -1,6 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import {
   ActivityIndicator,
+  Button,
   ScrollView,
   StyleSheet,
   Text,
@@ -42,6 +43,9 @@ export default function Balances() {
   const getWalletStatusResult = facade.getWalletStatus.useQuery(undefined, {
     refetchInterval: 1000,
   });
+
+  const pauseSyncing = facade.pauseSyncing.useMutation();
+  const resumeSyncing = facade.resumeSyncing.useMutation();
 
   useEffect(() => {
     if (getAccountResult.data) {
@@ -90,11 +94,32 @@ export default function Balances() {
       {getWalletStatusResult.data &&
         getWalletStatusResult.data.status === "SCANNING" && (
           // TODO: Only show this if the wallet is behind a certain number of blocks to avoid flickering
-          <>
+          <View style={{ backgroundColor: "#eee" }}>
             <Text>{`Blocks Scanned: ${getAccountResult.data?.head?.sequence ?? "--"} / ${getWalletStatusResult.data.latestKnownBlock}`}</Text>
             <Text>Your balances may currently be inaccurate.</Text>
             <Text>Learn More</Text>
-          </>
+            <Button
+              onPress={() => {
+                pauseSyncing.mutate(undefined);
+              }}
+              title="Pause"
+            />
+          </View>
+        )}
+      {getWalletStatusResult.data &&
+        getWalletStatusResult.data.status !== "SCANNING" && (
+          // TODO: Once scanning starts automatically, this should only show in the "PAUSED" state.
+          <View style={{ backgroundColor: "#eee" }}>
+            <Text>{`Scanning Paused: ${getAccountResult.data?.head?.sequence ?? "--"} / ${getWalletStatusResult.data.latestKnownBlock}`}</Text>
+            <Text>Your balances may currently be inaccurate.</Text>
+            <Text>Learn More</Text>
+            <Button
+              onPress={() => {
+                resumeSyncing.mutate(undefined);
+              }}
+              title="Resume"
+            />
+          </View>
         )}
       <View style={{ display: "flex", flexDirection: "row" }}>
         <LinkButton href="/send/" title="Send" />

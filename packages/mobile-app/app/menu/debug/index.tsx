@@ -26,14 +26,14 @@ export default function MenuDebug() {
         )}
         <Text>{}</Text>
         <Button
-          onPress={async () => {
-            await resumeSyncing.mutateAsync(undefined);
+          onPress={() => {
+            resumeSyncing.mutate(undefined);
           }}
           title="Resume Syncing"
         />
         <Button
-          onPress={async () => {
-            await pauseSyncing.mutateAsync(undefined);
+          onPress={() => {
+            pauseSyncing.mutateAsync(undefined);
           }}
           title="Pause Syncing"
         />
