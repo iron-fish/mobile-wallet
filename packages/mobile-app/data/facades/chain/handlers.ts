@@ -2,34 +2,39 @@ import { f } from "data-facade";
 import { Asset, ChainHandlers } from "./types";
 
 import { isValidPublicAddress } from "ironfish-native-module";
-import { IronFishApi } from "../../api/api";
 import { Network } from "../../constants";
+import { wallet } from "../../wallet/wallet";
+import * as Uint8ArrayUtils from "../../../utils/uint8Array";
 
 export const chainHandlers = f.facade<ChainHandlers>({
   getAsset: f.handler.query(
-    async ({ assetId }: { assetId: string }): Promise<Asset> => {
-      const asset = await IronFishApi.getAsset(Network.TESTNET, assetId);
+    async ({ assetId }: { assetId: string }): Promise<Asset | null> => {
+      const asset = await wallet.getAsset(
+        Network.TESTNET,
+        Uint8ArrayUtils.fromHex(assetId),
+      );
+
+      if (!asset) {
+        return null;
+      }
 
       return {
         id: assetId,
         name: asset.name,
-        createdTransactionHash: asset.created_transaction_hash,
-        createdTransactionTimestamp: asset.created_transaction_timestamp,
+        createdTransactionHash: asset.createdTransactionHash,
+        createdTransactionTimestamp: asset.createdTransactionTimestamp,
         creator: asset.creator,
         metadata: asset.metadata,
         owner: asset.owner,
-        verification:
-          asset.verified_metadata === null
-            ? { status: "unverified" }
-            : {
-                status: "verified",
-                createdAt: asset.verified_metadata.created_at,
-                updatedAt: asset.verified_metadata.updated_at,
-                symbol: asset.verified_metadata.symbol,
-                decimals: asset.verified_metadata.decimals,
-                logoURI: asset.verified_metadata.logo_uri,
-                website: asset.verified_metadata.website,
-              },
+        verification: !asset.verified
+          ? { status: "unverified" }
+          : {
+              status: "verified",
+              symbol: asset.symbol ?? asset.name,
+              decimals: asset.decimals ?? undefined,
+              logoURI: asset.logoURI ?? undefined,
+              website: asset.website ?? undefined,
+            },
         supply: asset.supply,
       };
     },

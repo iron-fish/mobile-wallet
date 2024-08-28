@@ -7,7 +7,7 @@ const API_SERVER_URLS: Record<Network, string> = {
   [Network.TESTNET]: "https://testnet.api.ironfish.network/",
 };
 
-type AssetFile = SerializedAsset & { updatedAt: number };
+export type AssetFile = SerializedAsset & { updatedAt: number };
 
 /**
  * Contains methods for making API requests to the Iron Fish API.
@@ -26,7 +26,7 @@ class IFApi {
     return directory;
   }
 
-  async getAsset(network: Network, assetId: string): Promise<AssetFile> {
+  async getAsset(network: Network, assetId: string): Promise<SerializedAsset> {
     const assetsDir = await this.getAssetsDir(network);
     // console.log(assetsDir);
 

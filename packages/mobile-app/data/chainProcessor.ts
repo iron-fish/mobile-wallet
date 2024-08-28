@@ -51,7 +51,7 @@ export class ChainProcessor {
     }
 
     // Freeze this value in case it changes while we're updating the head
-    const latest = await WalletServerApi.getLatestBlock(this.network);
+    const latest = await Blockchain.getLatestBlock(this.network);
     const chainHead = {
       hash: Uint8ArrayUtils.fromHex(latest.hash),
       sequence: latest.sequence,

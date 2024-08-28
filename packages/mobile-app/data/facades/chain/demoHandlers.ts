@@ -5,19 +5,17 @@ import { isValidPublicAddress } from "ironfish-native-module";
 
 export const chainDemoHandlers = f.facade<ChainHandlers>({
   getAsset: f.handler.query(
-    async ({ assetId }: { assetId: string }): Promise<Asset> => {
-      // TODO: Implement asset fetching or storage
+    async ({ assetId }: { assetId: string }): Promise<Asset | null> => {
       return {
         id: assetId,
         name: "$IRON",
         createdTransactionHash: "hash",
+        createdTransactionTimestamp: new Date().toISOString(),
         creator: "creator",
         metadata: "metadata",
         owner: "owner",
-        nonce: 0,
-        // TODO: Implement asset verification
-        verification: { status: "unknown" },
-        supply: "0",
+        verification: { status: "unverified" },
+        supply: "1",
       };
     },
   ),

@@ -17,8 +17,7 @@ import {
   LanguageUtils,
   TransactionStatus,
 } from "@ironfish/sdk";
-import { WalletServerApi } from "../../walletServerApi/walletServer";
-import { IronFishApi } from "../../api/api";
+import { Blockchain } from "../../blockchain";
 
 const IRON_ASSET_ID_HEX =
   "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c";
@@ -28,18 +27,13 @@ export const walletHandlers = f.facade<WalletHandlers>({
     async ({ name }: { name: string }): Promise<Account> => {
       const account = await wallet.createAccount(name);
 
-      const ironAsset = await IronFishApi.getAsset(
-        Network.TESTNET,
-        IRON_ASSET_ID_HEX,
-      );
-
       return {
         name: account.name,
         viewOnly: account.viewOnly,
         publicAddress: account.publicAddress,
         balances: {
           iron: {
-            asset: ironAsset,
+            assetId: IRON_ASSET_ID_HEX,
             available: "0",
             confirmed: "0",
             pending: "0",
@@ -92,35 +86,29 @@ export const walletHandlers = f.facade<WalletHandlers>({
         return null;
       }
 
-      const balances = await wallet.getBalances(account.id, Network.TESTNET);
+      const balances = (
+        await wallet.getBalances(account.id, Network.TESTNET)
+      ).map((b) => {
+        return {
+          assetId: Uint8ArrayUtils.toHex(b.assetId),
+          confirmed: b.confirmed,
+          unconfirmed: b.unconfirmed,
+          pending: "0",
+          available: "0",
+        };
+      });
 
-      const balancesWithAssets = await Promise.all(
-        balances.map(async (b) => {
-          const asset = await IronFishApi.getAsset(
-            Network.TESTNET,
-            Uint8ArrayUtils.toHex(b.assetId),
-          );
-          return {
-            asset,
-            available: "0",
-            pending: "0",
-            confirmed: b.confirmed,
-            unconfirmed: b.unconfirmed,
-          };
-        }),
-      );
-
-      const ironBalance = balancesWithAssets.find(
-        (b) => b.asset.identifier === IRON_ASSET_ID_HEX,
+      const ironBalance = balances.find(
+        (b) => b.assetId === IRON_ASSET_ID_HEX,
       ) ?? {
-        asset: await IronFishApi.getAsset(Network.TESTNET, IRON_ASSET_ID_HEX),
-        available: "0",
-        pending: "0",
+        assetId: IRON_ASSET_ID_HEX,
         confirmed: "0",
         unconfirmed: "0",
+        pending: "0",
+        available: "0",
       };
-      const customBalances = balancesWithAssets.filter(
-        (b) => b.asset.identifier !== IRON_ASSET_ID_HEX,
+      const customBalances = balances.filter(
+        (b) => b.assetId !== IRON_ASSET_ID_HEX,
       );
 
       const result: Account = {
@@ -151,11 +139,6 @@ export const walletHandlers = f.facade<WalletHandlers>({
       ]),
     );
 
-    const ironAsset = await IronFishApi.getAsset(
-      Network.TESTNET,
-      IRON_ASSET_ID_HEX,
-    );
-
     return accounts.map((a): Account => {
       const h = heads.get(a.id);
       let head = null;
@@ -170,7 +153,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         // TODO: Implement balances in Wallet
         balances: {
           iron: {
-            asset: ironAsset,
+            assetId: IRON_ASSET_ID_HEX,
             available: "0",
             confirmed: "0",
             pending: "0",
@@ -302,7 +285,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
     },
   ),
   getWalletStatus: f.handler.query(async (): Promise<WalletStatus> => {
-    const block = await WalletServerApi.getLatestBlock(Network.TESTNET);
+    const block = await Blockchain.getLatestBlock(Network.TESTNET);
     return { status: wallet.scanState.type, latestKnownBlock: block.sequence };
   }),
   importAccount: f.handler.mutation(

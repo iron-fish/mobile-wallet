@@ -29,6 +29,16 @@ export default function Balances() {
     },
   );
 
+  const getIronAsset = facade.getAsset.useQuery(
+    {
+      assetId: getAccountResult.data?.balances.iron.assetId ?? "",
+    },
+    {
+      refetchInterval: 1000,
+      enabled: !!getAccountResult.data,
+    },
+  );
+
   const getWalletStatusResult = facade.getWalletStatus.useQuery(undefined, {
     refetchInterval: 1000,
   });
@@ -72,7 +82,9 @@ export default function Balances() {
       {getAccountResult.data && (
         <>
           <Text>{`${getAccountResult.data.balances.iron.confirmed}`}</Text>
-          <Text>{`${getAccountResult.data.balances.iron.asset.verified_metadata ? `${getAccountResult.data.balances.iron.asset.verified_metadata.symbol} (Verified)` : `${getAccountResult.data.balances.iron.asset.name} (Not Verified)`}`}</Text>
+          {getIronAsset.data && (
+            <Text>{`${getIronAsset.data.verification.status === "verified" ? `${getIronAsset.data.verification.symbol} (Verified)` : `${getIronAsset.data.name} (Unverified)`}`}</Text>
+          )}
         </>
       )}
       {getWalletStatusResult.data &&

@@ -4,6 +4,16 @@ import { Network } from "./constants";
 import * as Uint8ArrayUtils from "../utils/uint8Array";
 import { RecentBlocks } from "./recentBlocks";
 import { WalletServerChunksApi } from "./walletServerApi/walletServerChunks";
+import { GetLatestBlockResponse } from "./walletServerApi/types";
+
+type LatestBlockRequest =
+  | { type: "LOADING"; request: Promise<GetLatestBlockResponse> }
+  | { type: "LOADED"; updatedAt: number; response: GetLatestBlockResponse };
+
+/**
+ * Milliseconds after which the latest block is considered out-of-date.
+ */
+const LATEST_BLOCK_UPDATE_MS = 5000;
 
 /**
  * Uses WalletServerApi and WalletServerChunksApi to download blocks from the wallet server
@@ -22,7 +32,12 @@ class BlockchainClass {
 
   private isRequesting = false;
 
-  async lockRequest(cb: () => Promise<void>) {
+  /**
+   * Ongoing asset loads, indexed by network and hex-encoded asset identifier.
+   */
+  private latestBlocks: Map<Network, LatestBlockRequest> = new Map();
+
+  private async lockRequest(cb: () => Promise<void>) {
     if (this.isRequesting) {
       console.warn("already requesting");
       return;
@@ -34,6 +49,41 @@ class BlockchainClass {
     } finally {
       this.isRequesting = false;
     }
+  }
+
+  getLatestBlock(
+    network: Network,
+  ): Promise<{ hash: string; sequence: number }> {
+    const cached = this.latestBlocks.get(network);
+
+    if (cached && cached.type === "LOADING") {
+      return cached.request;
+    }
+
+    if (
+      !cached ||
+      cached.updatedAt < performance.now() - LATEST_BLOCK_UPDATE_MS
+    ) {
+      const latestBlockPromise = WalletServerApi.getLatestBlock(network)
+        .then((response) => {
+          this.latestBlocks.set(network, {
+            type: "LOADED",
+            updatedAt: performance.now(),
+            response,
+          });
+          return response;
+        })
+        .catch((e) => {
+          this.latestBlocks.delete(network);
+        });
+      this.latestBlocks.set(network, {
+        type: "LOADING",
+        request: latestBlockPromise,
+      });
+      return latestBlockPromise;
+    }
+
+    return Promise.resolve(cached.response);
   }
 
   /**

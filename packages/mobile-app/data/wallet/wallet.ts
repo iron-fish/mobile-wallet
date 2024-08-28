@@ -12,9 +12,10 @@ import { Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
 import { LightBlock, LightTransaction } from "../walletServerApi/lightstreamer";
 import { WriteQueue } from "./writeQueue";
-import { WalletServerApi } from "../walletServerApi/walletServer";
+import { AssetLoader } from "./assetLoader";
+import { Blockchain } from "../blockchain";
 
-type StartedState = { type: "STARTED"; db: WalletDb };
+type StartedState = { type: "STARTED"; db: WalletDb; assetLoader: AssetLoader };
 type WalletState = { type: "STOPPED" } | { type: "LOADING" } | StartedState;
 type ScanState =
   // Not scanning, and a scan can be started
@@ -43,7 +44,7 @@ export class Wallet {
 
     const db = await WalletDb.init();
 
-    this.state = { type: "STARTED", db };
+    this.state = { type: "STARTED", db, assetLoader: new AssetLoader(db) };
   }
 
   async stop() {
@@ -140,7 +141,7 @@ export class Wallet {
   private async getUnconfirmedDeltas(accountId: number, network: Network) {
     assertStarted(this.state);
 
-    const chainHead = (await WalletServerApi.getLatestBlock(network)).sequence;
+    const chainHead = (await Blockchain.getLatestBlock(network)).sequence;
     // TODO: Make confirmation range configurable
     const confirmationRange = 2;
 
@@ -477,6 +478,16 @@ export class Wallet {
               account.decodedAccount.viewKey,
             );
 
+            // Preload asset info from the API
+            const assetIds = new Set<string>(
+              [...transactions.values()]
+                .flatMap((t) => t.notes)
+                .map((n) => Uint8ArrayUtils.toHex(n.note.assetId())),
+            );
+            for (const assetId of assetIds) {
+              this.state.assetLoader.preloadAsset(network, assetId);
+            }
+
             for (const [hash, transaction] of transactions.entries()) {
               const txn = transactionMap.get(hash);
               if (txn) {
@@ -628,6 +639,12 @@ export class Wallet {
     } else if (this.scanState.type === "IDLE") {
       this.scanState = { type: "PAUSED" };
     }
+  }
+
+  async getAsset(network: Network, assetId: Uint8Array) {
+    assertStarted(this.state);
+
+    return this.state.assetLoader.getAsset(network, assetId);
   }
 }
 

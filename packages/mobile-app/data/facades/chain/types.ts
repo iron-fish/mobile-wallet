@@ -1,8 +1,6 @@
 import { Mutation, Query } from "data-facade";
 
 export type VerifiedAssetMetadata = {
-  createdAt: string;
-  updatedAt: string;
   symbol: string;
   decimals?: number;
   logoURI?: string;
@@ -22,11 +20,11 @@ export type Asset = {
   createdTransactionHash: string;
   createdTransactionTimestamp: string;
   verification: AssetVerification;
-  supply?: string;
+  supply: string | null;
 };
 
 export type ChainHandlers = {
-  getAsset: Query<(args: { assetId: string }) => Asset>;
+  getAsset: Query<(args: { assetId: string }) => Asset | null>;
   getNetworkInfo: Query<() => { networkId: number }>;
   isValidPublicAddress: Query<(args: { address: string }) => boolean>;
   requestFaucetTokens: Mutation<
