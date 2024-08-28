@@ -27,7 +27,9 @@ type UseQueryType<
 export type HandlerQueryBuilderReturn<TResolver extends ResolverFunc> = (
   baseQueryKey: string,
 ) => {
-  useQuery: UseQueryType<TResolver, Awaited<ReturnType<TResolver>>>;
+  buildQueryKey: (args: Parameters<TResolver>["length"] extends 0 ? null | undefined : Parameters<TResolver>[0]) => any[];
+  resolver: (args: Parameters<TResolver>["length"] extends 0 ? null | undefined : Parameters<TResolver>[0]) => Awaited<ReturnType<TResolver>>;
+  useQuery: UseQueryType<TResolver>;
 };
 
 // Mutation type utils
