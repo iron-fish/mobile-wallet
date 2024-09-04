@@ -76,6 +76,7 @@ interface NotesTable {
   // into a signed integer and special-case large values (assume values <0 are largest), or store
   // the value as a Uint8Array (I think we do this for the keys in leveldb)
   value: string;
+  valueNum: number;
   // Depending how we want to search memos, we could store this multiple times. E.g. do we want to
   // allow searching non-utf8-encoded memos? Like searching binary data as hex
   memo: Uint8Array;
@@ -280,6 +281,9 @@ export class WalletDb {
                 .addColumn("sender", SQLiteType.Blob, (col) => col.notNull())
                 .addColumn("owner", SQLiteType.Blob, (col) => col.notNull())
                 .addColumn("value", SQLiteType.String, (col) => col.notNull())
+                .addColumn("valueNum", SQLiteType.Number, (col) =>
+                  col.notNull(),
+                )
                 .addColumn("memo", SQLiteType.Blob, (col) => col.notNull())
                 .execute();
               console.log("created notes");
@@ -897,6 +901,7 @@ export class WalletDb {
               owner: Uint8ArrayUtils.fromHex(note.note.owner()),
               sender: Uint8ArrayUtils.fromHex(note.note.sender()),
               value: note.note.value().toString(),
+              valueNum: Number(note.note.value()),
               memo: new Uint8Array(note.note.memo()),
               position: note.position,
             })
@@ -938,6 +943,7 @@ export class WalletDb {
               owner: Uint8ArrayUtils.fromHex(note.note.owner()),
               sender: Uint8ArrayUtils.fromHex(note.note.sender()),
               value: note.note.value().toString(),
+              valueNum: Number(note.note.value()),
               memo: new Uint8Array(note.note.memo()),
               position: null,
             })
@@ -1207,7 +1213,11 @@ export class WalletDb {
       .execute();
   }
 
-  async getUnspentNotes(accountId: number, network: Network) {
+  async getUnspentNotes(
+    accountId: number,
+    assetId: Uint8Array,
+    network: Network,
+  ) {
     // TODO: Consider the confirmation range
     return await this.db
       .selectFrom("notes")
@@ -1216,12 +1226,15 @@ export class WalletDb {
       .where((eb) =>
         eb.and([
           eb("notes.accountId", "=", accountId),
+          eb("notes.assetId", "=", assetId),
           eb("notes.network", "=", network),
           // Assumes we don't set note position on sent notes
           eb("notes.position", "is not", null),
           eb("nullifiers.transactionHash", "is", null),
         ]),
       )
+      // Spends the largest notes first
+      .orderBy("notes.valueNum", "desc")
       .execute();
   }
 

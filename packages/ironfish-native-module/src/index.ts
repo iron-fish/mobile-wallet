@@ -106,3 +106,36 @@ export function nullifier({
 }): Promise<string> {
   return IronfishNativeModule.nullifier(note, position, viewHexKey);
 }
+
+export function createNote({
+  owner,
+  value,
+  memo,
+  assetId,
+  sender,
+}: {
+  owner: Uint8Array;
+  value: string;
+  memo: Uint8Array;
+  assetId: Uint8Array;
+  sender: Uint8Array;
+}): Promise<Uint8Array> {
+  return IronfishNativeModule.createNote(owner, value, memo, assetId, sender);
+}
+
+export function createTransaction(
+  spendComponents: {
+    note: string;
+    witnessRootHash: string;
+    witnessTreeSize: string;
+    witnessAuthPath: { side: "Left" | "Right"; hashOfSibling: string }[];
+  }[],
+  outputs: string[],
+  spendingKey: Uint8Array,
+): Promise<Uint8Array> {
+  return IronfishNativeModule.createTransaction(
+    { components: spendComponents },
+    { outputs },
+    spendingKey,
+  );
+}

@@ -3,8 +3,9 @@ extern crate num;
 extern crate num_derive;
 
 use std::{
+    cmp,
     fs::{self, File},
-    io::{Read, Seek, SeekFrom},
+    io::{Cursor, Read, Seek, SeekFrom},
 };
 use tokio_rayon::rayon::iter::{
     IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator,
@@ -12,7 +13,11 @@ use tokio_rayon::rayon::iter::{
 use zune_inflate::DeflateDecoder;
 
 use crate::num::FromPrimitive;
-use ironfish::{keys::Language, serializing::bytes_to_hex, Note, PublicAddress, SaplingKey};
+use ironfish::sapling_bls12::Scalar;
+use ironfish::{
+    assets::asset::ID_LENGTH, keys::Language, note::MEMO_SIZE, serializing::bytes_to_hex,
+    MerkleNoteHash, Note, PublicAddress, SaplingKey,
+};
 
 uniffi::setup_scaffolding!();
 
@@ -63,6 +68,29 @@ pub struct Key {
 pub struct DecryptedNote {
     pub index: u32,
     pub note: String,
+}
+
+#[derive(uniffi::Record)]
+pub struct WitnessNode {
+    pub side: String,
+    pub hash_of_sibling: Vec<u8>,
+}
+
+#[derive(uniffi::Record)]
+pub struct SpendComponents {
+    pub note: Vec<u8>,
+    pub witness_root_hash: Vec<u8>,
+    pub witness_tree_size: u64,
+    pub witness_auth_path: Vec<WitnessNode>,
+}
+
+#[derive(uniffi::Record)]
+pub struct NoteParams {
+    owner: Vec<u8>,
+    value: u64,
+    memo: Vec<u8>,
+    asset_id: Vec<u8>,
+    sender: Vec<u8>,
 }
 
 #[uniffi::export]
@@ -273,4 +301,103 @@ pub fn nullifier(note: String, position: String, view_key: String) -> Result<Str
     let note = Note::read(&bytes[..]).map_err(|e| EnumError::Error { msg: e.to_string() })?;
 
     Ok(const_hex::encode(note.nullifier(&view_key, position_u64).0))
+}
+
+#[uniffi::export]
+pub fn create_note(params: NoteParams) -> Result<Vec<u8>, EnumError> {
+    let mut owner_vec = Cursor::new(params.owner);
+    let mut sender_vec = Cursor::new(params.sender);
+
+    //memo
+    let num_to_copy = cmp::min(params.memo.len(), MEMO_SIZE);
+    let mut memo_bytes = [0; MEMO_SIZE];
+    memo_bytes[..num_to_copy].copy_from_slice(&params.memo[..num_to_copy]);
+
+    //asset id
+    let mut asset_id_bytes = [0; ID_LENGTH];
+    asset_id_bytes.clone_from_slice(&params.asset_id[0..ID_LENGTH]);
+    let asset_id = asset_id_bytes.try_into().map_err(|_| EnumError::Error {
+        msg: "Error converting to AssetIdentifier".to_string(),
+    })?;
+
+    let note = Note::new(
+        PublicAddress::read(&mut owner_vec).map_err(|e| EnumError::Error { msg: e.to_string() })?,
+        params.value,
+        memo_bytes,
+        asset_id,
+        PublicAddress::read(&mut sender_vec)
+            .map_err(|e| EnumError::Error { msg: e.to_string() })?,
+    );
+
+    let mut arr: Vec<u8> = vec![];
+    note.write(&mut arr)
+        .map_err(|e| EnumError::Error { msg: e.to_string() })?;
+
+    Ok(arr)
+}
+
+#[uniffi::export]
+pub fn create_transaction(
+    spend_components: Vec<SpendComponents>,
+    outputs: Vec<Vec<u8>>,
+    spending_key: Vec<u8>,
+) -> Result<Vec<u8>, EnumError> {
+    let mut transaction =
+        ironfish::ProposedTransaction::new(ironfish::transaction::TransactionVersion::V2);
+    for spend_component in spend_components {
+        let note_data = Cursor::new(spend_component.note);
+        let note =
+            ironfish::Note::read(note_data).map_err(|e| EnumError::Error { msg: e.to_string() })?;
+
+        let root_hash_data = Cursor::new(spend_component.witness_root_hash);
+        let root_hash = MerkleNoteHash::read(root_hash_data)
+            .map_err(|e| EnumError::Error { msg: e.to_string() })?
+            .0;
+        let witness_auth_path: Vec<ironfish::witness::WitnessNode<Scalar>> = spend_component
+            .witness_auth_path
+            .into_iter()
+            .map(|witness_node| {
+                let hash_of_sibling_data = Cursor::new(witness_node.hash_of_sibling);
+                let hash_of_sibling: Scalar = MerkleNoteHash::read(hash_of_sibling_data)
+                    .map_err(|e| EnumError::Error { msg: e.to_string() })?
+                    .0;
+                match witness_node.side.as_str() {
+                    "Left" => Ok(ironfish::witness::WitnessNode::Left(hash_of_sibling)),
+                    "Right" => Ok(ironfish::witness::WitnessNode::Right(hash_of_sibling)),
+                    _ => Err(EnumError::Error {
+                        msg: "Invalid side".to_string(),
+                    }),
+                }
+            })
+            .collect::<Result<Vec<ironfish::witness::WitnessNode<Scalar>>, EnumError>>()?;
+        let witness = ironfish::witness::Witness {
+            root_hash,
+            tree_size: spend_component.witness_tree_size as usize,
+            auth_path: witness_auth_path,
+        };
+        transaction
+            .add_spend(note, &witness)
+            .map_err(|e| EnumError::Error { msg: e.to_string() })?;
+    }
+
+    for output in outputs {
+        let output_data = Cursor::new(output);
+        let output = ironfish::Note::read(output_data)
+            .map_err(|e| EnumError::Error { msg: e.to_string() })?;
+        transaction
+            .add_output(output)
+            .map_err(|e| EnumError::Error { msg: e.to_string() })?;
+    }
+
+    let mut spending_key_data = Cursor::new(spending_key);
+    let spending_key = ironfish::SaplingKey::read(&mut spending_key_data)
+        .map_err(|e| EnumError::Error { msg: e.to_string() })?;
+    let posted = transaction
+        .post(&spending_key, None, 1)
+        .map_err(|e| EnumError::Error { msg: e.to_string() })?;
+    let mut buffer = Vec::new();
+    posted
+        .write(&mut buffer)
+        .map_err(|e| EnumError::Error { msg: e.to_string() })?;
+    Ok(buffer)
 }

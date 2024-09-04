@@ -28,6 +28,38 @@ struct ExpoOutput : Record {
   var note: String
 }
 
+struct SpendComponentsInput: Record {
+  @Field
+  var components: [SpendComponentInput]
+}
+
+struct SpendComponentInput: Record {
+  @Field
+  var note: String
+
+  @Field
+  var witnessRootHash: String
+
+  @Field
+  var witnessTreeSize: String
+
+  @Field
+  var witnessAuthPath: [WitnessNodeInput]
+}
+
+struct WitnessNodeInput: Record {
+  @Field
+  var side: String
+
+  @Field
+  var hashOfSibling: String
+}
+
+struct OutputsInput: Record {
+  @Field
+  var outputs: [String]
+}
+
 public class IronfishNativeModule: Module {
   // Each module class must implement the definition function. The definition consists of components
   // that describes the module's functionality and behavior.
@@ -114,5 +146,47 @@ public class IronfishNativeModule: Module {
     AsyncFunction("nullifier") { (note: String, position: String, viewKey: String) throws -> String in
       return try nullifier(note: note, position: position, viewKey: viewKey)
     }
+
+    AsyncFunction ("createNote") { (owner: Data, value: String, memo: Data, assetId: Data, sender: Data) throws -> Data in
+      do {
+          let note = try createNote(params: NoteParams(owner: owner, value: UInt64(value)!, memo: memo, assetId: assetId, sender: sender))
+          return note
+      } catch let error as NSError {
+          print("Unexpected error: \(error.debugDescription)")
+          throw error
+      }
+    }
+
+    AsyncFunction("createTransaction") { (spendComponents: SpendComponentsInput, outputs: OutputsInput, spendingKey: Data) throws  -> Data in
+      let spendComponentsConverted = spendComponents.components.map { spendComponent in
+          let witnessAuthPath: [WitnessNode] = spendComponent.witnessAuthPath.map { WitnessNode(side: $0.side, hashOfSibling: Data(hexString: $0.hashOfSibling)!) }
+          return SpendComponents(note: Data(hexString: spendComponent.note)!, witnessRootHash: Data(hexString: spendComponent.witnessRootHash)!, witnessTreeSize: UInt64(spendComponent.witnessTreeSize)!, witnessAuthPath: witnessAuthPath)
+      }
+      do {
+        let transaction = try createTransaction(spendComponents: spendComponentsConverted, outputs: outputs.outputs.map {Data(hexString: $0)!}, spendingKey: spendingKey)
+          return transaction
+      } catch let error as NSError {
+          print("Unexpected error: \(error.debugDescription)")
+          throw error
+      }
+    }
   }
+}
+
+extension Data {
+    init?(hexString: String) {
+        let length = hexString.count / 2
+        var data = Data(capacity: length)
+        for i in 0..<length {
+            let j = hexString.index(hexString.startIndex, offsetBy: i*2)
+            let k = hexString.index(j, offsetBy: 2)
+            let bytes = hexString[j..<k]
+            if var num = UInt8(bytes, radix: 16) {
+                data.append(&num, count: 1)
+            } else {
+                return nil
+            }
+        }
+        self = data
+    }
 }

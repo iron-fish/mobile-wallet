@@ -6,6 +6,17 @@ export type GetLatestBlockResponse = {
   hash: string;
 };
 
+export type GetNoteWitnessResponse = {
+  authPath: { side: "Left" | "Right"; hashOfSibling: string }[];
+  rootHash: string;
+  treeSize: number;
+};
+
+export type GetFeeRatesResponse = {
+  slow: string;
+  average: string;
+  fast: string;
+};
 export interface WalletServerTransformer {
   getLatestBlock(
     network: Network,
@@ -27,4 +38,14 @@ export interface WalletServerTransformer {
     end: number,
     result: string[],
   ): Promise<string[]>;
+  getNoteWitness(
+    network: Network,
+    index: number,
+    confirmations: number | undefined,
+    result: GetNoteWitnessResponse,
+  ): Promise<GetNoteWitnessResponse>;
+  getFeeRates(
+    network: Network,
+    result: GetFeeRatesResponse,
+  ): Promise<GetFeeRatesResponse>;
 }

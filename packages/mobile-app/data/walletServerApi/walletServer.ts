@@ -1,7 +1,12 @@
 import { Network } from "../constants";
 import { LightBlock } from "./lightstreamer";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
-import { GetLatestBlockResponse, WalletServerTransformer } from "./types";
+import {
+  GetFeeRatesResponse,
+  GetLatestBlockResponse,
+  GetNoteWitnessResponse,
+  WalletServerTransformer,
+} from "./types";
 import { ForkTester } from "./transformers/forkTester";
 
 const WALLET_SERVER_URLS: Record<Network, string> = {
@@ -16,22 +21,8 @@ const WALLET_SERVER_URLS: Record<Network, string> = {
 class WalletServer {
   transformers: WalletServerTransformer[] = [ForkTester];
 
-  private latestBlockCache: Map<
-    Network,
-    { time: number; response: GetLatestBlockResponse }
-  > = new Map();
-  private LATEST_BLOCK_CACHE_MS = 5000;
-
   async getLatestBlock(network: Network): Promise<GetLatestBlockResponse> {
     const url = WALLET_SERVER_URLS[network] + "latest-block";
-
-    const cached = this.latestBlockCache.get(network);
-    if (
-      cached &&
-      performance.now() - cached.time < this.LATEST_BLOCK_CACHE_MS
-    ) {
-      return cached.response;
-    }
 
     console.log("requesting latest block");
 
@@ -41,11 +32,6 @@ class WalletServer {
     for (const transformer of this.transformers) {
       latestBlock = await transformer.getLatestBlock(network, latestBlock);
     }
-
-    this.latestBlockCache.set(network, {
-      time: performance.now(),
-      response: latestBlock,
-    });
 
     return latestBlock;
   }
@@ -90,7 +76,7 @@ class WalletServer {
   ): Promise<string[]> {
     const url =
       WALLET_SERVER_URLS[network] + `block-range?start=${start}&end=${end}`;
-    console.log("requesting blocks", start, end);
+    console.log(`requesting blocks - start: ${start}, end: ${end}`);
 
     const fetchResult = await fetch(url);
     let blocks = (await fetchResult.json()) as string[];
@@ -100,6 +86,53 @@ class WalletServer {
     }
 
     return blocks;
+  }
+
+  async getFeeRates(network: Network): Promise<GetFeeRatesResponse> {
+    const url = WALLET_SERVER_URLS[network] + `fee-rates`;
+
+    console.log(`requesting fee rates`);
+
+    const fetchResult = await fetch(url);
+    let rates = (await fetchResult.json()) as GetFeeRatesResponse;
+
+    for (const transformer of this.transformers) {
+      rates = await transformer.getFeeRates(network, rates);
+    }
+
+    return rates;
+  }
+
+  async getNoteWitness(
+    network: Network,
+    index: number,
+    confirmations?: number,
+  ): Promise<GetNoteWitnessResponse> {
+    const url =
+      WALLET_SERVER_URLS[network] +
+      `note-witness?index=${index}${confirmations != null ? `&confirmations=${confirmations}` : ``}`;
+
+    console.log(
+      `requesting note witness - index: ${index} confirmations: ${confirmations}`,
+    );
+
+    const fetchResult = await fetch(url);
+    let witness = (await fetchResult.json()) as {
+      authPath: { side: "Left" | "Right"; hashOfSibling: string }[];
+      rootHash: string;
+      treeSize: number;
+    };
+
+    for (const transformer of this.transformers) {
+      witness = await transformer.getNoteWitness(
+        network,
+        index,
+        confirmations,
+        witness,
+      );
+    }
+
+    return witness;
   }
 }
 

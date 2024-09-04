@@ -1,6 +1,11 @@
 import { Network } from "../../constants";
 import { LightBlock } from "../lightstreamer";
-import { GetLatestBlockResponse, WalletServerTransformer } from "../types";
+import {
+  GetFeeRatesResponse,
+  GetLatestBlockResponse,
+  GetNoteWitnessResponse,
+  WalletServerTransformer,
+} from "../types";
 import * as Uint8ArrayUtils from "../../../utils/uint8Array";
 
 const getRandomHash = () =>
@@ -99,6 +104,20 @@ class ForkTesterClass implements WalletServerTransformer {
       }
       return Promise.resolve(newBlocks);
     }
+    return Promise.resolve(result);
+  }
+  getNoteWitness(
+    network: Network,
+    index: number,
+    confirmations: number | undefined,
+    result: GetNoteWitnessResponse,
+  ): Promise<GetNoteWitnessResponse> {
+    return Promise.resolve(result);
+  }
+  getFeeRates(
+    network: Network,
+    result: GetFeeRatesResponse,
+  ): Promise<GetFeeRatesResponse> {
     return Promise.resolve(result);
   }
 }
