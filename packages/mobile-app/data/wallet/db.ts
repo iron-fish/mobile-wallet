@@ -7,6 +7,7 @@ import { AccountFormat, encodeAccount, Note } from "@ironfish/sdk";
 import { Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
 import { TransactionType } from "../facades/wallet/types";
+import { SerializedAsset } from "../api/types";
 interface AccountsTable {
   id: Generated<number>;
   name: string;
@@ -96,6 +97,25 @@ interface BalancesTable {
   value: string;
 }
 
+interface AssetsTable {
+  id: Generated<number>;
+  network: Network;
+  assetId: Uint8Array;
+  updatedAt: Date;
+  name: string;
+  owner: string;
+  creator: string;
+  metadata: string;
+  createdTransactionHash: string;
+  createdTransactionTimestamp: string;
+  verified: boolean;
+  supply: string | null;
+  symbol: string | null;
+  decimals: number | null;
+  logoURI: string | null;
+  website: string | null;
+}
+
 interface Database {
   accounts: AccountsTable;
   activeAccount: ActiveAccountTable;
@@ -106,6 +126,7 @@ interface Database {
   notes: NotesTable;
   nullifiers: NullifiersTable;
   balances: BalancesTable;
+  assets: AssetsTable;
 }
 
 class BalanceDeltas {
@@ -141,6 +162,7 @@ export class WalletDb {
     const db = new Kysely<Database>({
       dialect: new ExpoDialect({
         database: "wallet.db",
+        autoAffinityConversion: true,
       }),
     });
 
@@ -362,6 +384,49 @@ export class WalletDb {
                 .values({ id: 1, accountId: null })
                 .execute();
               console.log("created active account");
+            },
+          },
+          ["009_createAssets"]: {
+            up: async (db: Kysely<Database>) => {
+              console.log("creating assets");
+              await db.schema
+                .createTable("assets")
+                .addColumn("id", SQLiteType.Integer, (col) =>
+                  col.primaryKey().autoIncrement(),
+                )
+                .addColumn("updatedAt", SQLiteType.DateTime, (col) =>
+                  col.notNull(),
+                )
+                .addColumn("assetId", SQLiteType.Blob, (col) => col.notNull())
+                .addColumn("network", SQLiteType.String, (col) =>
+                  col.notNull().check(sql`network IN ("mainnet", "testnet")`),
+                )
+                .addColumn("name", SQLiteType.String, (col) => col.notNull())
+                .addColumn("owner", SQLiteType.String, (col) => col.notNull())
+                .addColumn("creator", SQLiteType.String, (col) => col.notNull())
+                .addColumn("metadata", SQLiteType.String, (col) =>
+                  col.notNull(),
+                )
+                .addColumn("createdTransactionHash", SQLiteType.String, (col) =>
+                  col.notNull(),
+                )
+                .addColumn(
+                  "createdTransactionTimestamp",
+                  SQLiteType.String,
+                  (col) => col.notNull(),
+                )
+                .addColumn("supply", SQLiteType.String)
+                .addColumn("verified", SQLiteType.Boolean)
+                .addColumn("symbol", SQLiteType.String)
+                .addColumn("decimals", SQLiteType.Number)
+                .addColumn("logoURI", SQLiteType.String)
+                .addColumn("website", SQLiteType.String)
+                .addUniqueConstraint("assets_assetId_network", [
+                  "assetId",
+                  "network",
+                ])
+                .execute();
+              console.log("created assets");
             },
           },
         },
@@ -1235,5 +1300,59 @@ export class WalletDb {
         ]),
       )
       .execute();
+  }
+
+  async getAsset(network: Network, assetId: Uint8Array) {
+    return await this.db
+      .selectFrom("assets")
+      .selectAll()
+      .where((eb) =>
+        eb.and([eb("network", "=", network), eb("assetId", "=", assetId)]),
+      )
+      .executeTakeFirst();
+  }
+
+  async setAsset(network: Network, serializedAsset: SerializedAsset) {
+    return await this.db
+      .insertInto("assets")
+      .values({
+        assetId: Uint8ArrayUtils.fromHex(serializedAsset.identifier),
+        createdTransactionHash: serializedAsset.created_transaction_hash,
+        createdTransactionTimestamp:
+          serializedAsset.created_transaction_timestamp,
+        creator: serializedAsset.creator,
+        metadata: serializedAsset.metadata,
+        owner: serializedAsset.owner,
+        name: serializedAsset.name,
+        network: network,
+        updatedAt: new Date(),
+        verified: !!serializedAsset.verified_metadata,
+        decimals: serializedAsset.verified_metadata?.decimals ?? null,
+        logoURI: serializedAsset.verified_metadata?.logo_uri ?? null,
+        supply: serializedAsset.supply ?? null,
+        symbol: serializedAsset.verified_metadata?.symbol ?? null,
+        website: serializedAsset.verified_metadata?.website ?? null,
+      })
+      .onConflict((oc) =>
+        oc.columns(["assetId", "network"]).doUpdateSet({
+          assetId: Uint8ArrayUtils.fromHex(serializedAsset.identifier),
+          createdTransactionHash: serializedAsset.created_transaction_hash,
+          createdTransactionTimestamp:
+            serializedAsset.created_transaction_timestamp,
+          creator: serializedAsset.creator,
+          metadata: serializedAsset.metadata,
+          owner: serializedAsset.owner,
+          name: serializedAsset.name,
+          network: network,
+          updatedAt: new Date(),
+          verified: !!serializedAsset.verified_metadata,
+          decimals: serializedAsset.verified_metadata?.decimals ?? null,
+          logoURI: serializedAsset.verified_metadata?.logo_uri ?? null,
+          supply: serializedAsset.supply ?? null,
+          symbol: serializedAsset.verified_metadata?.symbol ?? null,
+          website: serializedAsset.verified_metadata?.website ?? null,
+        }),
+      )
+      .executeTakeFirst();
   }
 }

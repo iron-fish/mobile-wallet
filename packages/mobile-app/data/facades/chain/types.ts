@@ -14,17 +14,17 @@ export type AssetVerification =
 export type Asset = {
   id: string;
   name: string;
-  nonce: number;
   owner: string;
   creator: string;
   metadata: string;
   createdTransactionHash: string;
+  createdTransactionTimestamp: string;
   verification: AssetVerification;
-  supply?: string;
+  supply: string | null;
 };
 
 export type ChainHandlers = {
-  getAsset: Query<(args: { assetId: string }) => Asset>;
+  getAsset: Query<(args: { assetId: string }) => Asset | null>;
   getNetworkInfo: Query<() => { networkId: number }>;
   isValidPublicAddress: Query<(args: { address: string }) => boolean>;
   requestFaucetTokens: Mutation<

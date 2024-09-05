@@ -1,6 +1,6 @@
-import { LightBlock } from "./api/lightstreamer";
+import { LightBlock } from "./walletServerApi/lightstreamer";
 import { Network } from "./constants";
-import { WalletServerApi } from "./api/walletServer";
+import { WalletServerApi } from "./walletServerApi/walletServer";
 import { Blockchain } from "./blockchain";
 import * as Uint8ArrayUtils from "../utils/uint8Array";
 
@@ -51,7 +51,7 @@ export class ChainProcessor {
     }
 
     // Freeze this value in case it changes while we're updating the head
-    const latest = await WalletServerApi.getLatestBlock(this.network);
+    const latest = await Blockchain.getLatestBlock(this.network);
     const chainHead = {
       hash: Uint8ArrayUtils.fromHex(latest.hash),
       sequence: latest.sequence,

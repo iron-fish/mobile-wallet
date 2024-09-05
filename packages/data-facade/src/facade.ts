@@ -13,6 +13,8 @@ import type {
 function buildUseQuery(baseQueryKey: string) {
   return <TResolver extends ResolverFunc, TReturn extends Awaited<ReturnType<TResolver>>>(resolver: TResolver) => {
     return {
+      buildQueryKey: (args?: unknown) => buildQueryKey(args),
+      resolver,
       useQuery: (args?: unknown, opts?: UseQueryOptionsWithoutKey<TReturn>): UseQueryResult<TReturn> => {
         return useQuery<TReturn>({
           ...opts,

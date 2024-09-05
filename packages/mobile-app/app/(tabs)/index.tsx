@@ -2,6 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import {
   ActivityIndicator,
   Button,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,11 +11,17 @@ import {
 import { useFacade } from "../../data/facades";
 import { useEffect, useState } from "react";
 import { LinkButton } from "../../components/LinkButton";
+import { useQueries } from "@tanstack/react-query";
+import { Asset } from "../../data/facades/chain/types";
 
 export default function Balances() {
   const facade = useFacade();
 
   const [account, setAccount] = useState<string>("");
+
+  const [visibleView, setVisibleView] = useState<"transactions" | "assets">(
+    "transactions",
+  );
 
   const getTransactionsResult = facade.getTransactions.useQuery(
     { accountName: account },
@@ -27,6 +34,33 @@ export default function Balances() {
     {},
     {
       refetchInterval: 1000,
+    },
+  );
+
+  const getCustomAssets = useQueries({
+    queries:
+      getAccountResult.data?.balances.custom.map((b) => {
+        return {
+          refetchInterval: 1000,
+          queryFn: () => facade.getAsset.resolver({ assetId: b.assetId }),
+          queryKey: facade.getAsset.buildQueryKey({ assetId: b.assetId }),
+        };
+      }) ?? [],
+  });
+  const assetMap = new Map<string, Asset>();
+  for (const asset of getCustomAssets) {
+    if (asset.data) {
+      assetMap.set(asset.data.id, asset.data);
+    }
+  }
+
+  const getIronAsset = facade.getAsset.useQuery(
+    {
+      assetId: getAccountResult.data?.balances.iron.assetId ?? "",
+    },
+    {
+      refetchInterval: 1000,
+      enabled: !!getAccountResult.data,
     },
   );
 
@@ -76,7 +110,9 @@ export default function Balances() {
       {getAccountResult.data && (
         <>
           <Text>{`${getAccountResult.data.balances.iron.confirmed}`}</Text>
-          <Text>{`$IRON`}</Text>
+          {getIronAsset.data && (
+            <Text>{`${getIronAsset.data.verification.status === "verified" ? `${getIronAsset.data.verification.symbol} (Verified)` : `${getIronAsset.data.name} (Unverified)`}`}</Text>
+          )}
         </>
       )}
       {getWalletStatusResult.data &&
@@ -113,18 +149,56 @@ export default function Balances() {
         <LinkButton href="/send/" title="Send" />
         <LinkButton href="/address/" title="Receive" />
       </View>
-      <Text style={{ fontWeight: 700, fontSize: 24 }}>Transactions</Text>
+      <View style={{ display: "flex", flexDirection: "row", gap: 16 }}>
+        <Pressable onPress={() => setVisibleView("transactions")}>
+          <Text style={{ fontWeight: 700, fontSize: 24 }}>Transactions</Text>
+        </Pressable>
+        <Pressable onPress={() => setVisibleView("assets")}>
+          <Text style={{ fontWeight: 700, fontSize: 24 }}>Assets</Text>
+        </Pressable>
+      </View>
       <ScrollView>
-        {getTransactionsResult.data?.map((transaction) => (
-          <View key={transaction.hash} style={{ marginBottom: 8 }}>
-            <Text style={{ fontSize: 14 }}>{transaction.hash}</Text>
-            <Text>Block Sequence: {transaction.blockSequence}</Text>
-            <Text>Timestamp: {transaction.timestamp.toString()}</Text>
-            <Text>
-              {`Notes (${transaction.notes.length}): ${transaction.notes.map((n) => n.value).join(", ")}`}
-            </Text>
+        {visibleView === "transactions" &&
+          getTransactionsResult.data?.map((transaction) => (
+            <View key={transaction.hash} style={{ marginBottom: 8 }}>
+              <Text style={{ fontSize: 14 }}>{transaction.hash}</Text>
+              <Text>Block Sequence: {transaction.blockSequence}</Text>
+              <Text>Timestamp: {transaction.timestamp.toString()}</Text>
+              <Text>
+                {`Notes (${transaction.notes.length}): ${transaction.notes.map((n) => n.value).join(", ")}`}
+              </Text>
+            </View>
+          ))}
+        {visibleView === "assets" && getAccountResult.data && (
+          <View>
+            <View>
+              <Text>
+                {getIronAsset.data
+                  ? getIronAsset.data.verification.status === "verified"
+                    ? `${getIronAsset.data.verification.symbol} (Verified)`
+                    : `${getIronAsset.data.name} (Unverified)`
+                  : getAccountResult.data.balances.iron.assetId}
+              </Text>
+              <Text>{getAccountResult.data.balances.iron.confirmed}</Text>
+            </View>
+            {getAccountResult.data.balances.custom.map((balance) => {
+              const asset = assetMap.get(balance.assetId);
+
+              return (
+                <View key={balance.assetId}>
+                  <Text>
+                    {asset
+                      ? asset.verification.status === "verified"
+                        ? `${asset.verification.symbol} (Verified)`
+                        : `${asset.name} (Unverified)`
+                      : balance.assetId}
+                  </Text>
+                  <Text>{balance.confirmed}</Text>
+                </View>
+              );
+            })}
           </View>
-        ))}
+        )}
       </ScrollView>
       <StatusBar style="auto" />
     </View>
