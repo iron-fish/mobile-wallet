@@ -14,6 +14,8 @@ import { LightBlock, LightTransaction } from "../walletServerApi/lightstreamer";
 import { WriteQueue } from "./writeQueue";
 import { AssetLoader } from "./assetLoader";
 import { Blockchain } from "../blockchain";
+import { Output } from "../facades/wallet/types";
+import { WalletServerApi } from "../walletServerApi/walletServer";
 
 type StartedState = { type: "STARTED"; db: WalletDb; assetLoader: AssetLoader };
 type WalletState = { type: "STOPPED" } | { type: "LOADING" } | StartedState;
@@ -30,6 +32,9 @@ function assertStarted(state: WalletState): asserts state is StartedState {
     throw new Error("Wallet is not started");
   }
 }
+
+// TODO: Make confirmations configurable
+const CONFIRMATIONS = 2;
 
 export class Wallet {
   state: WalletState = { type: "STOPPED" };
@@ -136,7 +141,11 @@ export class Wallet {
 
     const unconfirmed = await this.state.db.getBalances(accountId, network);
 
-    const deltas = await this.getUnconfirmedDeltas(accountId, network);
+    const deltas = await this.getUnconfirmedDeltas(
+      accountId,
+      CONFIRMATIONS,
+      network,
+    );
     const confirmed: { assetId: Uint8Array; value: string }[] = unconfirmed.map(
       (balance) => {
         const assetDeltas = deltas.filter((d) =>
@@ -168,23 +177,25 @@ export class Wallet {
   }
 
   /**
-   * Returns transaction balance deltas from head - confirmationRange + 1 to head, inclusive.
+   * Returns transaction balance deltas from head - confirmations + 1 to head, inclusive.
    */
-  private async getUnconfirmedDeltas(accountId: number, network: Network) {
+  private async getUnconfirmedDeltas(
+    accountId: number,
+    confirmations: number,
+    network: Network,
+  ) {
     assertStarted(this.state);
 
     const chainHead = (await Blockchain.getLatestBlock(network)).sequence;
-    // TODO: Make confirmation range configurable
-    const confirmationRange = 2;
 
-    if (confirmationRange <= 0) {
+    if (confirmations <= 0) {
       return [];
     }
 
     const deltas = await this.state.db.getTransactionBalanceDeltasBySequence(
       accountId,
       network,
-      chainHead - confirmationRange + 1,
+      chainHead - confirmations + 1,
       chainHead,
     );
 
@@ -266,17 +277,6 @@ export class Wallet {
     }
 
     return await this.state.db.getTransactions(account.id, network);
-  }
-
-  async getUnspentNotes(accountName: string, network: Network) {
-    assertStarted(this.state);
-
-    const account = await this.state.db.getAccount(accountName);
-    if (account == null) {
-      throw new Error(`No account found with name ${accountName}`);
-    }
-
-    return await this.state.db.getUnspentNotes(account.id, network);
   }
 
   private async decryptBlockNotesAsOwner(
@@ -681,6 +681,130 @@ export class Wallet {
     assertStarted(this.state);
 
     return this.state.assetLoader.getAsset(network, assetId);
+  }
+
+  async sendTransaction(
+    network: Network,
+    accountName: string,
+    outputs: Output[],
+    fee: string,
+    // TODO: Implement transaction expiration
+    expiration?: number,
+  ) {
+    assertStarted(this.state);
+    let lastTime = performance.now();
+    // Make sure the account exists
+    const account = await this.state.db.getAccount(accountName);
+    if (account == null) {
+      throw new Error(`No account found with name ${accountName}`);
+    }
+
+    if (account.viewOnly) {
+      throw new Error("Cannot send transactions from a view-only account");
+    }
+
+    console.log(`Account fetched in: ${performance.now() - lastTime}ms`);
+    lastTime = performance.now();
+
+    // Attempt to fund the transaction
+    const assetAmounts = new Map<string, bigint>();
+    assetAmounts.set(
+      "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+      BigInt(fee),
+    );
+    for (const output of outputs) {
+      assetAmounts.set(
+        output.assetId,
+        (assetAmounts.get(output.assetId) ?? 0n) + BigInt(output.amount),
+      );
+    }
+
+    const notesToSpend: { note: Uint8Array; position: number }[] = [];
+    // for each asset in assetAmounts
+    for (let [assetId, amount] of assetAmounts) {
+      // fetch unspent notes
+      const unspentNotes = await this.state.db.getUnspentNotes(
+        account.id,
+        Uint8ArrayUtils.fromHex(assetId),
+        network,
+      );
+      // take notes until you have enough to cover the amount
+      for (const note of unspentNotes) {
+        if (amount <= 0n) {
+          break;
+        }
+        if (note.position === null) {
+          throw new Error("Note position should not be null on unspent notes");
+        }
+        notesToSpend.push({
+          note: note.note,
+          position: note.position,
+        });
+        amount -= BigInt(note.value);
+      }
+
+      // throw if we run out of unspent notes
+      if (amount > 0n) {
+        throw new Error(`Insufficient balance for asset ${assetId}`);
+      }
+    }
+
+    console.log(`Unspent notes fetched in: ${performance.now() - lastTime}ms`);
+    lastTime = performance.now();
+
+    // Call noteWitness API for each note you want to spend
+    const witnesses = notesToSpend.map((note) =>
+      WalletServerApi.getNoteWitness(network, note.position, CONFIRMATIONS),
+    );
+
+    // Call createNote for each output you want to create
+    const notes = await Promise.all(
+      outputs.map((output) =>
+        IronfishNativeModule.createNote({
+          assetId: Uint8ArrayUtils.fromHex(output.assetId),
+          owner: Uint8ArrayUtils.fromHex(output.publicAddress),
+          sender: Uint8ArrayUtils.fromHex(account.publicAddress),
+          value: output.amount.toString(),
+          memo: Uint8ArrayUtils.fromHex(output.memoHex),
+        }),
+      ),
+    );
+
+    const witnessResults = await Promise.all(witnesses);
+    if (witnessResults.length !== notesToSpend.length) {
+      throw new Error("witnesses don't match");
+    }
+
+    console.log(
+      `Witnesses and notes prepared in ${performance.now() - lastTime}ms`,
+    );
+    lastTime = performance.now();
+
+    // Call createTransaction with the spends and outputs
+    const spendComponents = notesToSpend.map((note, i) => ({
+      note: Uint8ArrayUtils.toHex(note.note),
+      witnessRootHash: witnessResults[i].rootHash,
+      witnessTreeSize: witnessResults[i].treeSize.toString(),
+      witnessAuthPath: witnessResults[i].authPath,
+    }));
+
+    const spendingKey = await this.state.db.getSpendingKey(
+      account.publicAddress,
+    );
+    if (spendingKey === null) {
+      throw new Error("Spending key not found");
+    }
+    const result = await IronfishNativeModule.createTransaction(
+      spendComponents,
+      notes.map((note) => Uint8ArrayUtils.toHex(note)),
+      Uint8ArrayUtils.fromHex(spendingKey),
+    );
+
+    console.log(`Transaction created in ${performance.now() - lastTime}ms`);
+    console.log(Uint8ArrayUtils.toHex(result));
+
+    // Call broadcastTransaction with the transaction
+    // Save the transaction in a pending state in the database
   }
 }
 

@@ -363,7 +363,12 @@ export const walletHandlers = f.facade<WalletHandlers>({
       expiration?: number;
     }) => {
       // TODO: Implement getEstimatedFees
-      return;
+      await wallet.sendTransaction(
+        Network.TESTNET,
+        args.accountName,
+        args.outputs,
+        args.fee,
+      );
     },
   ),
   setAccountSettings: f.handler.mutation(
