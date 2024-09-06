@@ -35,7 +35,7 @@ export default function Send() {
       {getAccountResult.data?.balances.custom.map((b) => (
         <Button
           key={b.assetId}
-          title={`${b.assetId} (${getAccountResult.data?.balances.iron.confirmed ?? 0}) ${selectedAssetId === b.assetId ? "(selected)" : ""}`}
+          title={`${b.assetId} (${b.confirmed ?? 0}) ${selectedAssetId === b.assetId ? "(selected)" : ""}`}
           onPress={() => setSelectedAssetId(b.assetId)}
         />
       ))}
