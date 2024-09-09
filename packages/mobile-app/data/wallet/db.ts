@@ -167,6 +167,12 @@ export class WalletDb {
       }),
     });
 
+    // WAL mode is generally faster, and I don't think any of the listed
+    // downsides apply: https://www.sqlite.org/draft/wal.html
+    // So opting to default to enabling WAL mode and can disable if we run
+    // into issues on Android/iOS.
+    sql`PRAGMA journal_mode=WAL`.execute(db);
+
     const migrator = new Migrator({
       db: db,
       provider: new ExpoMigrationProvider({
