@@ -16,6 +16,7 @@ import { AssetLoader } from "./assetLoader";
 import { Blockchain } from "../blockchain";
 import { Output } from "../facades/wallet/types";
 import { WalletServerApi } from "../walletServerApi/walletServer";
+import { Consensus, MAINNET, TESTNET } from "@ironfish/sdk";
 
 type StartedState = { type: "STARTED"; db: WalletDb; assetLoader: AssetLoader };
 type WalletState = { type: "STOPPED" } | { type: "LOADING" } | StartedState;
@@ -683,6 +684,21 @@ export class Wallet {
     return this.state.assetLoader.getAsset(network, assetId);
   }
 
+  private async getActiveTransactionVersion(network: Network) {
+    // TODO IFL-2898 Consider fetching the active transaction version from the API
+    // so we don't have to deploy a new version when setting the activation sequence.
+    const latestBlock = await Blockchain.getLatestBlock(network);
+    let consensus;
+    if (network === Network.MAINNET) {
+      consensus = new Consensus(MAINNET.consensus);
+    } else if (network === Network.TESTNET) {
+      consensus = new Consensus(TESTNET.consensus);
+    } else {
+      throw new Error("Unsupported network");
+    }
+    return consensus.getActiveTransactionVersion(latestBlock.sequence);
+  }
+
   async sendTransaction(
     network: Network,
     accountName: string,
@@ -775,6 +791,8 @@ export class Wallet {
       throw new Error("witnesses don't match");
     }
 
+    const txnVersion = await this.getActiveTransactionVersion(network);
+
     console.log(
       `Witnesses and notes prepared in ${performance.now() - lastTime}ms`,
     );
@@ -795,6 +813,7 @@ export class Wallet {
       throw new Error("Spending key not found");
     }
     const result = await IronfishNativeModule.createTransaction(
+      txnVersion,
       spendComponents,
       notes.map((note) => Uint8ArrayUtils.toHex(note)),
       Uint8ArrayUtils.fromHex(spendingKey),

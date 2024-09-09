@@ -338,12 +338,17 @@ pub fn create_note(params: NoteParams) -> Result<Vec<u8>, EnumError> {
 
 #[uniffi::export]
 pub fn create_transaction(
+    transaction_version: u8,
     spend_components: Vec<SpendComponents>,
     outputs: Vec<Vec<u8>>,
     spending_key: Vec<u8>,
 ) -> Result<Vec<u8>, EnumError> {
-    let mut transaction =
-        ironfish::ProposedTransaction::new(ironfish::transaction::TransactionVersion::V2);
+    let version = ironfish::transaction::TransactionVersion::from_u8(transaction_version)
+        .ok_or_else(|| EnumError::Error {
+            msg: "Invalid transaction version".to_string(),
+        })?;
+
+    let mut transaction = ironfish::ProposedTransaction::new(version);
     for spend_component in spend_components {
         let note_data = Cursor::new(spend_component.note);
         let note =
