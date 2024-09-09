@@ -339,6 +339,8 @@ pub fn create_note(params: NoteParams) -> Result<Vec<u8>, EnumError> {
 #[uniffi::export]
 pub fn create_transaction(
     transaction_version: u8,
+    transaction_fee: u64,
+    expiration_sequence: u32,
     spend_components: Vec<SpendComponents>,
     outputs: Vec<Vec<u8>>,
     spending_key: Vec<u8>,
@@ -394,13 +396,16 @@ pub fn create_transaction(
             .map_err(|e| EnumError::Error { msg: e.to_string() })?;
     }
 
+    transaction.set_expiration(expiration_sequence);
+
     let mut spending_key_data = Cursor::new(spending_key);
     let spending_key = ironfish::SaplingKey::read(&mut spending_key_data)
         .map_err(|e| EnumError::Error { msg: e.to_string() })?;
+
     let posted = transaction
-        .post(&spending_key, None, 1)
+        .post(&spending_key, None, transaction_fee)
         .map_err(|e| EnumError::Error { msg: e.to_string() })?;
-    let mut buffer = Vec::new();
+    let mut buffer: Vec<u8> = Vec::new();
     posted
         .write(&mut buffer)
         .map_err(|e| EnumError::Error { msg: e.to_string() })?;

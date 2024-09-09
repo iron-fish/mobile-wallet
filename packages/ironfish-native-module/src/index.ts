@@ -125,6 +125,8 @@ export function createNote({
 
 export function createTransaction(
   transactionVersion: number,
+  transactionFee: string,
+  expirationSequence: number,
   spendComponents: {
     note: string;
     witnessRootHash: string;
@@ -136,6 +138,8 @@ export function createTransaction(
 ): Promise<Uint8Array> {
   return IronfishNativeModule.createTransaction(
     transactionVersion,
+    transactionFee,
+    expirationSequence,
     { components: spendComponents },
     { outputs },
     spendingKey,

@@ -37,6 +37,10 @@ function assertStarted(state: WalletState): asserts state is StartedState {
 // TODO: Make confirmations configurable
 const CONFIRMATIONS = 2;
 
+// Used when calculating a transaction's expiration sequence by adding it
+// to the latest block sequence returned from the API.
+const EXPIRATION_DELTA = 20;
+
 export class Wallet {
   state: WalletState = { type: "STOPPED" };
   scanState: ScanState = { type: "IDLE" };
@@ -812,8 +816,15 @@ export class Wallet {
     if (spendingKey === null) {
       throw new Error("Spending key not found");
     }
+
+    const { sequence: latestSequence } =
+      await Blockchain.getLatestBlock(network);
+
     const result = await IronfishNativeModule.createTransaction(
       txnVersion,
+      // TODO: Implement proper transaction fees
+      "1",
+      latestSequence + EXPIRATION_DELTA,
       spendComponents,
       notes.map((note) => Uint8ArrayUtils.toHex(note)),
       Uint8ArrayUtils.fromHex(spendingKey),
