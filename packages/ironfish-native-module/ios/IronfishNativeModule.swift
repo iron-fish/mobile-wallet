@@ -157,13 +157,13 @@ public class IronfishNativeModule: Module {
       }
     }
 
-    AsyncFunction("createTransaction") { (transactionVersion: UInt8, spendComponents: SpendComponentsInput, outputs: OutputsInput, spendingKey: Data) throws  -> Data in
+    AsyncFunction("createTransaction") { (transactionVersion: UInt8, transactionFee: String, expirationSequence: UInt32, spendComponents: SpendComponentsInput, outputs: OutputsInput, spendingKey: Data) throws  -> Data in
       let spendComponentsConverted = spendComponents.components.map { spendComponent in
           let witnessAuthPath: [WitnessNode] = spendComponent.witnessAuthPath.map { WitnessNode(side: $0.side, hashOfSibling: Data(hexString: $0.hashOfSibling)!) }
           return SpendComponents(note: Data(hexString: spendComponent.note)!, witnessRootHash: Data(hexString: spendComponent.witnessRootHash)!, witnessTreeSize: UInt64(spendComponent.witnessTreeSize)!, witnessAuthPath: witnessAuthPath)
       }
       do {
-        let transaction = try createTransaction(transactionVersion: transactionVersion, spendComponents: spendComponentsConverted, outputs: outputs.outputs.map {Data(hexString: $0)!}, spendingKey: spendingKey)
+        let transaction = try createTransaction(transactionVersion: transactionVersion, transactionFee: UInt64(transactionFee)!, expirationSequence: expirationSequence, spendComponents: spendComponentsConverted, outputs: outputs.outputs.map {Data(hexString: $0)!}, spendingKey: spendingKey)
           return transaction
       } catch let error as NSError {
           print("Unexpected error: \(error.debugDescription)")
