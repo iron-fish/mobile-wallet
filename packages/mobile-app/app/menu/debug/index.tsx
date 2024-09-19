@@ -4,6 +4,7 @@ import { useFacade } from "../../../data/facades";
 import { Network } from "../../../data/constants";
 import { wallet } from "../../../data/wallet/wallet";
 import { reverseScan } from "../../../data/debug/reverseScan";
+import { LinkButton } from "../../../components/LinkButton";
 
 export default function MenuDebug() {
   const facade = useFacade();
@@ -17,6 +18,8 @@ export default function MenuDebug() {
 
   return (
     <View style={styles.container}>
+      <LinkButton title="Pending Transactions" href="/menu/debug/pending/" />
+      <LinkButton title="Unspent Notes" href="/menu/debug/unspent/" />
       <View>
         {walletStatus.data && (
           <>

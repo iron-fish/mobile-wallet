@@ -109,7 +109,12 @@ export default function Balances() {
       <Text>You're currently on Testnet</Text>
       {getAccountResult.data && (
         <>
-          <Text>{`${getAccountResult.data.balances.iron.confirmed}`}</Text>
+          <Text>
+            {getAccountResult.data.balances.iron.confirmed ===
+            getAccountResult.data.balances.iron.available
+              ? `${getAccountResult.data.balances.iron.confirmed}`
+              : `${getAccountResult.data.balances.iron.confirmed} (${getAccountResult.data.balances.iron.available} available to spend)`}
+          </Text>
           {getIronAsset.data && (
             <Text>{`${getIronAsset.data.verification.status === "verified" ? `${getIronAsset.data.verification.symbol} (Verified)` : `${getIronAsset.data.name} (Unverified)`}`}</Text>
           )}

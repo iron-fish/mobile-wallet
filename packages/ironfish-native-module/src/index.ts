@@ -145,3 +145,7 @@ export function createTransaction(
     spendingKey,
   );
 }
+
+export function hashTransaction(transaction: Uint8Array): Promise<Uint8Array> {
+  return IronfishNativeModule.hashTransaction(transaction);
+}

@@ -4,6 +4,7 @@ import {
   AccountFormat,
   LanguageKey,
   Note,
+  Transaction,
   decodeAccount,
   encodeAccount,
 } from "@ironfish/sdk";
@@ -125,9 +126,7 @@ export class Wallet {
 
     if (!account) return;
 
-    const balancesPromise = this.getBalances(account.id, network);
-
-    const balances = await balancesPromise;
+    const balances = await this.getBalances(account.id, network);
 
     return {
       ...account,
@@ -151,6 +150,17 @@ export class Wallet {
       CONFIRMATIONS,
       network,
     );
+
+    const pendingDeltas = await this.getPendingTransactionBalanceDeltas(
+      accountId,
+      network,
+    );
+    const spentNotes = await this.getUnconfirmedAndPendingSpentNotes(
+      accountId,
+      CONFIRMATIONS,
+      network,
+    );
+
     const confirmed: { assetId: Uint8Array; value: string }[] = unconfirmed.map(
       (balance) => {
         const assetDeltas = deltas.filter((d) =>
@@ -168,6 +178,44 @@ export class Wallet {
       },
     );
 
+    // available is the sum of unspent notes. This is equal to the confirmed balance,
+    // minus unique notes spent in unconfirmed and pending transactions.
+    // notes must be unique, otherwise pending could include the same note spent twice.
+    const available: { assetId: Uint8Array; value: string }[] = confirmed.map(
+      (balance) => {
+        const assetNotes = spentNotes.filter((d) =>
+          Uint8ArrayUtils.areEqual(d.assetId, balance.assetId),
+        );
+
+        return {
+          assetId: balance.assetId,
+          value: assetNotes
+            .reduce((a, b) => {
+              return a - BigInt(b.value);
+            }, BigInt(balance.value))
+            .toString(),
+        };
+      },
+    );
+
+    // pending is unconfirmed with pending transaction deltas applied
+    const pending: { assetId: Uint8Array; value: string }[] = unconfirmed.map(
+      (balance) => {
+        const assetDeltas = pendingDeltas.filter((d) =>
+          Uint8ArrayUtils.areEqual(d.assetId, balance.assetId),
+        );
+
+        return {
+          assetId: balance.assetId,
+          value: assetDeltas
+            .reduce((a, b) => {
+              return a + BigInt(b.value);
+            }, BigInt(balance.value))
+            .toString(),
+        };
+      },
+    );
+
     // Caution, this makes the assumption that unconfirmed and confirmed are ordered the same
     const balanceReturns = [];
     for (let i = 0; i < unconfirmed.length; i++) {
@@ -175,6 +223,8 @@ export class Wallet {
         assetId: unconfirmed[i].assetId,
         confirmed: confirmed[i].value,
         unconfirmed: unconfirmed[i].value,
+        pending: pending[i].value,
+        available: available[i].value,
       });
     }
 
@@ -202,6 +252,49 @@ export class Wallet {
       network,
       chainHead - confirmations + 1,
       chainHead,
+    );
+
+    return deltas;
+  }
+
+  /**
+   * Returns notes spent from head - confirmations + 1 to head, inclusive, as well as notes
+   * spent in pending transactions.
+   */
+  private async getUnconfirmedAndPendingSpentNotes(
+    accountId: number,
+    confirmations: number,
+    network: Network,
+  ) {
+    assertStarted(this.state);
+
+    const chainHead = (await Blockchain.getLatestBlock(network)).sequence;
+
+    if (confirmations <= 0) {
+      return [];
+    }
+
+    const notes = await this.state.db.getUnconfirmedAndPendingSpentNotes(
+      accountId,
+      network,
+      chainHead - confirmations + 1,
+    );
+
+    return notes;
+  }
+
+  /**
+   * Returns transaction balance deltas for transactions not yet on a block.
+   */
+  private async getPendingTransactionBalanceDeltas(
+    accountId: number,
+    network: Network,
+  ) {
+    assertStarted(this.state);
+
+    const deltas = await this.state.db.getPendingTransactionBalanceDeltas(
+      accountId,
+      network,
     );
 
     return deltas;
@@ -739,26 +832,39 @@ export class Wallet {
       );
     }
 
-    const notesToSpend: { note: Uint8Array; position: number }[] = [];
+    const notesToSpend: {
+      note: Uint8Array;
+      position: number;
+      nullifier: Uint8Array;
+    }[] = [];
     // for each asset in assetAmounts
     for (let [assetId, amount] of assetAmounts) {
+      let { sequence: latestSequence } =
+        await Blockchain.getLatestBlock(network);
+
       // fetch unspent notes
       const unspentNotes = await this.state.db.getUnspentNotes(
+        latestSequence,
+        CONFIRMATIONS,
         account.id,
         Uint8ArrayUtils.fromHex(assetId),
         network,
       );
-      // take notes until you have enough to cover the amount
+
+      // take notes until we have enough to cover the amount
       for (const note of unspentNotes) {
         if (amount <= 0n) {
           break;
         }
-        if (note.position === null) {
-          throw new Error("Note position should not be null on unspent notes");
+        if (note.position === null || note.nullifier === null) {
+          throw new Error(
+            "Note position and nullifier should not be null on unspent notes",
+          );
         }
         notesToSpend.push({
           note: note.note,
           position: note.position,
+          nullifier: note.nullifier,
         });
         amount -= BigInt(note.value);
       }
@@ -817,24 +923,62 @@ export class Wallet {
       throw new Error("Spending key not found");
     }
 
-    const { sequence: latestSequence } =
-      await Blockchain.getLatestBlock(network);
+    let { sequence: latestSequence } = await Blockchain.getLatestBlock(network);
 
+    const expirationSequence = latestSequence + EXPIRATION_DELTA;
+    // TODO: Implement proper transaction fees
     const result = await IronfishNativeModule.createTransaction(
       txnVersion,
-      // TODO: Implement proper transaction fees
-      "1",
-      latestSequence + EXPIRATION_DELTA,
+      fee,
+      expirationSequence,
       spendComponents,
       notes.map((note) => Uint8ArrayUtils.toHex(note)),
       Uint8ArrayUtils.fromHex(spendingKey),
     );
 
     console.log(`Transaction created in ${performance.now() - lastTime}ms`);
+    lastTime = performance.now();
     console.log(Uint8ArrayUtils.toHex(result));
 
-    // Call broadcastTransaction with the transaction
+    const txn = new Transaction(Buffer.from(result));
+    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+      name: account.name,
+    });
+
+    // We could create change notes ourselves to avoid decryption altogether.
+    const decryptedNotes = await IronfishNativeModule.decryptNotesForSpender(
+      txn.notes.map((note) => Uint8ArrayUtils.toHex(note.serialize())),
+      decodedAccount.outgoingViewKey,
+    );
+    const ownerNotes = [];
+    const spenderNotes = [];
+    for (const hexNote of decryptedNotes) {
+      const note = new Note(Buffer.from(Uint8ArrayUtils.fromHex(hexNote.note)));
+      if (note.owner() === decodedAccount.publicAddress) {
+        ownerNotes.push({ note });
+      } else {
+        spenderNotes.push({ note });
+      }
+    }
+
+    // TODO: Call broadcastTransaction with the transaction
+
     // Save the transaction in a pending state in the database
+    const hash = await IronfishNativeModule.hashTransaction(result);
+
+    await this.state.db.savePendingTransaction({
+      accountId: account.id,
+      network,
+      hash,
+      timestamp: new Date(),
+      expirationSequence: expirationSequence,
+      fee,
+      foundNullifiers: notesToSpend.map((note) => note.nullifier),
+      spenderNotes,
+      ownerNotes,
+    });
+
+    console.log(`Transaction saved in ${performance.now() - lastTime}ms`);
   }
 }
 
