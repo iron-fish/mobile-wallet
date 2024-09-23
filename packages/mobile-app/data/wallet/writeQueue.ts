@@ -17,8 +17,13 @@ type DBWrite =
       transactions: {
         hash: Uint8Array;
         timestamp: Date;
-        ownerNotes: { position: number; note: Note; nullifier: string }[];
-        spenderNotes: { note: Note }[];
+        ownerNotes: {
+          position: number;
+          note: Note;
+          nullifier: string;
+          noteTransactionIndex: number;
+        }[];
+        spenderNotes: { note: Note; noteTransactionIndex: number }[];
         foundNullifiers: Uint8Array[];
       }[];
     }
@@ -64,8 +69,13 @@ export class WriteQueue {
     transactions: {
       hash: Uint8Array;
       timestamp: Date;
-      ownerNotes: { position: number; note: Note; nullifier: string }[];
-      spenderNotes: { note: Note }[];
+      ownerNotes: {
+        position: number;
+        note: Note;
+        nullifier: string;
+        noteTransactionIndex: number;
+      }[];
+      spenderNotes: { note: Note; noteTransactionIndex: number }[];
       foundNullifiers: Uint8Array[];
     }[],
   ) {
