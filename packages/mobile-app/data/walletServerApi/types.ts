@@ -17,6 +17,13 @@ export type GetFeeRatesResponse = {
   average: string;
   fast: string;
 };
+
+export type BroadcastTransactionResponse = {
+  hash: string;
+  accepted: boolean;
+  broadcasted: boolean;
+};
+
 export interface WalletServerTransformer {
   getLatestBlock(
     network: Network,
@@ -48,4 +55,9 @@ export interface WalletServerTransformer {
     network: Network,
     result: GetFeeRatesResponse,
   ): Promise<GetFeeRatesResponse>;
+  broadcastTransaction(
+    network: Network,
+    transaction: Uint8Array,
+    result: BroadcastTransactionResponse,
+  ): Promise<BroadcastTransactionResponse>;
 }

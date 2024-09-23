@@ -2,6 +2,7 @@ import { Network } from "../constants";
 import { LightBlock } from "./lightstreamer";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
 import {
+  BroadcastTransactionResponse,
   GetFeeRatesResponse,
   GetLatestBlockResponse,
   GetNoteWitnessResponse,
@@ -117,11 +118,7 @@ class WalletServer {
     );
 
     const fetchResult = await fetch(url);
-    let witness = (await fetchResult.json()) as {
-      authPath: { side: "Left" | "Right"; hashOfSibling: string }[];
-      rootHash: string;
-      treeSize: number;
-    };
+    let witness = (await fetchResult.json()) as GetNoteWitnessResponse;
 
     for (const transformer of this.transformers) {
       witness = await transformer.getNoteWitness(
@@ -133,6 +130,42 @@ class WalletServer {
     }
 
     return witness;
+  }
+
+  async broadcastTransaction(
+    network: Network,
+    transaction: Uint8Array,
+  ): Promise<BroadcastTransactionResponse> {
+    const url = WALLET_SERVER_URLS[network] + `transaction`;
+
+    console.log(`broadcasting transaction`);
+    console.log(JSON.stringify(Uint8ArrayUtils.toHex(transaction)));
+
+    const fetchResult = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(Uint8ArrayUtils.toHex(transaction)),
+    });
+
+    if (!fetchResult.ok) {
+      const errText = `Error ${fetchResult.status}: ${await fetchResult.text()}`;
+      console.error(errText);
+      throw new Error(errText);
+    }
+
+    let response = (await fetchResult.json()) as BroadcastTransactionResponse;
+
+    for (const transformer of this.transformers) {
+      response = await transformer.broadcastTransaction(
+        network,
+        transaction,
+        response,
+      );
+    }
+
+    return response;
   }
 }
 

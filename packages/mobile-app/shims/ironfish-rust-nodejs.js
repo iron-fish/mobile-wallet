@@ -12,9 +12,7 @@ class Asset {
   }
 }
 
-class Transaction {
-
-}
+class Transaction {}
 
 const mockIronfishRustNodejs = {
   $$typeof: undefined,

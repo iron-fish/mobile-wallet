@@ -386,7 +386,12 @@ export class Wallet {
       string,
       {
         transaction: LightTransaction;
-        notes: { position: number; note: Note; nullifier: string }[];
+        notes: {
+          position: number;
+          note: Note;
+          nullifier: string;
+          noteTransactionIndex: number;
+        }[];
       }
     >
   > {
@@ -405,49 +410,65 @@ export class Wallet {
       return new Map();
     }
 
-    const startingNoteIndex = block.noteSize - hexOutputs.length;
+    const startingTreeIndex = block.noteSize - hexOutputs.length;
+    let currentTransactionIndex = 0;
+    let resultIndex = 0;
 
     const transactions: Map<
       string,
       {
         transaction: LightTransaction;
-        notes: { position: number; note: Note; nullifier: string }[];
+        notes: {
+          note: Note;
+          position: number;
+          nullifier: string;
+          noteTransactionIndex: number;
+        }[];
       }
     > = new Map();
-    for (const result of results) {
-      const output = hexOutputs[result.index];
-      const outputBuffer = Uint8ArrayUtils.fromHex(output);
+    // Assumes the results are ordered by index
+    for (const txn of block.transactions) {
+      const nextTransactionIndex = currentTransactionIndex + txn.outputs.length;
+      const notes = [];
+      while (
+        results[resultIndex] != null &&
+        results[resultIndex].index < nextTransactionIndex
+      ) {
+        const note = new Note(
+          Buffer.from(Uint8ArrayUtils.fromHex(results[resultIndex].note)),
+        );
+        const position = startingTreeIndex + results[resultIndex].index;
+        const nullifier = await IronfishNativeModule.nullifier({
+          note: results[resultIndex].note,
+          position: position.toString(),
+          viewHexKey,
+        });
+        const noteTransactionIndex =
+          results[resultIndex].index - currentTransactionIndex;
 
-      // find a transaction with a matching output
-      const transaction = block.transactions.find((transaction) =>
-        transaction.outputs.some((o) =>
-          Uint8ArrayUtils.areEqual(o.note, outputBuffer),
-        ),
-      );
+        notes.push({ note, position, nullifier, noteTransactionIndex });
 
-      if (!transaction) {
-        console.error("Transaction not found");
-        continue;
+        resultIndex++;
       }
 
-      const note = new Note(Buffer.from(Uint8ArrayUtils.fromHex(result.note)));
-      const position = startingNoteIndex + result.index;
-      const nullifier = await IronfishNativeModule.nullifier({
-        note: Uint8ArrayUtils.toHex(note.serialize()),
-        position: position.toString(),
-        viewHexKey,
-      });
-
-      const hexHash = Uint8ArrayUtils.toHex(transaction.hash);
-      const txnStore = transactions.get(hexHash);
-      if (txnStore) {
-        txnStore.notes.push({ note, position, nullifier });
-      } else {
-        transactions.set(hexHash, {
-          transaction,
-          notes: [{ note, position, nullifier }],
+      if (notes.length > 0) {
+        transactions.set(Uint8ArrayUtils.toHex(txn.hash), {
+          transaction: txn,
+          notes,
         });
       }
+
+      if (resultIndex >= results.length) {
+        break;
+      }
+
+      currentTransactionIndex = nextTransactionIndex;
+    }
+
+    if (resultIndex !== results.length) {
+      console.error(
+        "Some decrypted notes were not associated with a transaction",
+      );
     }
 
     return transactions;
@@ -461,7 +482,7 @@ export class Wallet {
       string,
       {
         transaction: LightTransaction;
-        notes: { note: Note }[];
+        notes: { note: Note; noteTransactionIndex: number }[];
       }
     >
   > {
@@ -484,41 +505,53 @@ export class Wallet {
       return new Map();
     }
 
+    let currentTransactionIndex = 0;
+    let resultIndex = 0;
+
     const resultTransactions: Map<
       string,
       {
         transaction: LightTransaction;
-        notes: { note: Note }[];
+        notes: { note: Note; noteTransactionIndex: number }[];
       }
     > = new Map();
-    for (const result of results) {
-      const output = hexOutputs[result.index];
-      const outputBuffer = Uint8ArrayUtils.fromHex(output);
+    // Assumes results are ordered by index
+    for (const txn of transactions) {
+      const nextTransactionIndex = currentTransactionIndex + txn.outputs.length;
+      const notes = [];
+      while (
+        results[resultIndex] != null &&
+        results[resultIndex].index < nextTransactionIndex
+      ) {
+        const note = new Note(
+          Buffer.from(Uint8ArrayUtils.fromHex(results[resultIndex].note)),
+        );
+        const noteTransactionIndex =
+          results[resultIndex].index - currentTransactionIndex;
 
-      // find a transaction with a matching output
-      const transaction = transactions.find((transaction) =>
-        transaction.outputs.some((o) =>
-          Uint8ArrayUtils.areEqual(o.note, outputBuffer),
-        ),
-      );
+        notes.push({ note, noteTransactionIndex });
 
-      if (!transaction) {
-        console.error("Transaction not found");
-        continue;
+        resultIndex++;
       }
 
-      const note = new Note(Buffer.from(Uint8ArrayUtils.fromHex(result.note)));
-
-      const hexHash = Uint8ArrayUtils.toHex(transaction.hash);
-      const txnStore = resultTransactions.get(hexHash);
-      if (txnStore) {
-        txnStore.notes.push({ note });
-      } else {
-        resultTransactions.set(hexHash, {
-          transaction,
-          notes: [{ note }],
+      if (notes.length > 0) {
+        resultTransactions.set(Uint8ArrayUtils.toHex(txn.hash), {
+          transaction: txn,
+          notes,
         });
       }
+
+      if (resultIndex >= results.length) {
+        break;
+      }
+
+      currentTransactionIndex = nextTransactionIndex;
+    }
+
+    if (resultIndex !== results.length) {
+      console.error(
+        "Some decrypted notes were not associated with a transaction",
+      );
     }
 
     return resultTransactions;
@@ -756,11 +789,9 @@ export class Wallet {
       finished = true;
       clearTimeout(saveLoopTimeout);
       await saveLoop();
-      if (this.scanState.abort.signal.aborted) {
-        this.scanState = this.scanState = this.scanState.abort.signal.aborted
-          ? { type: "PAUSED" }
-          : { type: "IDLE" };
-      }
+      this.scanState = this.scanState.abort.signal.aborted
+        ? { type: "PAUSED" }
+        : { type: "IDLE" };
       console.log(`finished in ${performance.now() - performanceTimer}ms`);
     }
 
@@ -950,18 +981,36 @@ export class Wallet {
       txn.notes.map((note) => Uint8ArrayUtils.toHex(note.serialize())),
       decodedAccount.outgoingViewKey,
     );
+
+    if (decryptedNotes.length !== txn.notes.length) {
+      console.error("All notes should be decryptable by the spender");
+    }
+
     const ownerNotes = [];
     const spenderNotes = [];
     for (const hexNote of decryptedNotes) {
       const note = new Note(Buffer.from(Uint8ArrayUtils.fromHex(hexNote.note)));
       if (note.owner() === decodedAccount.publicAddress) {
-        ownerNotes.push({ note });
+        ownerNotes.push({ note, noteTransactionIndex: hexNote.index });
       } else {
-        spenderNotes.push({ note });
+        spenderNotes.push({ note, noteTransactionIndex: hexNote.index });
       }
     }
 
-    // TODO: Call broadcastTransaction with the transaction
+    const broadcastResult = await WalletServerApi.broadcastTransaction(
+      network,
+      result,
+    );
+
+    if (!broadcastResult.accepted) {
+      console.error("Transaction was not accepted by the network");
+      return;
+    }
+
+    if (!broadcastResult.broadcasted) {
+      console.error("Transaction was not broadcasted by the network");
+      return;
+    }
 
     // Save the transaction in a pending state in the database
     const hash = await IronfishNativeModule.hashTransaction(result);

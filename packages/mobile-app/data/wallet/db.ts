@@ -68,6 +68,9 @@ interface NotesTable {
   // If storage is an issue, we could fall back to re-decrypting the notes
   // to get the full note.
   note: Uint8Array;
+  // The index of the note within the transaction. Notes can be reused, so combining
+  // the transaction hash and the index provides a unique identifier for a note (aka outpoint).
+  noteTransactionIndex: number;
   // Note index in the merkle tree. Could also be derived from the note size on the
   // transaction, but stored here for convenience.
   // Can be null for:
@@ -269,6 +272,10 @@ export class WalletDb {
                 .addColumn("type", SQLiteType.String, (col) =>
                   col.notNull().check(sql`type IN ("receive", "send")`),
                 )
+                .addUniqueConstraint("accountTransactions_accountId_hash", [
+                  "accountId",
+                  "transactionHash",
+                ])
                 .execute();
               console.log("created account transactions");
             },
@@ -291,6 +298,9 @@ export class WalletDb {
                   col.notNull().check(sql`network IN ("mainnet", "testnet")`),
                 )
                 .addColumn("note", SQLiteType.Blob, (col) => col.notNull())
+                .addColumn("noteTransactionIndex", SQLiteType.Integer, (col) =>
+                  col.notNull(),
+                )
                 .addColumn("position", SQLiteType.Integer)
                 .addColumn("assetId", SQLiteType.Blob, (col) => col.notNull())
                 .addColumn("sender", SQLiteType.Blob, (col) => col.notNull())
@@ -302,6 +312,10 @@ export class WalletDb {
                 .addColumn("memo", SQLiteType.Blob, (col) => col.notNull())
                 .addColumn("nullifier", SQLiteType.Blob)
                 .addColumn("nullifierTransactionHash", SQLiteType.Blob)
+                .addUniqueConstraint(
+                  "notes_accountId_transactionHash_noteTransactionIndex",
+                  ["accountId", "transactionHash", "noteTransactionIndex"],
+                )
                 .execute();
 
               await db.schema
@@ -522,7 +536,9 @@ export class WalletDb {
     return await this.db
       .updateTable("accounts")
       .where("accounts.name", "=", name)
-      .set("accounts.name", newName)
+      .set({
+        name: newName,
+      })
       .executeTakeFirst();
   }
 
@@ -831,9 +847,9 @@ export class WalletDb {
     timestamp: Date;
     expirationSequence: number;
     fee: string;
-    ownerNotes: { note: Note }[];
+    ownerNotes: { note: Note; noteTransactionIndex: number }[];
     foundNullifiers: Uint8Array[];
-    spenderNotes: { note: Note }[];
+    spenderNotes: { note: Note; noteTransactionIndex: number }[];
   }) {
     await this.db.transaction().execute(async (db) => {
       const balanceDeltas = new BalanceDeltas();
@@ -895,6 +911,7 @@ export class WalletDb {
             network: values.network,
             transactionHash: values.hash,
             note: new Uint8Array(note.note.serialize()),
+            noteTransactionIndex: note.noteTransactionIndex,
             assetId: new Uint8Array(note.note.assetId()),
             owner: Uint8ArrayUtils.fromHex(note.note.owner()),
             sender: Uint8ArrayUtils.fromHex(note.note.sender()),
@@ -924,6 +941,7 @@ export class WalletDb {
             network: values.network,
             transactionHash: values.hash,
             note: new Uint8Array(note.note.serialize()),
+            noteTransactionIndex: note.noteTransactionIndex,
             assetId: new Uint8Array(note.note.assetId()),
             owner: Uint8ArrayUtils.fromHex(note.note.owner()),
             sender: Uint8ArrayUtils.fromHex(note.note.sender()),
@@ -958,9 +976,14 @@ export class WalletDb {
     blockHash: Uint8Array;
     transactions: {
       hash: Uint8Array;
-      ownerNotes: { position: number | null; note: Note; nullifier: string }[];
+      ownerNotes: {
+        position: number | null;
+        note: Note;
+        nullifier: string;
+        noteTransactionIndex: number;
+      }[];
       foundNullifiers: Uint8Array[];
-      spenderNotes: { note: Note }[];
+      spenderNotes: { note: Note; noteTransactionIndex: number }[];
       timestamp: Date;
     }[];
   }) {
@@ -1068,14 +1091,24 @@ export class WalletDb {
           )
           .executeTakeFirstOrThrow();
 
-        await db
+        const r = await db
           .insertInto("accountTransactions")
           .values({
             accountId: values.accountId,
             transactionHash: txn.hash,
             type: transactionType,
           })
+          // Transaction might already be pending
+          .onConflict((oc) =>
+            oc.columns(["accountId", "transactionHash"]).doNothing(),
+          )
           .executeTakeFirstOrThrow();
+
+        if (r.insertId) {
+          console.log("new");
+        } else {
+          console.log("update");
+        }
 
         for (const note of txn.ownerNotes) {
           await db
@@ -1085,6 +1118,7 @@ export class WalletDb {
               network: values.network,
               transactionHash: txn.hash,
               note: new Uint8Array(note.note.serialize()),
+              noteTransactionIndex: note.noteTransactionIndex,
               assetId: new Uint8Array(note.note.assetId()),
               owner: Uint8ArrayUtils.fromHex(note.note.owner()),
               sender: Uint8ArrayUtils.fromHex(note.note.sender()),
@@ -1095,6 +1129,19 @@ export class WalletDb {
               nullifier: Uint8ArrayUtils.fromHex(note.nullifier),
               nullifierTransactionHash: null,
             })
+            .onConflict((oc) =>
+              oc
+                .columns([
+                  "accountId",
+                  "transactionHash",
+                  "noteTransactionIndex",
+                ])
+                .doUpdateSet({
+                  position: note.position,
+                  nullifier: Uint8ArrayUtils.fromHex(note.nullifier),
+                  nullifierTransactionHash: null,
+                }),
+            )
             .executeTakeFirst();
         }
 
@@ -1114,6 +1161,7 @@ export class WalletDb {
               network: values.network,
               transactionHash: txn.hash,
               note: new Uint8Array(note.note.serialize()),
+              noteTransactionIndex: note.noteTransactionIndex,
               assetId: new Uint8Array(note.note.assetId()),
               owner: Uint8ArrayUtils.fromHex(note.note.owner()),
               sender: Uint8ArrayUtils.fromHex(note.note.sender()),
@@ -1121,7 +1169,10 @@ export class WalletDb {
               valueNum: Number(note.note.value()),
               memo: new Uint8Array(note.note.memo()),
               position: null,
+              nullifier: null,
+              nullifierTransactionHash: null,
             })
+            .onConflict((oc) => oc.doNothing())
             .executeTakeFirstOrThrow();
         }
 
@@ -1167,6 +1218,11 @@ export class WalletDb {
               transactionHash: txn.hash,
               value: delta[1].toString(),
             })
+            .onConflict((oc) =>
+              oc
+                .columns(["accountId", "transactionHash", "assetId"])
+                .doNothing(),
+            )
             .executeTakeFirstOrThrow();
         }
       }
