@@ -25,7 +25,7 @@ export default function Send() {
     <View style={styles.container}>
       <Text>Select asset</Text>
       <Button
-        title={`IRON (${getAccountResult.data?.balances.iron.confirmed ?? 0}) ${selectedAssetId === "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c" ? "(selected)" : ""}`}
+        title={`IRON (${getAccountResult.data?.balances.iron.available ?? 0}) ${selectedAssetId === "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c" ? "(selected)" : ""}`}
         onPress={() =>
           setSelectedAssetId(
             "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",

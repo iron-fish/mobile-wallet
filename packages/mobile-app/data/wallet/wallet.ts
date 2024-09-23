@@ -4,6 +4,7 @@ import {
   AccountFormat,
   LanguageKey,
   Note,
+  Transaction,
   decodeAccount,
   encodeAccount,
 } from "@ironfish/sdk";
@@ -125,9 +126,7 @@ export class Wallet {
 
     if (!account) return;
 
-    const balancesPromise = this.getBalances(account.id, network);
-
-    const balances = await balancesPromise;
+    const balances = await this.getBalances(account.id, network);
 
     return {
       ...account,
@@ -151,6 +150,17 @@ export class Wallet {
       CONFIRMATIONS,
       network,
     );
+
+    const pendingDeltas = await this.getPendingTransactionBalanceDeltas(
+      accountId,
+      network,
+    );
+    const spentNotes = await this.getUnconfirmedAndPendingSpentNotes(
+      accountId,
+      CONFIRMATIONS,
+      network,
+    );
+
     const confirmed: { assetId: Uint8Array; value: string }[] = unconfirmed.map(
       (balance) => {
         const assetDeltas = deltas.filter((d) =>
@@ -168,6 +178,44 @@ export class Wallet {
       },
     );
 
+    // available is the sum of unspent notes. This is equal to the confirmed balance,
+    // minus unique notes spent in unconfirmed and pending transactions.
+    // notes must be unique, otherwise pending could include the same note spent twice.
+    const available: { assetId: Uint8Array; value: string }[] = confirmed.map(
+      (balance) => {
+        const assetNotes = spentNotes.filter((d) =>
+          Uint8ArrayUtils.areEqual(d.assetId, balance.assetId),
+        );
+
+        return {
+          assetId: balance.assetId,
+          value: assetNotes
+            .reduce((a, b) => {
+              return a - BigInt(b.value);
+            }, BigInt(balance.value))
+            .toString(),
+        };
+      },
+    );
+
+    // pending is unconfirmed with pending transaction deltas applied
+    const pending: { assetId: Uint8Array; value: string }[] = unconfirmed.map(
+      (balance) => {
+        const assetDeltas = pendingDeltas.filter((d) =>
+          Uint8ArrayUtils.areEqual(d.assetId, balance.assetId),
+        );
+
+        return {
+          assetId: balance.assetId,
+          value: assetDeltas
+            .reduce((a, b) => {
+              return a + BigInt(b.value);
+            }, BigInt(balance.value))
+            .toString(),
+        };
+      },
+    );
+
     // Caution, this makes the assumption that unconfirmed and confirmed are ordered the same
     const balanceReturns = [];
     for (let i = 0; i < unconfirmed.length; i++) {
@@ -175,6 +223,8 @@ export class Wallet {
         assetId: unconfirmed[i].assetId,
         confirmed: confirmed[i].value,
         unconfirmed: unconfirmed[i].value,
+        pending: pending[i].value,
+        available: available[i].value,
       });
     }
 
@@ -202,6 +252,49 @@ export class Wallet {
       network,
       chainHead - confirmations + 1,
       chainHead,
+    );
+
+    return deltas;
+  }
+
+  /**
+   * Returns notes spent from head - confirmations + 1 to head, inclusive, as well as notes
+   * spent in pending transactions.
+   */
+  private async getUnconfirmedAndPendingSpentNotes(
+    accountId: number,
+    confirmations: number,
+    network: Network,
+  ) {
+    assertStarted(this.state);
+
+    const chainHead = (await Blockchain.getLatestBlock(network)).sequence;
+
+    if (confirmations <= 0) {
+      return [];
+    }
+
+    const notes = await this.state.db.getUnconfirmedAndPendingSpentNotes(
+      accountId,
+      network,
+      chainHead - confirmations + 1,
+    );
+
+    return notes;
+  }
+
+  /**
+   * Returns transaction balance deltas for transactions not yet on a block.
+   */
+  private async getPendingTransactionBalanceDeltas(
+    accountId: number,
+    network: Network,
+  ) {
+    assertStarted(this.state);
+
+    const deltas = await this.state.db.getPendingTransactionBalanceDeltas(
+      accountId,
+      network,
     );
 
     return deltas;
@@ -293,7 +386,12 @@ export class Wallet {
       string,
       {
         transaction: LightTransaction;
-        notes: { position: number; note: Note; nullifier: string }[];
+        notes: {
+          position: number;
+          note: Note;
+          nullifier: string;
+          noteTransactionIndex: number;
+        }[];
       }
     >
   > {
@@ -312,49 +410,65 @@ export class Wallet {
       return new Map();
     }
 
-    const startingNoteIndex = block.noteSize - hexOutputs.length;
+    const startingTreeIndex = block.noteSize - hexOutputs.length;
+    let currentTransactionIndex = 0;
+    let resultIndex = 0;
 
     const transactions: Map<
       string,
       {
         transaction: LightTransaction;
-        notes: { position: number; note: Note; nullifier: string }[];
+        notes: {
+          note: Note;
+          position: number;
+          nullifier: string;
+          noteTransactionIndex: number;
+        }[];
       }
     > = new Map();
-    for (const result of results) {
-      const output = hexOutputs[result.index];
-      const outputBuffer = Uint8ArrayUtils.fromHex(output);
+    // Assumes the results are ordered by index
+    for (const txn of block.transactions) {
+      const nextTransactionIndex = currentTransactionIndex + txn.outputs.length;
+      const notes = [];
+      while (
+        results[resultIndex] != null &&
+        results[resultIndex].index < nextTransactionIndex
+      ) {
+        const note = new Note(
+          Buffer.from(Uint8ArrayUtils.fromHex(results[resultIndex].note)),
+        );
+        const position = startingTreeIndex + results[resultIndex].index;
+        const nullifier = await IronfishNativeModule.nullifier({
+          note: results[resultIndex].note,
+          position: position.toString(),
+          viewHexKey,
+        });
+        const noteTransactionIndex =
+          results[resultIndex].index - currentTransactionIndex;
 
-      // find a transaction with a matching output
-      const transaction = block.transactions.find((transaction) =>
-        transaction.outputs.some((o) =>
-          Uint8ArrayUtils.areEqual(o.note, outputBuffer),
-        ),
-      );
+        notes.push({ note, position, nullifier, noteTransactionIndex });
 
-      if (!transaction) {
-        console.error("Transaction not found");
-        continue;
+        resultIndex++;
       }
 
-      const note = new Note(Buffer.from(Uint8ArrayUtils.fromHex(result.note)));
-      const position = startingNoteIndex + result.index;
-      const nullifier = await IronfishNativeModule.nullifier({
-        note: Uint8ArrayUtils.toHex(note.serialize()),
-        position: position.toString(),
-        viewHexKey,
-      });
-
-      const hexHash = Uint8ArrayUtils.toHex(transaction.hash);
-      const txnStore = transactions.get(hexHash);
-      if (txnStore) {
-        txnStore.notes.push({ note, position, nullifier });
-      } else {
-        transactions.set(hexHash, {
-          transaction,
-          notes: [{ note, position, nullifier }],
+      if (notes.length > 0) {
+        transactions.set(Uint8ArrayUtils.toHex(txn.hash), {
+          transaction: txn,
+          notes,
         });
       }
+
+      if (resultIndex >= results.length) {
+        break;
+      }
+
+      currentTransactionIndex = nextTransactionIndex;
+    }
+
+    if (resultIndex !== results.length) {
+      console.error(
+        "Some decrypted notes were not associated with a transaction",
+      );
     }
 
     return transactions;
@@ -368,7 +482,7 @@ export class Wallet {
       string,
       {
         transaction: LightTransaction;
-        notes: { note: Note }[];
+        notes: { note: Note; noteTransactionIndex: number }[];
       }
     >
   > {
@@ -391,41 +505,53 @@ export class Wallet {
       return new Map();
     }
 
+    let currentTransactionIndex = 0;
+    let resultIndex = 0;
+
     const resultTransactions: Map<
       string,
       {
         transaction: LightTransaction;
-        notes: { note: Note }[];
+        notes: { note: Note; noteTransactionIndex: number }[];
       }
     > = new Map();
-    for (const result of results) {
-      const output = hexOutputs[result.index];
-      const outputBuffer = Uint8ArrayUtils.fromHex(output);
+    // Assumes results are ordered by index
+    for (const txn of transactions) {
+      const nextTransactionIndex = currentTransactionIndex + txn.outputs.length;
+      const notes = [];
+      while (
+        results[resultIndex] != null &&
+        results[resultIndex].index < nextTransactionIndex
+      ) {
+        const note = new Note(
+          Buffer.from(Uint8ArrayUtils.fromHex(results[resultIndex].note)),
+        );
+        const noteTransactionIndex =
+          results[resultIndex].index - currentTransactionIndex;
 
-      // find a transaction with a matching output
-      const transaction = transactions.find((transaction) =>
-        transaction.outputs.some((o) =>
-          Uint8ArrayUtils.areEqual(o.note, outputBuffer),
-        ),
-      );
+        notes.push({ note, noteTransactionIndex });
 
-      if (!transaction) {
-        console.error("Transaction not found");
-        continue;
+        resultIndex++;
       }
 
-      const note = new Note(Buffer.from(Uint8ArrayUtils.fromHex(result.note)));
-
-      const hexHash = Uint8ArrayUtils.toHex(transaction.hash);
-      const txnStore = resultTransactions.get(hexHash);
-      if (txnStore) {
-        txnStore.notes.push({ note });
-      } else {
-        resultTransactions.set(hexHash, {
-          transaction,
-          notes: [{ note }],
+      if (notes.length > 0) {
+        resultTransactions.set(Uint8ArrayUtils.toHex(txn.hash), {
+          transaction: txn,
+          notes,
         });
       }
+
+      if (resultIndex >= results.length) {
+        break;
+      }
+
+      currentTransactionIndex = nextTransactionIndex;
+    }
+
+    if (resultIndex !== results.length) {
+      console.error(
+        "Some decrypted notes were not associated with a transaction",
+      );
     }
 
     return resultTransactions;
@@ -505,10 +631,12 @@ export class Wallet {
                   position: number;
                   note: Note;
                   nullifier: string;
+                  noteTransactionIndex: number;
                 }[];
                 foundNullifiers: Uint8Array[];
                 spenderNotes: {
                   note: Note;
+                  noteTransactionIndex: number;
                 }[];
               }
             >();
@@ -663,11 +791,9 @@ export class Wallet {
       finished = true;
       clearTimeout(saveLoopTimeout);
       await saveLoop();
-      if (this.scanState.abort.signal.aborted) {
-        this.scanState = this.scanState = this.scanState.abort.signal.aborted
-          ? { type: "PAUSED" }
-          : { type: "IDLE" };
-      }
+      this.scanState = this.scanState.abort.signal.aborted
+        ? { type: "PAUSED" }
+        : { type: "IDLE" };
       console.log(`finished in ${performance.now() - performanceTimer}ms`);
     }
 
@@ -739,26 +865,39 @@ export class Wallet {
       );
     }
 
-    const notesToSpend: { note: Uint8Array; position: number }[] = [];
+    const notesToSpend: {
+      note: Uint8Array;
+      position: number;
+      nullifier: Uint8Array;
+    }[] = [];
     // for each asset in assetAmounts
     for (let [assetId, amount] of assetAmounts) {
+      let { sequence: latestSequence } =
+        await Blockchain.getLatestBlock(network);
+
       // fetch unspent notes
       const unspentNotes = await this.state.db.getUnspentNotes(
+        latestSequence,
+        CONFIRMATIONS,
         account.id,
         Uint8ArrayUtils.fromHex(assetId),
         network,
       );
-      // take notes until you have enough to cover the amount
+
+      // take notes until we have enough to cover the amount
       for (const note of unspentNotes) {
         if (amount <= 0n) {
           break;
         }
-        if (note.position === null) {
-          throw new Error("Note position should not be null on unspent notes");
+        if (note.position === null || note.nullifier === null) {
+          throw new Error(
+            "Note position and nullifier should not be null on unspent notes",
+          );
         }
         notesToSpend.push({
           note: note.note,
           position: note.position,
+          nullifier: note.nullifier,
         });
         amount -= BigInt(note.value);
       }
@@ -817,13 +956,13 @@ export class Wallet {
       throw new Error("Spending key not found");
     }
 
-    const { sequence: latestSequence } =
-      await Blockchain.getLatestBlock(network);
+    let { sequence: latestSequence } = await Blockchain.getLatestBlock(network);
 
+    const expirationSequence = latestSequence + EXPIRATION_DELTA;
+    // TODO: Implement proper transaction fees
     const result = await IronfishNativeModule.createTransaction(
       txnVersion,
-      // TODO: Implement proper transaction fees
-      "1",
+      fee,
       latestSequence + EXPIRATION_DELTA,
       spendComponents,
       notes.map((note) => Uint8ArrayUtils.toHex(note)),
@@ -831,10 +970,66 @@ export class Wallet {
     );
 
     console.log(`Transaction created in ${performance.now() - lastTime}ms`);
+    lastTime = performance.now();
     console.log(Uint8ArrayUtils.toHex(result));
 
-    // Call broadcastTransaction with the transaction
+    const txn = new Transaction(Buffer.from(result));
+    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+      name: account.name,
+    });
+
+    // We could create change notes ourselves to avoid decryption altogether.
+    const decryptedNotes = await IronfishNativeModule.decryptNotesForSpender(
+      txn.notes.map((note) => Uint8ArrayUtils.toHex(note.serialize())),
+      decodedAccount.outgoingViewKey,
+    );
+
+    if (decryptedNotes.length !== txn.notes.length) {
+      console.error("All notes should be decryptable by the spender");
+    }
+
+    const ownerNotes = [];
+    const spenderNotes = [];
+    for (const hexNote of decryptedNotes) {
+      const note = new Note(Buffer.from(Uint8ArrayUtils.fromHex(hexNote.note)));
+      if (note.owner() === decodedAccount.publicAddress) {
+        ownerNotes.push({ note, noteTransactionIndex: hexNote.index });
+      } else {
+        spenderNotes.push({ note, noteTransactionIndex: hexNote.index });
+      }
+    }
+
+    const broadcastResult = await WalletServerApi.broadcastTransaction(
+      network,
+      result,
+    );
+
+    if (!broadcastResult.accepted) {
+      console.error("Transaction was not accepted by the network");
+      return;
+    }
+
+    if (!broadcastResult.broadcasted) {
+      console.error("Transaction was not broadcasted by the network");
+      return;
+    }
+
     // Save the transaction in a pending state in the database
+    const hash = await IronfishNativeModule.hashTransaction(result);
+
+    await this.state.db.savePendingTransaction({
+      accountId: account.id,
+      network,
+      hash,
+      timestamp: new Date(),
+      expirationSequence: expirationSequence,
+      fee,
+      foundNullifiers: notesToSpend.map((note) => note.nullifier),
+      spenderNotes,
+      ownerNotes,
+    });
+
+    console.log(`Transaction saved in ${performance.now() - lastTime}ms`);
   }
 }
 

@@ -1,6 +1,7 @@
 import { Network } from "../../constants";
 import { LightBlock } from "../lightstreamer";
 import {
+  BroadcastTransactionResponse,
   GetFeeRatesResponse,
   GetLatestBlockResponse,
   GetNoteWitnessResponse,
@@ -118,6 +119,13 @@ class ForkTesterClass implements WalletServerTransformer {
     network: Network,
     result: GetFeeRatesResponse,
   ): Promise<GetFeeRatesResponse> {
+    return Promise.resolve(result);
+  }
+  broadcastTransaction(
+    network: Network,
+    transaction: Uint8Array,
+    result: BroadcastTransactionResponse,
+  ): Promise<BroadcastTransactionResponse> {
     return Promise.resolve(result);
   }
 }

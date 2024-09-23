@@ -38,6 +38,10 @@ interface TransactionsTable {
   timestamp: Date;
   blockSequence: number | null;
   blockHash: Uint8Array | null;
+  // Expiration sequence is only set on transactions generated on-device.
+  expirationSequence: number | null;
+  // Fee is only set on transactions generated on-device.
+  fee: string | null;
 }
 
 interface AccountTransactionsTable {
@@ -64,8 +68,14 @@ interface NotesTable {
   // If storage is an issue, we could fall back to re-decrypting the notes
   // to get the full note.
   note: Uint8Array;
-  // Note index in the merkle tree could also be derived from the note size on the
+  // The index of the note within the transaction. Notes can be reused, so combining
+  // the transaction hash and the index provides a unique identifier for a note (aka outpoint).
+  noteTransactionIndex: number;
+  // Note index in the merkle tree. Could also be derived from the note size on the
   // transaction, but stored here for convenience.
+  // Can be null for:
+  //   * Notes that are owned in a pending transaction
+  //   * Notes that are not owned
   position: number | null;
   // The rest of the fields are primarily to allow searching/filtering in SQLite.
   assetId: Uint8Array;
@@ -80,14 +90,14 @@ interface NotesTable {
   // Depending how we want to search memos, we could store this multiple times. E.g. do we want to
   // allow searching non-utf8-encoded memos? Like searching binary data as hex
   memo: Uint8Array;
-}
-
-interface NullifiersTable {
-  noteId: number;
-  nullifier: Uint8Array;
-  transactionHash: Uint8Array | null;
-  accountId: number;
-  network: Network;
+  // Can be null for:
+  //   * Notes that are not owned
+  //   * Notes that are owned in a pending transaction
+  nullifier: Uint8Array | null;
+  // Can be null for:
+  //   * Notes have not been spent
+  //   * Notes that are not owned
+  nullifierTransactionHash: Uint8Array | null;
 }
 
 interface BalancesTable {
@@ -125,7 +135,6 @@ interface Database {
   accountTransactions: AccountTransactionsTable;
   transactionBalanceDeltas: TransactionBalanceDeltasTable;
   notes: NotesTable;
-  nullifiers: NullifiersTable;
   balances: BalancesTable;
   assets: AssetsTable;
 }
@@ -165,6 +174,7 @@ export class WalletDb {
         database: "wallet.db",
         autoAffinityConversion: true,
       }),
+      log: ["error"],
     });
 
     // WAL mode is generally faster, and I don't think any of the listed
@@ -239,6 +249,8 @@ export class WalletDb {
                 .addColumn("timestamp", SQLiteType.DateTime)
                 .addColumn("blockSequence", SQLiteType.Integer)
                 .addColumn("blockHash", SQLiteType.Blob)
+                .addColumn("expirationSequence", SQLiteType.Integer)
+                .addColumn("fee", SQLiteType.String)
                 .execute();
               console.log("created transactions");
             },
@@ -260,6 +272,10 @@ export class WalletDb {
                 .addColumn("type", SQLiteType.String, (col) =>
                   col.notNull().check(sql`type IN ("receive", "send")`),
                 )
+                .addUniqueConstraint("accountTransactions_accountId_hash", [
+                  "accountId",
+                  "transactionHash",
+                ])
                 .execute();
               console.log("created account transactions");
             },
@@ -282,6 +298,9 @@ export class WalletDb {
                   col.notNull().check(sql`network IN ("mainnet", "testnet")`),
                 )
                 .addColumn("note", SQLiteType.Blob, (col) => col.notNull())
+                .addColumn("noteTransactionIndex", SQLiteType.Integer, (col) =>
+                  col.notNull(),
+                )
                 .addColumn("position", SQLiteType.Integer)
                 .addColumn("assetId", SQLiteType.Blob, (col) => col.notNull())
                 .addColumn("sender", SQLiteType.Blob, (col) => col.notNull())
@@ -291,37 +310,21 @@ export class WalletDb {
                   col.notNull(),
                 )
                 .addColumn("memo", SQLiteType.Blob, (col) => col.notNull())
-                .execute();
-              console.log("created notes");
-            },
-          },
-          ["006_createNullifiers"]: {
-            up: async (db: Kysely<Database>) => {
-              console.log("creating nullifiers");
-              await db.schema
-                .createTable("nullifiers")
-                .addColumn("noteId", SQLiteType.Number, (col) =>
-                  col.primaryKey().references("notes.id"),
-                )
-                .addColumn("nullifier", SQLiteType.Blob, (col) => col.notNull())
-                .addColumn("transactionHash", SQLiteType.Blob, (col) =>
-                  col.references("transactions.hash"),
-                )
-                .addColumn("accountId", SQLiteType.Integer, (col) =>
-                  col.notNull().references("accounts.id"),
-                )
-                .addColumn("network", SQLiteType.String, (col) =>
-                  col.notNull().check(sql`network IN ("mainnet", "testnet")`),
+                .addColumn("nullifier", SQLiteType.Blob)
+                .addColumn("nullifierTransactionHash", SQLiteType.Blob)
+                .addUniqueConstraint(
+                  "notes_accountId_transactionHash_noteTransactionIndex",
+                  ["accountId", "transactionHash", "noteTransactionIndex"],
                 )
                 .execute();
 
               await db.schema
-                .createIndex("idx_nullifiers_nullifier")
-                .on("nullifiers")
+                .createIndex("idx_notes_nullifier")
+                .on("notes")
                 .column("nullifier")
                 .execute();
 
-              console.log("created nullifiers");
+              console.log("created notes");
             },
           },
           ["007_createBalances"]: {
@@ -533,7 +536,9 @@ export class WalletDb {
     return await this.db
       .updateTable("accounts")
       .where("accounts.name", "=", name)
-      .set("accounts.name", newName)
+      .set({
+        name: newName,
+      })
       .executeTakeFirst();
   }
 
@@ -556,11 +561,6 @@ export class WalletDb {
 
       await db
         .deleteFrom("accountTransactions")
-        .where("accountId", "=", account.id)
-        .executeTakeFirstOrThrow();
-
-      await db
-        .deleteFrom("nullifiers")
         .where("accountId", "=", account.id)
         .executeTakeFirstOrThrow();
 
@@ -775,6 +775,200 @@ export class WalletDb {
     }));
   }
 
+  async getPendingTransactions(accountId: number, network: Network) {
+    return await this.db
+      .selectFrom("transactions")
+      .innerJoin(
+        "accountTransactions",
+        "transactions.hash",
+        "accountTransactions.transactionHash",
+      )
+      .selectAll("transactions")
+      .where((eb) =>
+        eb.and([
+          eb("accountTransactions.accountId", "=", accountId),
+          eb("transactions.blockSequence", "is", null),
+          eb("transactions.network", "=", network),
+        ]),
+      )
+      .execute();
+  }
+
+  async removePendingTransaction(hash: Uint8Array) {
+    await this.db.transaction().execute(async (db) => {
+      const transaction = await db
+        .selectFrom("transactions")
+        .select("blockSequence")
+        .where("hash", "=", hash)
+        .executeTakeFirst();
+
+      if (!transaction) {
+        throw new Error("Transaction not found");
+      }
+
+      if (transaction.blockSequence !== null) {
+        throw new Error("Cannot remove a transaction that is in a block");
+      }
+
+      await db
+        .deleteFrom("accountTransactions")
+        .where("transactionHash", "=", hash)
+        .executeTakeFirstOrThrow();
+
+      await db
+        .deleteFrom("notes")
+        .where("transactionHash", "=", hash)
+        .executeTakeFirstOrThrow();
+
+      await db
+        .updateTable("notes")
+        .set({
+          nullifierTransactionHash: null,
+        })
+        .where("nullifierTransactionHash", "=", hash)
+        .executeTakeFirstOrThrow();
+
+      await db
+        .deleteFrom("transactionBalanceDeltas")
+        .where("transactionHash", "=", hash)
+        .executeTakeFirstOrThrow();
+
+      await db
+        .deleteFrom("transactions")
+        .where("hash", "=", hash)
+        .executeTakeFirstOrThrow();
+    });
+  }
+
+  async savePendingTransaction(values: {
+    accountId: number;
+    network: Network;
+    hash: Uint8Array;
+    timestamp: Date;
+    expirationSequence: number;
+    fee: string;
+    ownerNotes: { note: Note; noteTransactionIndex: number }[];
+    foundNullifiers: Uint8Array[];
+    spenderNotes: { note: Note; noteTransactionIndex: number }[];
+  }) {
+    await this.db.transaction().execute(async (db) => {
+      const balanceDeltas = new BalanceDeltas();
+
+      // Note that we can't rely on spenderNotes alone for subtracting from balance deltas
+      // because they don't include transaction fees.
+      if (values.foundNullifiers.length > 0) {
+        const spentNotes = await db
+          .selectFrom("notes")
+          .select(["notes.assetId", "notes.value"])
+          .where((eb) =>
+            eb.and([
+              eb("notes.nullifier", "in", values.foundNullifiers),
+              eb("notes.accountId", "=", values.accountId),
+            ]),
+          )
+          .execute();
+
+        if (spentNotes.length !== values.foundNullifiers.length) {
+          console.error("Some nullifiers were not found in the database");
+        }
+
+        for (const note of spentNotes) {
+          balanceDeltas.subtract(note.assetId, BigInt(note.value));
+        }
+      }
+      for (const note of values.ownerNotes) {
+        balanceDeltas.add(note.note.assetId(), note.note.value());
+      }
+
+      // One transaction could apply to multiple accounts
+      await db
+        .insertInto("transactions")
+        .values({
+          hash: values.hash,
+          network: values.network,
+          blockSequence: null,
+          blockHash: null,
+          timestamp: values.timestamp,
+          expirationSequence: values.expirationSequence,
+          fee: values.fee,
+        })
+        .executeTakeFirstOrThrow();
+
+      await db
+        .insertInto("accountTransactions")
+        .values({
+          accountId: values.accountId,
+          transactionHash: values.hash,
+          type: TransactionType.SEND,
+        })
+        .executeTakeFirstOrThrow();
+
+      for (const note of values.ownerNotes) {
+        await db
+          .insertInto("notes")
+          .values({
+            accountId: values.accountId,
+            network: values.network,
+            transactionHash: values.hash,
+            note: new Uint8Array(note.note.serialize()),
+            noteTransactionIndex: note.noteTransactionIndex,
+            assetId: new Uint8Array(note.note.assetId()),
+            owner: Uint8ArrayUtils.fromHex(note.note.owner()),
+            sender: Uint8ArrayUtils.fromHex(note.note.sender()),
+            value: note.note.value().toString(),
+            valueNum: Number(note.note.value()),
+            memo: new Uint8Array(note.note.memo()),
+            position: null,
+            nullifier: null,
+            nullifierTransactionHash: null,
+          })
+          .executeTakeFirst();
+      }
+
+      for (const nullifier of values.foundNullifiers) {
+        await db
+          .updateTable("notes")
+          .set("nullifierTransactionHash", values.hash)
+          .where("nullifier", "=", nullifier)
+          .executeTakeFirstOrThrow();
+      }
+
+      for (const note of values.spenderNotes) {
+        await db
+          .insertInto("notes")
+          .values({
+            accountId: values.accountId,
+            network: values.network,
+            transactionHash: values.hash,
+            note: new Uint8Array(note.note.serialize()),
+            noteTransactionIndex: note.noteTransactionIndex,
+            assetId: new Uint8Array(note.note.assetId()),
+            owner: Uint8ArrayUtils.fromHex(note.note.owner()),
+            sender: Uint8ArrayUtils.fromHex(note.note.sender()),
+            value: note.note.value().toString(),
+            valueNum: Number(note.note.value()),
+            memo: new Uint8Array(note.note.memo()),
+            position: null,
+            nullifier: null,
+            nullifierTransactionHash: null,
+          })
+          .executeTakeFirstOrThrow();
+      }
+
+      for (const delta of balanceDeltas) {
+        await db
+          .insertInto("transactionBalanceDeltas")
+          .values({
+            accountId: values.accountId,
+            assetId: Uint8ArrayUtils.fromHex(delta[0]),
+            transactionHash: values.hash,
+            value: delta[1].toString(),
+          })
+          .executeTakeFirstOrThrow();
+      }
+    });
+  }
+
   async saveBlock(values: {
     accountId: number;
     network: Network;
@@ -782,9 +976,14 @@ export class WalletDb {
     blockHash: Uint8Array;
     transactions: {
       hash: Uint8Array;
-      ownerNotes: { position: number | null; note: Note; nullifier: string }[];
+      ownerNotes: {
+        position: number | null;
+        note: Note;
+        nullifier: string;
+        noteTransactionIndex: number;
+      }[];
       foundNullifiers: Uint8Array[];
-      spenderNotes: { note: Note }[];
+      spenderNotes: { note: Note; noteTransactionIndex: number }[];
       timestamp: Date;
     }[];
   }) {
@@ -851,11 +1050,10 @@ export class WalletDb {
         if (txn.foundNullifiers.length > 0) {
           const spentNotes = await db
             .selectFrom("notes")
-            .innerJoin("nullifiers", "nullifiers.noteId", "notes.id")
             .selectAll()
             .where((eb) =>
               eb.and([
-                eb("nullifiers.nullifier", "in", txn.foundNullifiers),
+                eb("notes.nullifier", "in", txn.foundNullifiers),
                 eb("notes.accountId", "=", values.accountId),
               ]),
             )
@@ -873,7 +1071,6 @@ export class WalletDb {
           balanceDeltas.add(note.note.assetId(), note.note.value());
         }
 
-        // One transaction could apply to multiple accounts
         await db
           .insertInto("transactions")
           .values({
@@ -883,26 +1080,45 @@ export class WalletDb {
             blockHash: values.blockHash,
             timestamp: txn.timestamp,
           })
-          .onConflict((oc) => oc.column("hash").doNothing())
+          // One transaction could apply to multiple accounts
+          // Might be updating a pending txn to an on-chain txn
+          .onConflict((oc) =>
+            oc.column("hash").doUpdateSet({
+              blockHash: values.blockHash,
+              blockSequence: values.blockSequence,
+              timestamp: txn.timestamp,
+            }),
+          )
           .executeTakeFirstOrThrow();
 
-        await db
+        const r = await db
           .insertInto("accountTransactions")
           .values({
             accountId: values.accountId,
             transactionHash: txn.hash,
             type: transactionType,
           })
+          // Transaction might already be pending
+          .onConflict((oc) =>
+            oc.columns(["accountId", "transactionHash"]).doNothing(),
+          )
           .executeTakeFirstOrThrow();
 
+        if (r.insertId) {
+          console.log("new");
+        } else {
+          console.log("update");
+        }
+
         for (const note of txn.ownerNotes) {
-          const result = await db
+          await db
             .insertInto("notes")
             .values({
               accountId: values.accountId,
               network: values.network,
               transactionHash: txn.hash,
               note: new Uint8Array(note.note.serialize()),
+              noteTransactionIndex: note.noteTransactionIndex,
               assetId: new Uint8Array(note.note.assetId()),
               owner: Uint8ArrayUtils.fromHex(note.note.owner()),
               sender: Uint8ArrayUtils.fromHex(note.note.sender()),
@@ -910,29 +1126,29 @@ export class WalletDb {
               valueNum: Number(note.note.value()),
               memo: new Uint8Array(note.note.memo()),
               position: note.position,
-            })
-            .executeTakeFirst();
-
-          if (!result.insertId) {
-            throw new Error();
-          }
-
-          await db
-            .insertInto("nullifiers")
-            .values({
-              noteId: Number(result.insertId),
               nullifier: Uint8ArrayUtils.fromHex(note.nullifier),
-              accountId: values.accountId,
-              network: values.network,
-              transactionHash: null,
+              nullifierTransactionHash: null,
             })
+            .onConflict((oc) =>
+              oc
+                .columns([
+                  "accountId",
+                  "transactionHash",
+                  "noteTransactionIndex",
+                ])
+                .doUpdateSet({
+                  position: note.position,
+                  nullifier: Uint8ArrayUtils.fromHex(note.nullifier),
+                  nullifierTransactionHash: null,
+                }),
+            )
             .executeTakeFirst();
         }
 
         for (const nullifier of txn.foundNullifiers) {
           await db
-            .updateTable("nullifiers")
-            .set("transactionHash", txn.hash)
+            .updateTable("notes")
+            .set("nullifierTransactionHash", txn.hash)
             .where("nullifier", "=", nullifier)
             .executeTakeFirstOrThrow();
         }
@@ -945,6 +1161,7 @@ export class WalletDb {
               network: values.network,
               transactionHash: txn.hash,
               note: new Uint8Array(note.note.serialize()),
+              noteTransactionIndex: note.noteTransactionIndex,
               assetId: new Uint8Array(note.note.assetId()),
               owner: Uint8ArrayUtils.fromHex(note.note.owner()),
               sender: Uint8ArrayUtils.fromHex(note.note.sender()),
@@ -952,7 +1169,10 @@ export class WalletDb {
               valueNum: Number(note.note.value()),
               memo: new Uint8Array(note.note.memo()),
               position: null,
+              nullifier: null,
+              nullifierTransactionHash: null,
             })
+            .onConflict((oc) => oc.doNothing())
             .executeTakeFirstOrThrow();
         }
 
@@ -998,6 +1218,11 @@ export class WalletDb {
               transactionHash: txn.hash,
               value: delta[1].toString(),
             })
+            .onConflict((oc) =>
+              oc
+                .columns(["accountId", "transactionHash", "assetId"])
+                .doNothing(),
+            )
             .executeTakeFirstOrThrow();
         }
       }
@@ -1105,32 +1330,12 @@ export class WalletDb {
           .execute();
       }
 
-      // If nullifiers were created in this transaction, remove them
-      await db
-        .deleteFrom("nullifiers")
-        .where((eb) =>
-          eb(
-            "nullifiers.noteId",
-            "in",
-            eb
-              .selectFrom("notes")
-              .innerJoin(
-                "transactions",
-                "transactions.hash",
-                "notes.transactionHash",
-              )
-              .where("transactions.blockHash", "==", values.blockHash)
-              .select("notes.id"),
-          ),
-        )
-        .executeTakeFirstOrThrow();
-
       // If nullifiers were found in this transaction, mark them as unfound
       await db
-        .updateTable("nullifiers")
+        .updateTable("notes")
         .where((eb) =>
           eb(
-            "nullifiers.transactionHash",
+            "nullifierTransactionHash",
             "in",
             eb
               .selectFrom("transactions")
@@ -1138,7 +1343,7 @@ export class WalletDb {
               .select("transactions.hash"),
           ),
         )
-        .set("transactionHash", null)
+        .set("nullifierTransactionHash", null)
         .executeTakeFirstOrThrow();
 
       await db
@@ -1220,49 +1425,75 @@ export class WalletDb {
   }
 
   async getUnspentNotes(
+    latestBlock: number,
+    confirmations: number,
     accountId: number,
     assetId: Uint8Array,
     network: Network,
   ) {
-    // TODO: Consider the confirmation range
-    return await this.db
-      .selectFrom("notes")
-      .leftJoin("nullifiers", "nullifiers.noteId", "notes.id")
-      .selectAll()
-      .where((eb) =>
-        eb.and([
-          eb("notes.accountId", "=", accountId),
-          eb("notes.assetId", "=", assetId),
-          eb("notes.network", "=", network),
-          // Assumes we don't set note position on sent notes
-          eb("notes.position", "is not", null),
-          eb("nullifiers.transactionHash", "is", null),
-        ]),
-      )
-      // Spends the largest notes first
-      .orderBy("notes.valueNum", "desc")
-      .execute();
-  }
+    return await this.db.transaction().execute(async (db) => {
+      const accountHead = await db
+        .selectFrom("accountNetworkHeads")
+        .select("accountNetworkHeads.sequence")
+        .where((eb) =>
+          eb.and([
+            eb("accountId", "=", accountId),
+            eb("network", "=", network),
+          ]),
+        )
+        .executeTakeFirst();
+      const accountSequence = accountHead?.sequence ?? 0;
 
-  async saveNullifier(
-    nullifier: Uint8Array,
-    network: Network,
-  ): Promise<boolean> {
-    const result = await this.db
-      .selectNoFrom(({ exists, selectFrom }) =>
-        exists(
-          selectFrom("nullifiers")
-            .where((eb) =>
+      return await db
+        .selectFrom("notes")
+        .leftJoin(
+          "transactions as noteTransaction",
+          "noteTransaction.hash",
+          "notes.transactionHash",
+        )
+        .leftJoin(
+          "transactions as nullifierTransaction",
+          "nullifierTransaction.hash",
+          "notes.nullifierTransactionHash",
+        )
+        .selectAll("notes")
+        .where((eb) =>
+          eb.and([
+            eb("notes.accountId", "=", accountId),
+            eb("notes.assetId", "=", assetId),
+            eb("notes.network", "=", network),
+            // Assumes we don't set note position on sent notes
+            eb("notes.position", "is not", null),
+            eb(
+              "noteTransaction.blockSequence",
+              "<=",
+              latestBlock - confirmations,
+            ),
+            eb.or([
+              // if the nullifier is unused, the note is unspent
+              eb("notes.nullifierTransactionHash", "is", null),
+              // if the nullifier is in a transaction, the transaction is not on a block,
+              // and the transaction is expired, the note is unspent
               eb.and([
-                eb("nullifier", "=", nullifier),
-                eb("network", "=", network),
+                eb("nullifierTransaction.blockSequence", "is", null),
+                // 0-expiration means the transaction never expires
+                eb("nullifierTransaction.expirationSequence", ">", 0),
+                // TODO: We could use confirmations here, but undecided on whether it's worth
+                // delaying expiration for the chance that the transaction might be reorged onto
+                // a different block.
+                eb(
+                  "nullifierTransaction.expirationSequence",
+                  "<=",
+                  accountSequence,
+                ),
               ]),
-            )
-            .select(sql`1`.as("_")),
-        ).as("exists"),
-      )
-      .executeTakeFirstOrThrow();
-    return Boolean(result.exists);
+            ]),
+          ]),
+        )
+        // Spends the largest notes first
+        .orderBy("notes.valueNum", "desc")
+        .execute();
+    });
   }
 
   async hasNullifier(
@@ -1272,7 +1503,7 @@ export class WalletDb {
     const result = await this.db
       .selectNoFrom(({ exists, selectFrom }) =>
         exists(
-          selectFrom("nullifiers")
+          selectFrom("notes")
             .where((eb) =>
               eb.and([
                 eb("nullifier", "=", nullifier),
@@ -1309,7 +1540,7 @@ export class WalletDb {
         "transactions.hash",
         "transactionBalanceDeltas.transactionHash",
       )
-      .selectAll()
+      .selectAll("transactionBalanceDeltas")
       .where((eb) =>
         eb.and([
           eb("transactions.blockSequence", ">=", startSequence),
@@ -1319,6 +1550,96 @@ export class WalletDb {
         ]),
       )
       .execute();
+  }
+
+  async getPendingTransactionBalanceDeltas(
+    accountId: number,
+    network: Network,
+  ) {
+    return await this.db.transaction().execute(async (db) => {
+      const accountHead = await db
+        .selectFrom("accountNetworkHeads")
+        .select("accountNetworkHeads.sequence")
+        .where((eb) =>
+          eb.and([
+            eb("accountId", "=", accountId),
+            eb("network", "=", network),
+          ]),
+        )
+        .executeTakeFirst();
+      const accountSequence = accountHead?.sequence ?? 0;
+
+      return await db
+        .selectFrom("transactionBalanceDeltas")
+        .innerJoin(
+          "transactions",
+          "transactions.hash",
+          "transactionBalanceDeltas.transactionHash",
+        )
+        .selectAll("transactionBalanceDeltas")
+        .where((eb) =>
+          eb.and([
+            eb("transactions.network", "=", network),
+            eb("transactionBalanceDeltas.accountId", "=", accountId),
+            eb("transactions.blockSequence", "is", null),
+            eb.or([
+              eb("transactions.expirationSequence", "==", 0),
+              // TODO: We could treat transactions as unexpired until after accountSequence + confirmations,
+              // since the transaction could reorg onto a different block.
+              eb("transactions.expirationSequence", ">", accountSequence),
+            ]),
+          ]),
+        )
+        .execute();
+    });
+  }
+
+  async getUnconfirmedAndPendingSpentNotes(
+    accountId: number,
+    network: Network,
+    start: number,
+  ) {
+    return await this.db.transaction().execute(async (db) => {
+      const accountHead = await db
+        .selectFrom("accountNetworkHeads")
+        .select("accountNetworkHeads.sequence")
+        .where((eb) =>
+          eb.and([
+            eb("accountId", "=", accountId),
+            eb("network", "=", network),
+          ]),
+        )
+        .executeTakeFirst();
+      const accountSequence = accountHead?.sequence ?? 0;
+
+      return await db
+        .selectFrom("notes")
+        .innerJoin(
+          "transactions",
+          "transactions.hash",
+          "notes.nullifierTransactionHash",
+        )
+        .selectAll("notes")
+        .where((eb) =>
+          eb.and([
+            eb("notes.accountId", "=", accountId),
+            eb("notes.network", "=", network),
+            eb.or([
+              eb("transactions.blockSequence", ">=", start),
+              eb.and([
+                eb("transactions.blockSequence", "is", null),
+                eb.or([
+                  eb("transactions.expirationSequence", "==", 0),
+                  // TODO: We could treat transactions as unexpired until after accountSequence + confirmations,
+                  // since the transaction could reorg onto a different block.
+                  eb("transactions.expirationSequence", ">", accountSequence),
+                ]),
+              ]),
+            ]),
+          ]),
+        )
+        .execute();
+    });
   }
 
   async getAsset(network: Network, assetId: Uint8Array) {

@@ -22,6 +22,11 @@ import { useEffect, useState } from "react";
 import { ColorScheme } from "@ironfish/tackle-box";
 
 const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
   mutationCache: new MutationCache({
     onSuccess: async () => {
       await queryClient.invalidateQueries();

@@ -170,6 +170,10 @@ public class IronfishNativeModule: Module {
           throw error
       }
     }
+
+    AsyncFunction("hashTransaction") { (transaction: Data) -> Data in
+      return hashTransaction(transaction: transaction)
+    }
   }
 }
 

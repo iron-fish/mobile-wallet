@@ -411,3 +411,10 @@ pub fn create_transaction(
         .map_err(|e| EnumError::Error { msg: e.to_string() })?;
     Ok(buffer)
 }
+
+#[uniffi::export]
+pub fn hash_transaction(
+    transaction: Vec<u8>,
+) -> Vec<u8> {
+    blake3::hash(&transaction).as_bytes().to_vec()
+}

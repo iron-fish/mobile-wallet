@@ -12,18 +12,34 @@ class Asset {
   }
 }
 
+class Transaction {}
+
 const mockIronfishRustNodejs = {
   $$typeof: undefined,
   KEY_LENGTH: 32,
   ASSET_NAME_LENGTH: 32,
   ASSET_METADATA_LENGTH: 96,
+  ENCRYPTED_NOTE_LENGTH: 328,
   ENCRYPTED_NOTE_PLAINTEXT_LENGTH: 136 + 16,
   NOTE_ENCRYPTION_KEY_LENGTH: 80,
   PUBLIC_ADDRESS_LENGTH: 32,
   ASSET_ID_LENGTH: 32,
   RANDOMNESS_LENGTH: 32,
   MEMO_LENGTH: 32,
+  TRANSACTION_PUBLIC_KEY_RANDOMNESS_LENGTH: 32,
+  TRANSACTION_SIGNATURE_LENGTH: 64,
+  PROOF_LENGTH: 192,
   Asset: new Proxy(Asset, {
+    get: (obj, property) => {
+      if (obj.hasOwnProperty(property)) {
+        return obj[property];
+      }
+      const message = `ERROR: Please implement ${property} in shims/ironfish-rust-nodejs/Asset`;
+      console.error(message);
+      throw new Error(message);
+    },
+  }),
+  Transaction: new Proxy(Transaction, {
     get: (obj, property) => {
       if (obj.hasOwnProperty(property)) {
         return obj[property];
