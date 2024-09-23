@@ -961,7 +961,7 @@ export class Wallet {
     const result = await IronfishNativeModule.createTransaction(
       txnVersion,
       fee,
-      expirationSequence,
+      latestSequence + EXPIRATION_DELTA,
       spendComponents,
       notes.map((note) => Uint8ArrayUtils.toHex(note)),
       Uint8ArrayUtils.fromHex(spendingKey),
