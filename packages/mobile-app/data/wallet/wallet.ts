@@ -633,10 +633,12 @@ export class Wallet {
                   position: number;
                   note: Note;
                   nullifier: string;
+                  noteTransactionIndex: number;
                 }[];
                 foundNullifiers: Uint8Array[];
                 spenderNotes: {
                   note: Note;
+                  noteTransactionIndex: number;
                 }[];
               }
             >();
