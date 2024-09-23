@@ -39,11 +39,9 @@ export const chainHandlers = f.facade<ChainHandlers>({
     // TODO: Implement network switching
     return { networkId: 0 };
   }),
-  isValidPublicAddress: f.handler.query(
-    async ({ address }: { address: string }) => {
-      return isValidPublicAddress(address);
-    },
-  ),
+  isValidPublicAddress: f.handler.query(({ address }: { address: string }) => {
+    return isValidPublicAddress(address);
+  }),
   requestFaucetTokens: f.handler.mutation(
     async ({ address, email }: { address: string; email: string }) => {
       // TODO: Implement faucet

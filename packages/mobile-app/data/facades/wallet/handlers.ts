@@ -189,9 +189,15 @@ export const walletHandlers = f.facade<WalletHandlers>({
     return await wallet.setActiveAccount(name);
   }),
   getEstimatedFees: f.handler.query(
-    async (args: { accountName: string; outputs: Output[] }) => {
-      // TODO: Implement getEstimatedFees
-      return { slow: "0", average: "0", fast: "0" };
+    async (args: {
+      accountName: string;
+      outputs: { amount: string; assetId: string }[];
+    }) => {
+      return await wallet.estimateFees(
+        Network.TESTNET,
+        args.accountName,
+        args.outputs,
+      );
     },
   ),
   getTransaction: f.handler.query(
