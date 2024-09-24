@@ -179,8 +179,10 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
         ],
         fee: "1",
         expiration: 0,
-        blockHash:
-          "00000000000004e987a7404874bf27beee12180aef982a3f730981ac25ffe642",
+        block: {
+          hash: "00000000000004e987a7404874bf27beee12180aef982a3f730981ac25ffe642",
+          sequence: 1,
+        },
         submittedSequence: 0,
         status: TransactionStatus.CONFIRMED,
         type: TransactionType.RECEIVE,
@@ -231,8 +233,10 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
           ],
           fee: "1",
           expiration: 0,
-          blockHash:
-            "00000000000004e987a7404874bf27beee12180aef982a3f730981ac25ffe642",
+          block: {
+            hash: "00000000000004e987a7404874bf27beee12180aef982a3f730981ac25ffe642",
+            sequence: 1,
+          },
           submittedSequence: 0,
           status: TransactionStatus.CONFIRMED,
           type: TransactionType.RECEIVE,
