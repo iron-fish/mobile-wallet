@@ -4,6 +4,7 @@ import {
   AccountFormat,
   LanguageKey,
   Note,
+  RawTransaction,
   Transaction,
   decodeAccount,
   encodeAccount,
@@ -18,6 +19,7 @@ import { Blockchain } from "../blockchain";
 import { Output } from "../facades/wallet/types";
 import { WalletServerApi } from "../walletServerApi/walletServer";
 import { Consensus, MAINNET, TESTNET } from "@ironfish/sdk";
+import { getFee } from "@ironfish/sdk/build/src/memPool";
 
 type StartedState = { type: "STARTED"; db: WalletDb; assetLoader: AssetLoader };
 type WalletState = { type: "STOPPED" } | { type: "LOADING" } | StartedState;
@@ -829,35 +831,14 @@ export class Wallet {
     return consensus.getActiveTransactionVersion(latestBlock.sequence);
   }
 
-  async sendTransaction(
+  private async fundOutputs(
     network: Network,
-    accountName: string,
-    outputs: Output[],
-    fee: string,
-    // TODO: Implement transaction expiration
-    expiration?: number,
+    accountId: number,
+    outputs: { assetId: string; amount: string }[],
   ) {
     assertStarted(this.state);
-    let lastTime = performance.now();
-    // Make sure the account exists
-    const account = await this.state.db.getAccount(accountName);
-    if (account == null) {
-      throw new Error(`No account found with name ${accountName}`);
-    }
 
-    if (account.viewOnly) {
-      throw new Error("Cannot send transactions from a view-only account");
-    }
-
-    console.log(`Account fetched in: ${performance.now() - lastTime}ms`);
-    lastTime = performance.now();
-
-    // Attempt to fund the transaction
     const assetAmounts = new Map<string, bigint>();
-    assetAmounts.set(
-      "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
-      BigInt(fee),
-    );
     for (const output of outputs) {
       assetAmounts.set(
         output.assetId,
@@ -879,7 +860,7 @@ export class Wallet {
       const unspentNotes = await this.state.db.getUnspentNotes(
         latestSequence,
         CONFIRMATIONS,
-        account.id,
+        accountId,
         Uint8ArrayUtils.fromHex(assetId),
         network,
       );
@@ -907,6 +888,91 @@ export class Wallet {
         throw new Error(`Insufficient balance for asset ${assetId}`);
       }
     }
+
+    return notesToSpend;
+  }
+
+  async estimateFees(
+    network: Network,
+    accountName: string,
+    outputs: { assetId: string; amount: string }[],
+  ) {
+    assertStarted(this.state);
+
+    // Make sure the account exists
+    const account = await this.state.db.getAccount(accountName);
+    if (account == null) {
+      throw new Error(`No account found with name ${accountName}`);
+    }
+
+    if (account.viewOnly) {
+      throw new Error("Cannot send transactions from a view-only account");
+    }
+
+    // Attempt to fund the transaction
+    const notesToSpend = await this.fundOutputs(network, account.id, outputs);
+
+    const activeTxnVersion = await this.getActiveTransactionVersion(network);
+    const rawTxn = new RawTransaction(activeTxnVersion);
+    rawTxn.spends = notesToSpend.map((note) => ({
+      note: new Note(Buffer.from(note.note)),
+      // We don't need to assemble witnesses to estimate transaction fees
+      witness: [] as any,
+    }));
+    rawTxn.outputs = await Promise.all(
+      outputs.map(async (output) => {
+        return {
+          note: new Note(
+            Buffer.from(
+              await IronfishNativeModule.createNote({
+                owner: Uint8ArrayUtils.fromHex(account.publicAddress),
+                value: output.amount,
+                memo: new Uint8Array(),
+                assetId: Uint8ArrayUtils.fromHex(output.assetId),
+                sender: Uint8ArrayUtils.fromHex(account.publicAddress),
+              }),
+            ),
+          ),
+        };
+      }),
+    );
+
+    const size = rawTxn.postedSize("");
+
+    const feeRates = await Blockchain.getFeeRates(Network.TESTNET);
+
+    return {
+      slow: getFee(BigInt(feeRates.slow), size).toString(),
+      average: getFee(BigInt(feeRates.average), size).toString(),
+      fast: getFee(BigInt(feeRates.fast), size).toString(),
+    };
+  }
+
+  async sendTransaction(
+    network: Network,
+    accountName: string,
+    outputs: Output[],
+    fee: string,
+    // TODO: Implement transaction expiration
+    expiration?: number,
+  ) {
+    assertStarted(this.state);
+    let lastTime = performance.now();
+    // Make sure the account exists
+    const account = await this.state.db.getAccount(accountName);
+    if (account == null) {
+      throw new Error(`No account found with name ${accountName}`);
+    }
+
+    if (account.viewOnly) {
+      throw new Error("Cannot send transactions from a view-only account");
+    }
+
+    console.log(`Account fetched in: ${performance.now() - lastTime}ms`);
+    lastTime = performance.now();
+
+    // Attempt to fund the transaction
+    const notesToSpend = await this.fundOutputs(network, account.id, outputs);
 
     console.log(`Unspent notes fetched in: ${performance.now() - lastTime}ms`);
     lastTime = performance.now();

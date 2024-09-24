@@ -107,7 +107,10 @@ export type WalletHandlers = {
   getAccounts: Query<() => Account[]>;
   setActiveAccount: Mutation<(args: { name: string }) => boolean>;
   getEstimatedFees: Query<
-    (args: { accountName: string; outputs: Output[] }) => {
+    (args: {
+      accountName: string;
+      outputs: { amount: string; assetId: string }[];
+    }) => {
       slow: string;
       average: string;
       fast: string;

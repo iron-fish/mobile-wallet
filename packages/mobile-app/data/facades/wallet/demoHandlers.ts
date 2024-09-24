@@ -152,8 +152,11 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
     return true;
   }),
   getEstimatedFees: f.handler.query(
-    async (args: { accountName: string; outputs: Output[] }) => {
-      return { slow: "0.00000001", average: "0.00000002", fast: "0.00000003" };
+    (args: {
+      accountName: string;
+      outputs: { amount: string; assetId: string }[];
+    }) => {
+      return { slow: "1", average: "2", fast: "3" };
     },
   ),
   getTransaction: f.handler.query(

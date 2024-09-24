@@ -4,16 +4,24 @@ import { Network } from "./constants";
 import * as Uint8ArrayUtils from "../utils/uint8Array";
 import { RecentBlocks } from "./recentBlocks";
 import { WalletServerChunksApi } from "./walletServerApi/walletServerChunks";
-import { GetLatestBlockResponse } from "./walletServerApi/types";
+import {
+  GetFeeRatesResponse,
+  GetLatestBlockResponse,
+} from "./walletServerApi/types";
 
-type LatestBlockRequest =
-  | { type: "LOADING"; request: Promise<GetLatestBlockResponse> }
-  | { type: "LOADED"; updatedAt: number; response: GetLatestBlockResponse };
+type CachedRequest<T> =
+  | { type: "LOADING"; request: Promise<T> }
+  | { type: "LOADED"; updatedAt: number; response: T };
 
 /**
  * Milliseconds after which the latest block is considered out-of-date.
  */
 const LATEST_BLOCK_UPDATE_MS = 5000;
+
+/**
+ * Milliseconds after which estimated fee rates are considered out-of-date.
+ */
+const FEE_RATES_UPDATE_MS = 5000;
 
 /**
  * Uses WalletServerApi and WalletServerChunksApi to download blocks from the wallet server
@@ -35,7 +43,14 @@ class BlockchainClass {
   /**
    * latestBlock requests/cached responses, indexed by network.
    */
-  private latestBlocks: Map<Network, LatestBlockRequest> = new Map();
+  private latestBlocks: Map<Network, CachedRequest<GetLatestBlockResponse>> =
+    new Map();
+
+  /**
+   * feeRate requests/cached responses, indexed by network.
+   */
+  private feeRates: Map<Network, CachedRequest<GetFeeRatesResponse>> =
+    new Map();
 
   private async lockRequest(cb: () => Promise<void>) {
     if (this.isRequesting) {
@@ -51,6 +66,10 @@ class BlockchainClass {
     }
   }
 
+  /**
+   * Returns the latest block hash/sequence from the wallet server. The result is
+   * cached for a period of time.
+   */
   getLatestBlock(
     network: Network,
   ): Promise<{ hash: string; sequence: number }> {
@@ -85,6 +104,44 @@ class BlockchainClass {
       });
 
       return latestBlockPromise;
+    }
+
+    return Promise.resolve(cached.response);
+  }
+
+  /**
+   * Returns estimated transaction fee rates from the wallet server.
+   * The result is cached for a period of time.
+   */
+  getFeeRates(network: Network) {
+    const cached = this.feeRates.get(network);
+
+    if (cached && cached.type === "LOADING") {
+      return cached.request;
+    }
+
+    if (!cached || cached.updatedAt < performance.now() - FEE_RATES_UPDATE_MS) {
+      const feeRatesPromise = WalletServerApi.getFeeRates(network).then(
+        (response) => {
+          this.feeRates.set(network, {
+            type: "LOADED",
+            updatedAt: performance.now(),
+            response,
+          });
+          return response;
+        },
+      );
+
+      feeRatesPromise.catch(() => {
+        this.feeRates.delete(network);
+      });
+
+      this.feeRates.set(network, {
+        type: "LOADING",
+        request: feeRatesPromise,
+      });
+
+      return feeRatesPromise;
     }
 
     return Promise.resolve(cached.response);
