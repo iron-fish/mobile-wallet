@@ -1,11 +1,12 @@
 import * as IronfishNativeModule from "ironfish-native-module";
-import { WalletDb } from "./db";
+import { DBTransaction, WalletDb } from "./db";
 import {
   AccountFormat,
   LanguageKey,
   Note,
   RawTransaction,
   Transaction,
+  TransactionStatus,
   decodeAccount,
   encodeAccount,
 } from "@ironfish/sdk";
@@ -351,15 +352,56 @@ export class Wallet {
     await this.state.db.removeAccount(name);
   }
 
-  async getTransaction(accountName: string, transactionHash: Uint8Array) {
+  private async withTransactionStatus(
+    txn: DBTransaction,
+    accountHead: number,
+  ): Promise<DBTransaction & { status: TransactionStatus }> {
+    let status: TransactionStatus;
+    const latestBlock = await Blockchain.getLatestBlock(txn.network);
+
+    if (txn.blockSequence === null) {
+      // This could be shortened to `txn.expirationSequence &&`,
+      // but left explicit for clarity.
+      if (
+        txn.expirationSequence !== null &&
+        txn.expirationSequence > 0 &&
+        accountHead >= txn.expirationSequence
+      ) {
+        status = TransactionStatus.EXPIRED;
+      } else {
+        status = TransactionStatus.PENDING;
+      }
+    } else if (latestBlock.sequence - txn.blockSequence >= CONFIRMATIONS) {
+      status = TransactionStatus.CONFIRMED;
+    } else {
+      status = TransactionStatus.UNCONFIRMED;
+    }
+
+    return {
+      ...txn,
+      status,
+    };
+  }
+
+  async getTransaction(
+    accountName: string,
+    network: Network,
+    transactionHash: Uint8Array,
+  ) {
     assertStarted(this.state);
 
-    const account = await this.state.db.getAccount(accountName);
+    const account = await this.state.db.getAccountWithHead(
+      accountName,
+      network,
+    );
     if (account == null) {
       throw new Error(`No account found with name ${accountName}`);
     }
 
-    return await this.state.db.getTransaction(account.id, transactionHash);
+    const txn = await this.state.db.getTransaction(account.id, transactionHash);
+    if (!txn) return;
+
+    return await this.withTransactionStatus(txn, account.head?.sequence ?? 0);
   }
 
   async getTransactionNotes(transactionHash: Uint8Array) {
@@ -371,12 +413,21 @@ export class Wallet {
   async getTransactions(accountName: string, network: Network) {
     assertStarted(this.state);
 
-    const account = await this.state.db.getAccount(accountName);
+    const account = await this.state.db.getAccountWithHead(
+      accountName,
+      network,
+    );
     if (account == null) {
       throw new Error(`No account found with name ${accountName}`);
     }
 
-    return await this.state.db.getTransactions(account.id, network);
+    const results = await this.state.db.getTransactions(account.id, network);
+
+    return await Promise.all(
+      results.map((txn) =>
+        this.withTransactionStatus(txn, account.head?.sequence ?? 0),
+      ),
+    );
   }
 
   private async decryptBlockNotesAsOwner(

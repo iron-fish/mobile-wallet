@@ -167,8 +167,9 @@ export default function Balances() {
           getTransactionsResult.data?.map((transaction) => (
             <View key={transaction.hash} style={{ marginBottom: 8 }}>
               <Text style={{ fontSize: 14 }}>{transaction.hash}</Text>
-              <Text>Block Sequence: {transaction.blockSequence}</Text>
+              <Text>Block Sequence: {transaction.block?.sequence ?? ""}</Text>
               <Text>Timestamp: {transaction.timestamp.toString()}</Text>
+              <Text>Status: {transaction.status.toString()}</Text>
               <Text>
                 {`Notes (${transaction.notes.length}): ${transaction.notes.map((n) => n.value).join(", ")}`}
               </Text>

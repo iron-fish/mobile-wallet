@@ -1,5 +1,5 @@
 import { AccountImport } from "@ironfish/sdk/build/src/wallet/walletdb/accountValue";
-import { Kysely, Generated, Migrator, sql } from "kysely";
+import { Kysely, Generated, Migrator, sql, Selectable } from "kysely";
 import { ExpoDialect, ExpoMigrationProvider, SQLiteType } from "kysely-expo";
 import * as SecureStore from "expo-secure-store";
 import * as FileSystem from "expo-file-system";
@@ -138,6 +138,9 @@ interface Database {
   balances: BalancesTable;
   assets: AssetsTable;
 }
+
+export type DBTransaction = Selectable<TransactionsTable> &
+  Selectable<AccountTransactionsTable>;
 
 class BalanceDeltas {
   balanceDeltas = new Map<string, bigint>();

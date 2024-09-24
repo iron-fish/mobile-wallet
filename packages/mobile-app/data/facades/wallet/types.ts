@@ -34,8 +34,14 @@ export type AssetBalanceDelta = {
 
 export type Transaction = {
   hash: string;
-  fee: string;
-  expiration: number;
+  /**
+   * Fee is currently only set on locally-generated transactions.
+   */
+  fee: string | null;
+  /**
+   * Expiration is currently only set on locally-generated transactions.
+   */
+  expiration: number | null;
   timestamp: Date;
   submittedSequence: number;
   type: TransactionType;
@@ -43,8 +49,10 @@ export type Transaction = {
   assetBalanceDeltas: AssetBalanceDelta[];
   burns: Burn[];
   mints: Mint[];
-  blockHash?: string;
-  blockSequence?: number;
+  /**
+   * Block is unset on pending transactions.
+   */
+  block: { hash: string; sequence: number } | null;
   notes: Note[];
   spends: Spend[];
 };

@@ -11,12 +11,7 @@ import { wallet } from "../../wallet/wallet";
 import { Network } from "../../constants";
 import * as Uint8ArrayUtils from "../../../utils/uint8Array";
 
-import {
-  AccountFormat,
-  LanguageKey,
-  LanguageUtils,
-  TransactionStatus,
-} from "@ironfish/sdk";
+import { AccountFormat, LanguageKey, LanguageUtils } from "@ironfish/sdk";
 import { Blockchain } from "../../blockchain";
 
 const IRON_ASSET_ID_HEX =
@@ -209,7 +204,11 @@ export const walletHandlers = f.facade<WalletHandlers>({
       hash: string;
     }): Promise<Transaction | null> => {
       const txnHash = Uint8ArrayUtils.fromHex(hash);
-      const txn = await wallet.getTransaction(accountName, txnHash);
+      const txn = await wallet.getTransaction(
+        accountName,
+        Network.TESTNET,
+        txnHash,
+      );
 
       if (!txn) {
         return null;
@@ -218,16 +217,20 @@ export const walletHandlers = f.facade<WalletHandlers>({
       const notes = await wallet.getTransactionNotes(txnHash);
 
       return {
-        // TODO: Implement transaction fees
-        fee: "",
+        fee: txn.fee,
         timestamp: txn.timestamp,
-        // TODO: Implement transaction expiration
-        expiration: 0,
+        expiration: txn.expirationSequence,
         hash: Uint8ArrayUtils.toHex(txn.hash),
-        blockSequence: txn.blockSequence ?? undefined,
+        block:
+          txn.blockSequence && txn.blockHash
+            ? {
+                hash: Uint8ArrayUtils.toHex(txn.blockHash),
+                sequence: txn.blockSequence,
+              }
+            : null,
         submittedSequence: 0,
         assetBalanceDeltas: [],
-        status: TransactionStatus.CONFIRMED,
+        status: txn.status,
         notes: notes.map((n) => ({
           assetId: Uint8ArrayUtils.toHex(n.assetId),
           // TODO: implement utf8 memo decoding
@@ -272,19 +275,20 @@ export const walletHandlers = f.facade<WalletHandlers>({
       );
 
       return txnsWithNotes.map(({ txn, notes }) => ({
-        // TODO: Implement transaction fees
-        fee: "",
+        fee: txn.fee,
         timestamp: txn.timestamp,
-        // TODO: Implement transaction expiration
-        expiration: 0,
+        expiration: txn.expirationSequence,
+        block:
+          txn.blockHash && txn.blockSequence
+            ? {
+                hash: Uint8ArrayUtils.toHex(txn.blockHash),
+                sequence: txn.blockSequence,
+              }
+            : null,
         hash: Uint8ArrayUtils.toHex(txn.hash),
-        blockHash: txn.blockHash
-          ? Uint8ArrayUtils.toHex(txn.blockHash)
-          : undefined,
-        blockSequence: txn.blockSequence ?? undefined,
         submittedSequence: 0,
         assetBalanceDeltas: [],
-        status: TransactionStatus.CONFIRMED,
+        status: txn.status,
         notes: notes.map((n) => ({
           assetId: Uint8ArrayUtils.toHex(n.assetId),
           // TODO: implement utf8 memo decoding
@@ -364,7 +368,6 @@ export const walletHandlers = f.facade<WalletHandlers>({
       fee: string;
       expiration?: number;
     }) => {
-      // TODO: Implement getEstimatedFees
       await wallet.sendTransaction(
         Network.TESTNET,
         args.accountName,
