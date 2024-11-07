@@ -1,4 +1,6 @@
-import { Appearance, useColorScheme, View, Button } from "react-native";
+import { useColorScheme, View, Text } from "react-native";
+import { Button } from "@ironfish/tackle-box";
+
 export default function UiKit() {
   const scheme = useColorScheme();
   return (
@@ -9,12 +11,8 @@ export default function UiKit() {
         backgroundColor: scheme === "dark" ? "#333" : "#fff",
       }}
     >
-      <Button
-        title="Toggle color scheme"
-        onPress={() => {
-          Appearance.setColorScheme(scheme === "dark" ? "light" : "dark");
-        }}
-      />
+      <Text>Hello world</Text>
+      <Button message="hello world" />
     </View>
   );
 }

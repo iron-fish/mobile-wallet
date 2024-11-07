@@ -7,7 +7,7 @@ import { chainHandlers } from "./chain/handlers";
 import { chainDemoHandlers } from "./chain/demoHandlers";
 import { contactsDemoHandlers } from "./contacts/demoHandlers";
 
-const DEMO = false;
+const DEMO = true;
 
 export const facadeContext = createFacadeContext(
   DEMO
