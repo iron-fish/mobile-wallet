@@ -26,7 +26,7 @@ export default function UiKit() {
         onPointerDown={onPointerOver}
         style={{ height: 100, width: 100, backgroundColor: "blue" }}
       />
-      <Button title="hello" />
+      <Button title="hello" onClick={() => setCount(count + 1)} />
     </View>
   );
 }
