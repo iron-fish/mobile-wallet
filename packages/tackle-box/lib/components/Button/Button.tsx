@@ -1,12 +1,13 @@
 import { html, css } from "react-strict-dom";
+import { ComponentProps } from "react";
 
 const styles = css.create({
-  button: {
+  base: {
     backgroundColor: {
       default: "#000",
-      ":hover": "lightblue",
-      ":focus": "mediumpurple",
-      ":active": "pink",
+      ":hover": "#ff0000",
+      ":focus": "#00ff00",
+      ":active": "#0000ff",
     },
     color: "white",
     textAlign: "center",
@@ -19,13 +20,16 @@ const styles = css.create({
   },
 });
 
-type Props = {
-  message: string;
-};
+type ButtonProps = ComponentProps<typeof html.button>;
 
-export function Button({ message }: Props) {
-  console.log({ message });
+type Props = {
+  title: string;
+} & Omit<ButtonProps, "children">;
+
+export function Button({ title, ...rest }: Props) {
   return (
-    <html.button style={styles.button}>{`Click me: ${message}`}</html.button>
+    <html.button style={styles.base} {...rest}>
+      {title}
+    </html.button>
   );
 }

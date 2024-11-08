@@ -40,6 +40,7 @@ export default defineConfig(({ mode }) => {
         name: "@ironfish/tackle-box",
         entry: resolve(__dirname, "lib/index.ts"),
         fileName: platform.isNative ? "main-native" : "main-web",
+        formats: ["umd"],
       },
       rollupOptions: {
         external: ["react", "react-dom", "react-native", /react-native\/.*/],
