@@ -55,7 +55,8 @@
             "deploymentTarget": "13.4"
           }
         }
-      ]
+      ],
+      "./plugins/withPointerEvents.js"
     ]
   }
 }
