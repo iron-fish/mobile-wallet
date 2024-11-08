@@ -28,7 +28,8 @@
               "NSIncludesSubdomains": false
             }
           }
-        }
+        },
+        "UIApplicationSupportsIndirectInputEvents": true
       },
       "supportsTablet": true
     },
