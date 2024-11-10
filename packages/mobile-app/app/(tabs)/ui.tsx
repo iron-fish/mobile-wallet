@@ -1,8 +1,11 @@
+import { useState } from "react";
+import { Text } from "react-native";
 import { Button } from "@ironfish/tackle-box";
 import { Appearance, useColorScheme, View } from "react-native";
 
 export default function UiKit() {
   const scheme = useColorScheme();
+  const [count, setCount] = useState(0);
   return (
     <View
       style={{
@@ -11,12 +14,21 @@ export default function UiKit() {
         backgroundColor: scheme === "dark" ? "#333" : "#fff",
       }}
     >
+      <Text>Count: {count}</Text>
+      <View
+        onPointerDown={() => {
+          setCount(count + 1);
+        }}
+        style={{ height: 100, width: 100, backgroundColor: "blue" }}
+      />
+
       <Button
         label="Toggle color scheme"
         onPress={() => {
           Appearance.setColorScheme(scheme === "dark" ? "light" : "dark");
         }}
       />
+
       {/* Solid */}
       <Button label="Click me" />
 
