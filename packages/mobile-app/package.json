@@ -38,6 +38,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@svgr/webpack": "^8.1.0",
+    "@types/node": "^22.9.0",
     "@types/react": "~18.2.79",
     "eslint-config-expo": "^7.0.0",
     "eslint-config-prettier": "^9.1.0",
