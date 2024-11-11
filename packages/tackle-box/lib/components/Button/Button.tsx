@@ -1,15 +1,22 @@
 import { html, css } from "react-strict-dom";
 import { ComponentProps } from "react";
 
+const colors = css.defineVars({
+  black: "#000",
+  white: "#fff",
+  grayLight: "#DEDFE2",
+  grayMedium: "#989898",
+  grayDark: "#353535",
+});
+
 const styles = css.create({
   base: {
     backgroundColor: {
-      default: "#000",
-      ":hover": "#ff0000",
-      ":focus": "#00ff00",
-      ":active": "#0000ff",
+      default: colors.black,
+      ":active": colors.grayDark,
     },
-    color: "white",
+    borderWidth: 0,
+    color: colors.white,
     textAlign: "center",
     paddingTop: 14,
     paddingBottom: 14,
@@ -18,17 +25,31 @@ const styles = css.create({
     fontSize: 20,
     borderRadius: 9999,
   },
+  disabled: {
+    backgroundColor: colors.grayLight,
+    color: colors.grayMedium,
+  },
 });
 
 type ButtonProps = ComponentProps<typeof html.button>;
 
-type Props = {
+type Props = Pick<ButtonProps, "onClick"> & {
   title: string;
-} & Omit<ButtonProps, "children">;
+  disabled?: boolean;
+};
 
-export function Button({ title, ...rest }: Props) {
+export function Button({ title, disabled, onClick }: Props) {
   return (
-    <html.button style={styles.base} {...rest}>
+    <html.button
+      style={{
+        ...styles.base,
+        ...(disabled && styles.disabled),
+      }}
+      onClick={(e) => {
+        if (disabled) return;
+        onClick?.(e);
+      }}
+    >
       {title}
     </html.button>
   );

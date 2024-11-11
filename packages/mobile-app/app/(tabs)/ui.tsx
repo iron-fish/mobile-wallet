@@ -14,17 +14,8 @@ export default function UiKit() {
       }}
     >
       <Text>Count: {count}</Text>
-      <View
-        onPointerDown={function onPointerOver(event) {
-          console.log(
-            "Over blue box offset: ",
-            event.nativeEvent.offsetX,
-            event.nativeEvent.offsetY,
-          );
-        }}
-        style={{ height: 100, width: 100, backgroundColor: "blue" }}
-      />
-      <Button title="hello" onClick={() => setCount(count + 1)} />
+      <Button title="Press me" onClick={() => setCount(count + 1)} />
+      <Button disabled title="Press me" onClick={() => setCount(count + 1)} />
     </View>
   );
 }
