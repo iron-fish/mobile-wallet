@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { Text } from "react-native";
+import { useColorScheme, View, Text } from "react-native";
 import { Button } from "@ironfish/tackle-box";
-import { Appearance, useColorScheme, View } from "react-native";
+import { useState } from "react";
 
 export default function UiKit() {
   const scheme = useColorScheme();
@@ -15,40 +14,8 @@ export default function UiKit() {
       }}
     >
       <Text>Count: {count}</Text>
-      <View
-        onPointerDown={() => {
-          setCount(count + 1);
-        }}
-        style={{ height: 100, width: 100, backgroundColor: "blue" }}
-      />
-
-      <Button
-        label="Toggle color scheme"
-        onPress={() => {
-          Appearance.setColorScheme(scheme === "dark" ? "light" : "dark");
-        }}
-      />
-
-      {/* Solid */}
-      <Button label="Click me" />
-
-      {/* Solid with icon */}
-      <Button iconLeft="arrow-left-bottom" label="Click me" />
-
-      {/* Solid small */}
-      <Button label="Click me" size="sm" />
-
-      {/* Solid disabled */}
-      <Button iconLeft="arrow-left-bottom" label="Click me" disabled />
-
-      {/* Outline */}
-      <Button label="Click me" variant="outline" />
-
-      {/* Outline with icon */}
-      <Button iconLeft="arrow-left-bottom" label="Click me" variant="outline" />
-
-      {/* Outline small */}
-      <Button label="Click me" size="sm" variant="outline" />
+      <Button title="Press me" onClick={() => setCount(count + 1)} />
+      <Button disabled title="Press me" onClick={() => setCount(count + 1)} />
     </View>
   );
 }

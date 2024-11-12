@@ -24,7 +24,7 @@ jobs:
           node-version: 20
 
       - name: Install packages
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Lint
         run: npm run lint

@@ -90,6 +90,8 @@ module.exports = (() => {
     },
     assetExts: resolver.assetExts.filter((ext) => ext !== "svg"),
     sourceExts: [...resolver.sourceExts, "svg"],
+    unstable_enablePackageExports: true,
+    unstable_conditionNames: ["browser", "require", "react-native"],
   };
 
   config.transformer = {
