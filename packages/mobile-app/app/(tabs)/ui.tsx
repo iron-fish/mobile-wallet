@@ -1,5 +1,5 @@
 import { useColorScheme, View, Text } from "react-native";
-import { Button } from "@ironfish/tackle-box";
+import { Button, Box } from "@ironfish/tackle-box";
 import { useState } from "react";
 
 export default function UiKit() {
@@ -16,6 +16,10 @@ export default function UiKit() {
       <Text>Count: {count}</Text>
       <Button title="Press me" onClick={() => setCount(count + 1)} />
       <Button disabled title="Press me" onClick={() => setCount(count + 1)} />
+
+      <Box>
+        <Text>Hello</Text>
+      </Box>
     </View>
   );
 }
