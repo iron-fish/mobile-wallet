@@ -41,10 +41,7 @@ type Props = Pick<ButtonProps, "onClick"> & {
 export function Button({ title, disabled, onClick }: Props) {
   return (
     <html.button
-      style={{
-        ...styles.base,
-        ...(disabled && styles.disabled),
-      }}
+      style={[styles.base, disabled && styles.disabled]}
       onClick={(e) => {
         if (disabled) return;
         onClick?.(e);
