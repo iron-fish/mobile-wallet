@@ -2,7 +2,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "targets": {
     "android": {
-      "dependsOn": ["^cargo-android"]
+      "dependsOn": ["^build", "^cargo-android"]
     },
     "pod-sim": {
       "executor": "@nx/react-native:pod-install",
