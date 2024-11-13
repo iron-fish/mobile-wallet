@@ -2,6 +2,7 @@ import { defineConfig, PluginOption } from "vite";
 import { resolve } from "path";
 import react from "@vitejs/plugin-react";
 import dts from "vite-plugin-dts";
+// import commonjs from "@rollup/plugin-commonjs";
 // import reactStrictBabelPreset from "react-strict-dom/babel-preset";
 
 function getPlatform(mode: string) {
@@ -48,9 +49,7 @@ export default defineConfig(({ mode }) => {
           globals: {
             react: "react",
           },
-          generatedCode: {
-            symbols: false,
-          },
+          interop: "auto",
         },
       },
     },
