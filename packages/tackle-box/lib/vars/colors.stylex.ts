@@ -67,12 +67,3 @@ export const colors = css.defineVars({
     "@media (prefers-color-scheme: dark)": baseColors.neutral40,
   },
 });
-
-// Optional: Create a theme class to enable dark mode
-export const darkModeTheme = css.create({
-  dark: {
-    "@media (prefers-color-scheme: dark)": {
-      //   color: colors.textPrimary,
-    },
-  },
-});
