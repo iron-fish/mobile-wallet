@@ -26,6 +26,7 @@ const styles = css.create({
   inputDisabled: {
     backgroundColor: colors.backgroundDisabled,
     color: colors.textDisabled,
+    cursor: "not-allowed",
   },
   label: {
     position: "absolute",

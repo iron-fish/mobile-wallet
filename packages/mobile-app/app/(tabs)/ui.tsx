@@ -26,6 +26,12 @@ export default function UiKit() {
         onChange={(value: string) => setInputValue(value)}
         label="Enter your name"
       />
+      <Input
+        disabled
+        value={inputValue}
+        onChange={(value: string) => setInputValue(value)}
+        label="Enter your name"
+      />
     </View>
   );
 }
