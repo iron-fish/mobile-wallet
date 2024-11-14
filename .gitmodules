@@ -1,4 +1,0 @@
-[submodule "packages/ironfish-native-module/ironfish"]
-	path = packages/ironfish-native-module/ironfish
-	url = https://github.com/iron-fish/ironfish.git
-	shallow = true
