@@ -57,7 +57,7 @@ type Props = {
   onChange: (value: string) => void;
 } & Omit<InputProps, "onChange" | "value">;
 
-export function Input({ label, value, onChange, ...props }: Props) {
+export function TextInput({ label, value, onChange, ...props }: Props) {
   const [isFocused, setIsFocused] = useState(false);
   const hasValueOrIsFocused = !!value || isFocused;
 
