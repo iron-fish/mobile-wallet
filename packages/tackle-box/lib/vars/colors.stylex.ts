@@ -59,7 +59,7 @@ export const colors = css.defineVars({
 
   // Border and outline colors
   border: {
-    default: baseColors.neutral90,
+    default: baseColors.neutral0,
     "@media (prefers-color-scheme: dark)": baseColors.neutral40,
   },
   divider: {
