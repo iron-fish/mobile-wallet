@@ -12,7 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "bundleIdentifier": "com.ironfish.mobileapp",
       "infoPlist": {
@@ -39,21 +41,11 @@
       },
       "package": "com.ironfish.mobileapp"
     },
+    "newArchEnabled": true,
     "plugins": [
-      "expo-router",
       "expo-secure-store",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "newArchEnabled": true
-          },
-          "ios": {
-            "newArchEnabled": true
-          }
-        }
-      ],
-      "./plugins/withPointerEvents.js"
+      "./plugins/withPointerEvents.js",
+      "expo-sqlite"
     ]
   }
 }
