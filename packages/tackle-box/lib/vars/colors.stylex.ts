@@ -4,7 +4,7 @@ import { VarKeys } from "@/utils/types";
 // Based off of:
 //  https://www.figma.com/design/ejI1OJnIyNbqiPw94FwzDp/Mobile-App?node-id=1672-3924&t=MMrHs0Y0V34oxa3X-4
 // Base color palette (not sold on name `neutral`)
-export const palette = {
+export const palette = css.defineVars({
   neutral0: "#000000", // Pure black
   neutral5: "#0D0D0D",
   neutral10: "#101010", // Dark background
@@ -32,7 +32,7 @@ export const palette = {
   white: "#FFFFFF",
   gray: "#7F7F7F",
   pink: "#FFC0CB",
-};
+});
 
 // Theme tokens
 export const colors = css.defineVars({
