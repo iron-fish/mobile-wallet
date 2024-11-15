@@ -8,20 +8,21 @@
   "types": "./dist/tackle-box.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/tackle-box.d.ts",
+      "types": "./dist/index.d.ts",
       "react-native": "./dist/main-native.umd.js",
       "default": "./dist/main-web.umd.js"
     }
   },
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:native && npm run build:web",
+    "build": "npm run build:web && npm run build:native",
     "build:web": "tsc -b && vite build --mode web",
     "build:native": "tsc -b && vite build --mode native",
     "dev:web": "nodemon -e ts,tsx --exec \"npm run build:web\" --watch lib",
     "dev:native": "nodemon -e ts,tsx --exec \"npm run build:native\" --watch lib",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "react-strict-dom": "^0.0.28"

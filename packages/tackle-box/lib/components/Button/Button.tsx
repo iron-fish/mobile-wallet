@@ -16,6 +16,7 @@ const styles = css.create({
       ":active": colors.grayDark,
     },
     borderWidth: 0,
+    boxSizing: "border-box",
     color: colors.white,
     textAlign: "center",
     paddingTop: 14,

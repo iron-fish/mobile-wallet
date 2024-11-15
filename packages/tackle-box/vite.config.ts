@@ -1,3 +1,4 @@
+import fs from "fs";
 import { defineConfig, PluginOption } from "vite";
 import { resolve } from "path";
 import react from "@vitejs/plugin-react";
@@ -22,12 +23,16 @@ export default defineConfig(({ mode }) => {
 
   const plugins: PluginOption[] = [react()];
 
+  // if ./dist/tackle-box.d.ts exists, delete it
+  if (fs.existsSync("./dist/tackle-box.d.ts")) {
+    fs.unlinkSync("./dist/tackle-box.d.ts");
+  }
+
   if (platform.isNative) {
     plugins.push(
       dts({
         tsconfigPath: "./tsconfig.app.json",
         include: ["lib"],
-        rollupTypes: true,
       }),
     );
   }
@@ -55,6 +60,9 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       conditions: platform.isNative ? ["react-native"] : [],
+      alias: {
+        "@": resolve(__dirname, "lib"),
+      },
     },
   };
 });
