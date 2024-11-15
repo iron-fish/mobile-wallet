@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, ComponentProps } from "react";
 import { html, css } from "react-strict-dom";
-import { ComponentProps } from "react";
+import { MergeProps } from "../../types";
 import { sizing, colors } from "../../vars/index.stylex";
 
 const styles = css.create({
@@ -51,11 +51,14 @@ const styles = css.create({
 
 type InputProps = ComponentProps<typeof html.input>;
 
-type Props = {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-} & Omit<InputProps, "onChange" | "value">;
+type Props = MergeProps<
+  InputProps,
+  {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+  }
+>;
 
 export function TextInput({ label, value, onChange, ...props }: Props) {
   const [isFocused, setIsFocused] = useState(false);
