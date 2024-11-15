@@ -1,9 +1,10 @@
 import { css } from "react-strict-dom";
+import { VarKeys } from "@/utils/types";
 
 // Based off of:
 //  https://www.figma.com/design/ejI1OJnIyNbqiPw94FwzDp/Mobile-App?node-id=1672-3924&t=MMrHs0Y0V34oxa3X-4
 // Base color palette (not sold on name `neutral`)
-const baseColors = {
+export const palette = {
   neutral0: "#000000", // Pure black
   neutral5: "#0D0D0D",
   neutral10: "#101010", // Dark background
@@ -25,45 +26,58 @@ const baseColors = {
   neutral90: "#DEDFE2", // Grey 2
   neutral95: "#F3F3F4", // Lighter grey
   neutral100: "#FFFFFF", // Pure white
-} as const;
+
+  // Extra colors for getting up and running
+  black: "#000000",
+  white: "#FFFFFF",
+  gray: "#7F7F7F",
+  pink: "#FFC0CB",
+};
 
 // Theme tokens
 export const colors = css.defineVars({
-  // Surface colors
+  // background colors
   background: {
-    default: baseColors.neutral100,
-    "@media (prefers-color-scheme: dark)": baseColors.neutral10,
+    default: palette.neutral100,
+    "@media (prefers-color-scheme: dark)": palette.neutral10,
   },
   backgroundHover: {
-    default: baseColors.neutral95,
-    "@media (prefers-color-scheme: dark)": baseColors.neutral25,
+    default: palette.neutral95,
+    "@media (prefers-color-scheme: dark)": palette.neutral25,
   },
   backgroundDisabled: {
-    default: baseColors.neutral95,
-    "@media (prefers-color-scheme: dark)": baseColors.neutral25,
+    default: palette.neutral95,
+    "@media (prefers-color-scheme: dark)": palette.neutral25,
+  },
+
+  // Colored background colors
+  backgroundPink: {
+    default: palette.pink,
   },
 
   // Text colors
   textPrimary: {
-    default: baseColors.neutral0,
-    "@media (prefers-color-scheme: dark)": baseColors.neutral100,
+    default: palette.neutral0,
+    "@media (prefers-color-scheme: dark)": palette.neutral100,
   },
   textSecondary: {
-    default: baseColors.neutral70,
-    "@media (prefers-color-scheme: dark)": baseColors.neutral80,
+    default: palette.neutral70,
+    "@media (prefers-color-scheme: dark)": palette.neutral80,
   },
   textDisabled: {
-    default: baseColors.neutral90,
-    "@media (prefers-color-scheme: dark)": baseColors.neutral40,
+    default: palette.neutral90,
+    "@media (prefers-color-scheme: dark)": palette.neutral40,
   },
 
   // Border and outline colors
   border: {
-    default: baseColors.neutral0,
-    "@media (prefers-color-scheme: dark)": baseColors.neutral40,
+    default: palette.neutral0,
+    "@media (prefers-color-scheme: dark)": palette.neutral40,
   },
   divider: {
-    default: baseColors.neutral90,
-    "@media (prefers-color-scheme: dark)": baseColors.neutral40,
+    default: palette.neutral90,
+    "@media (prefers-color-scheme: dark)": palette.neutral40,
   },
 });
+
+export type PaletteColors = VarKeys<typeof palette>;
