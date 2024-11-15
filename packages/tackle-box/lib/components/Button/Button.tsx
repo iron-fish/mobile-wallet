@@ -1,5 +1,6 @@
 import { html, css } from "react-strict-dom";
 import { ComponentProps } from "react";
+import { Text } from "@/components/Text/Text";
 
 const colors = css.defineVars({
   black: "#000",
@@ -48,7 +49,7 @@ export function Button({ title, disabled, onClick }: Props) {
         onClick?.(e);
       }}
     >
-      {title}
+      <Text>{title}</Text>
     </html.button>
   );
 }

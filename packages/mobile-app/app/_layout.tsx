@@ -19,6 +19,7 @@ import {
 import { useColorScheme } from "react-native";
 import { FacadeProvider, useFacade } from "../data/facades";
 import { useEffect, useState } from "react";
+import { useFonts } from "expo-font";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +63,13 @@ function DatabaseLoader({ children }: { children?: React.ReactNode }) {
 
 export default function Layout() {
   const scheme = useColorScheme();
+  const [loaded] = useFonts({
+    Favorit: require("../assets/fonts/ABCFavorit-Regular.otf"),
+    FavoritExtended: require("../assets/fonts/ABCFavoritExtended-Regular.otf"),
+  });
+
+  if (!loaded) return null;
+
   return (
     <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
       <QueryClientProvider client={queryClient}>
