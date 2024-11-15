@@ -39,7 +39,7 @@ export default function UiKit() {
         borderWidth={4}
         borderColor="black"
       >
-        <Button title="Press me 888" onClick={() => setCount(count + 1)} />
+        <Button title="Press me" onClick={() => setCount(count + 1)} />
         <Button disabled title="Press me" onClick={() => setCount(count + 1)} />
       </VStack>
     </View>
