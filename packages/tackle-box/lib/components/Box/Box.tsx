@@ -15,8 +15,8 @@ const styles = css.create({
     alignItems: "stretch",
     justifyContent: "flex-start",
   },
-  backgroundColor: (color?: PaletteColors) => ({
-    backgroundColor: color ? palette[color] : undefined,
+  backgroundColor: (color?: string) => ({
+    backgroundColor: color,
   }),
   dimensions: (height: UnitValue, width: UnitValue) => ({
     height,
@@ -47,11 +47,11 @@ const styles = css.create({
   borderRadius: (radius: number) => ({
     borderRadius: radius,
   }),
-  borderColor: (color?: PaletteColors) => ({
-    borderColor: color ? palette[color] : undefined,
+  borderColor: (color?: string) => ({
+    borderColor: color,
   }),
-  borderWidth: (width?: number) => ({
-    borderWidth: width ?? 0,
+  borderWidth: (width: number) => ({
+    borderWidth: width,
   }),
 });
 
@@ -87,8 +87,8 @@ export function Box({
         styles.margin(...margin),
         styles.padding(...padding),
         styles.borderRadius(borderRadius === "full" ? 9999 : borderRadius),
-        styles.backgroundColor(bg),
-        styles.borderColor(borderColor),
+        styles.backgroundColor(bg ? palette[bg] : undefined),
+        styles.borderColor(borderColor ? palette[borderColor] : undefined),
         styles.borderWidth(borderWidth),
         style,
       ]}
