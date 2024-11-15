@@ -53,17 +53,7 @@
           }
         }
       ],
-      "./plugins/withPointerEvents.js",
-      [
-        "expo-font",
-        {
-          "fonts": [
-            "./assets/fonts/ABCFavorit-Regular.otf",
-            "./assets/fonts/ABCFavoritExtended-Bold.otf",
-            "./assets/fonts/ABCFavoritExtended-Regular.otf"
-          ]
-        }
-      ]
+      "./plugins/withPointerEvents.js"
     ]
   }
 }
