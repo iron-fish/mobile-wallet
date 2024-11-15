@@ -4,10 +4,28 @@ This project was generated using [Nx](https://nx.dev).
 
 ## Quick Start
 
+### Setup
+
 - Optional: `npm i -g nx`
   - This will allow you to run `nx` commands without `npx`. If you do not want to install `nx` globally, you can run `npx nx` instead of `nx`.
 - Install dependencies: `npm install`
-- Start Expo app: `nx start mobile-app`
+
+### Running the Mobile App
+
+1. In a terminal, build and run the iOS app:
+   - `nx ios mobile-app`
+
+- Alternatively, install this [VSCode extension](https://ide.swmansion.com/) for running the app within your editor
+
+### Developing Tackle-Box Components
+
+When making changes to the shared component library (@ironfish/tackle-box), you'll need three terminal windows:
+
+1. Run the mobile app:
+
+2. Watch and rebuild tackle-box changes:
+   - `cd packages/tackle-box`
+   - `npm run dev:native`
 
 ## Running tasks
 
