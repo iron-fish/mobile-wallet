@@ -33,7 +33,6 @@ export default defineConfig(({ mode }) => {
       dts({
         tsconfigPath: "./tsconfig.app.json",
         include: ["lib"],
-        // rollupTypes: true,
       }),
     );
   }

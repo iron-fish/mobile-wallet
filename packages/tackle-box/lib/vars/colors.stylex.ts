@@ -8,8 +8,4 @@ export const palette = css.defineVars({
   pink: "#FFC0CB",
 });
 
-export type Foo = keyof typeof palette;
-
-export const foo: Foo = "black";
-
 export type PaletteColors = VarKeys<typeof palette>;
