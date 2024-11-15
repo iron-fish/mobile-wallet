@@ -1,11 +1,11 @@
 import { ReactNode } from "react";
 import { css, html } from "react-strict-dom";
-import { palette, type PaletteColors } from "../../vars/colors.stylex";
-import { StyleObj, UnitValue } from "../../utils/types";
+import { palette, type PaletteColors } from "@/vars/colors.stylex";
+import { StyleObj, UnitValue } from "@/utils/types";
 import {
   useMarginPaddingValues,
   type MarginPadding,
-} from "../../utils/useMarginPaddingValues";
+} from "@/utils/useMarginPaddingValues";
 
 const styles = css.create({
   base: {

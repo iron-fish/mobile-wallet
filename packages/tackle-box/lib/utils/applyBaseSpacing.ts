@@ -1,4 +1,4 @@
-import { BASE_SPACING_UNIT } from "../vars/constants";
+import { BASE_SPACING_UNIT } from "@/vars/constants";
 
 import { UnitValue } from "./types";
 

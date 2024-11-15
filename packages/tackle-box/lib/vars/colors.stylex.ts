@@ -1,5 +1,5 @@
 import { css } from "react-strict-dom";
-import { VarKeys } from "../utils/types";
+import { VarKeys } from "@/utils/types";
 
 export const palette = css.defineVars({
   black: "#000000",

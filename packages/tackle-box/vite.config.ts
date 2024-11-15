@@ -60,6 +60,9 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       conditions: platform.isNative ? ["react-native"] : [],
+      alias: {
+        "@": resolve(__dirname, "lib"),
+      },
     },
   };
 });
