@@ -9,7 +9,6 @@ import {
 } from "@ironfish/tackle-box";
 import { useState } from "react";
 
-import VideoImage from "./VideoImage.svg";
 import ArrowLeftBottom from "./arrow-left-bottom.svg";
 
 export default function UiKit() {
@@ -43,6 +42,8 @@ export default function UiKit() {
         onChange={(value: string) => setInputValue(value)}
         label="Enter your name"
       />
+
+      <Button title="button" rightIcon={<ArrowLeftBottom />} />
 
       <ArrowLeftBottom width="100px" height="100px" />
       <HStack
