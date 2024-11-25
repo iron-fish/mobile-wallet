@@ -35,11 +35,11 @@ const styles = css.create({
 type ButtonProps = ComponentProps<typeof html.button>;
 
 type Props = Pick<ButtonProps, "onClick"> & {
-  title: string;
   disabled?: boolean;
+  children: React.ReactNode;
 };
 
-export function Button({ title, disabled, onClick }: Props) {
+export function Button({ disabled, onClick, children }: Props) {
   return (
     <html.button
       style={[styles.base, disabled && styles.disabled]}
@@ -48,7 +48,7 @@ export function Button({ title, disabled, onClick }: Props) {
         onClick?.(e);
       }}
     >
-      {title}
+      {children}
     </html.button>
   );
 }
