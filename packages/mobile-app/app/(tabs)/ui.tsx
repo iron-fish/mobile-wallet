@@ -1,5 +1,12 @@
-import { useColorScheme, View, Text } from "react-native";
-import { Button, Box, HStack, VStack, TextInput } from "@ironfish/tackle-box";
+import { useColorScheme, View } from "react-native";
+import {
+  Button,
+  Box,
+  HStack,
+  VStack,
+  TextInput,
+  Text,
+} from "@ironfish/tackle-box";
 import { useState } from "react";
 
 export default function UiKit() {
@@ -15,7 +22,7 @@ export default function UiKit() {
         backgroundColor: scheme === "dark" ? "#333" : "#fff",
       }}
     >
-      <Text>Count: {count}</Text>
+      <Text size="lg">Count: {count}</Text>
       <Button title="Press me" onClick={() => setCount(count + 1)} />
       <Box height="auto" bg="pink" borderWidth={2} borderColor="gray">
         <Button title="Press me" onClick={() => setCount(count + 1)} />
