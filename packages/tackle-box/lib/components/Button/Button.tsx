@@ -1,7 +1,6 @@
 import { html, css } from "react-strict-dom";
 import { ComponentProps } from "react";
-import { Text } from "@/components/Text/Text";
-import { HStack } from "@/index";
+import { HStack, Text } from "@/index";
 
 const colors = css.defineVars({
   black: "#000",
