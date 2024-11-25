@@ -23,10 +23,16 @@ export default function UiKit() {
       }}
     >
       <Text size="lg">Count: {count}</Text>
-      <Button title="Press me" onClick={() => setCount(count + 1)} />
+      <Button onClick={() => setCount(count + 1)}>
+        <Text>Press me</Text>
+      </Button>
       <Box height="auto" bg="pink" borderWidth={2} borderColor="gray">
-        <Button title="Press me" onClick={() => setCount(count + 1)} />
-        <Button disabled title="Press me" onClick={() => setCount(count + 1)} />
+        <Button onClick={() => setCount(count + 1)}>
+          <Text>Press me</Text>
+        </Button>
+        <Button disabled onClick={() => setCount(count + 1)}>
+          <Text>You can't press me</Text>
+        </Button>
       </Box>
       <Text>Input value: {inputValue}</Text>
       <TextInput
@@ -48,8 +54,12 @@ export default function UiKit() {
         borderWidth={8}
         borderColor="gray"
       >
-        <Button title="Press me" onClick={() => setCount(count + 1)} />
-        <Button disabled title="Press me" onClick={() => setCount(count + 1)} />
+        <Button onClick={() => setCount(count + 1)}>
+          <Text>Press me</Text>
+        </Button>
+        <Button disabled onClick={() => setCount(count + 1)}>
+          <Text>You can't press me</Text>
+        </Button>
       </HStack>
 
       <VStack
@@ -59,8 +69,12 @@ export default function UiKit() {
         borderWidth={4}
         borderColor="black"
       >
-        <Button title="Press me" onClick={() => setCount(count + 1)} />
-        <Button disabled title="Press me" onClick={() => setCount(count + 1)} />
+        <Button onClick={() => setCount(count + 1)}>
+          <Text>Press me</Text>
+        </Button>
+        <Button disabled onClick={() => setCount(count + 1)}>
+          <Text>You can't press me</Text>
+        </Button>
       </VStack>
     </View>
   );

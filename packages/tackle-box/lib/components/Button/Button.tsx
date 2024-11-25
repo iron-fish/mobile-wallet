@@ -1,6 +1,5 @@
 import { html, css } from "react-strict-dom";
 import { ComponentProps } from "react";
-import { Text } from "@/components/Text/Text";
 
 const colors = css.defineVars({
   black: "#000",
@@ -36,11 +35,11 @@ const styles = css.create({
 type ButtonProps = ComponentProps<typeof html.button>;
 
 type Props = Pick<ButtonProps, "onClick"> & {
-  title: string;
+  children: React.ReactNode;
   disabled?: boolean;
 };
 
-export function Button({ title, disabled, onClick }: Props) {
+export function Button({ disabled, onClick, children }: Props) {
   return (
     <html.button
       style={[styles.base, disabled && styles.disabled]}
@@ -49,7 +48,7 @@ export function Button({ title, disabled, onClick }: Props) {
         onClick?.(e);
       }}
     >
-      <Text>{title}</Text>
+      {children}
     </html.button>
   );
 }
