@@ -1,5 +1,12 @@
-import { useColorScheme, Text, ScrollView, Image } from "react-native";
-import { Button, Box, HStack, VStack, TextInput } from "@ironfish/tackle-box";
+import { useColorScheme, ScrollView } from "react-native";
+import {
+  Button,
+  Box,
+  HStack,
+  VStack,
+  TextInput,
+  Text,
+} from "@ironfish/tackle-box";
 import { useState } from "react";
 
 import VideoImage from "./VideoImage.svg";
@@ -18,10 +25,8 @@ export default function UiKit() {
         backgroundColor: scheme === "dark" ? "#333" : "#fff",
       }}
     >
-      <Text>Count: {count}</Text>
-      <Button onClick={() => setCount(count + 1)}>
-        <Text>Press me</Text>
-      </Button>
+      <Text size="lg">Count: {count}</Text>
+      <Button title="Press me" onClick={() => setCount(count + 1)} />
       <Box height="auto" bg="pink" borderWidth={2} borderColor="gray">
         <Button title="Press me" onClick={() => setCount(count + 1)} />
         <Button disabled title="Press me" onClick={() => setCount(count + 1)} />
