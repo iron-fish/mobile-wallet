@@ -9,7 +9,7 @@ import {
 } from "@ironfish/tackle-box";
 import { useState } from "react";
 
-import ArrowLeftBottom from "./arrow-left-bottom.svg";
+import ArrowLeftBottom from "../../assets/icons/arrow-left-bottom.svg";
 
 export default function UiKit() {
   const scheme = useColorScheme();
