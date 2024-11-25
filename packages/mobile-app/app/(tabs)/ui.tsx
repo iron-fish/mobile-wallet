@@ -1,4 +1,4 @@
-import { useColorScheme, View } from "react-native";
+import { useColorScheme, ScrollView } from "react-native";
 import {
   Button,
   Box,
@@ -9,13 +9,15 @@ import {
 } from "@ironfish/tackle-box";
 import { useState } from "react";
 
+import ArrowLeftBottom from "../../assets/icons/arrow-left-bottom.svg";
+
 export default function UiKit() {
   const scheme = useColorScheme();
   const [count, setCount] = useState(0);
   const [inputValue, setInputValue] = useState("");
 
   return (
-    <View
+    <ScrollView
       style={{
         gap: 10,
         padding: 10,
@@ -41,6 +43,9 @@ export default function UiKit() {
         label="Enter your name"
       />
 
+      <Button title="button" rightIcon={<ArrowLeftBottom />} />
+
+      <ArrowLeftBottom width="100px" height="100px" />
       <HStack
         gap={4}
         height="auto"
@@ -62,6 +67,6 @@ export default function UiKit() {
         <Button title="Press me" onClick={() => setCount(count + 1)} />
         <Button disabled title="Press me" onClick={() => setCount(count + 1)} />
       </VStack>
-    </View>
+    </ScrollView>
   );
 }

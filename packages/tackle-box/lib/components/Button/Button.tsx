@@ -1,6 +1,6 @@
 import { html, css } from "react-strict-dom";
 import { ComponentProps } from "react";
-import { Text } from "@/components/Text/Text";
+import { HStack, Text } from "@/index";
 
 const colors = css.defineVars({
   black: "#000",
@@ -31,16 +31,21 @@ const styles = css.create({
     backgroundColor: colors.grayLight,
     color: colors.grayMedium,
   },
+  icon: {
+    width: 17,
+    height: 18,
+  },
 });
 
 type ButtonProps = ComponentProps<typeof html.button>;
 
 type Props = Pick<ButtonProps, "onClick"> & {
-  title: string;
   disabled?: boolean;
+  title: string;
+  rightIcon?: React.ReactNode;
 };
 
-export function Button({ title, disabled, onClick }: Props) {
+export function Button({ title, disabled, onClick, rightIcon }: Props) {
   return (
     <html.button
       style={[styles.base, disabled && styles.disabled]}
@@ -49,7 +54,10 @@ export function Button({ title, disabled, onClick }: Props) {
         onClick?.(e);
       }}
     >
-      <Text>{title}</Text>
+      <HStack gap={8}>
+        <Text>{title}</Text>
+        {rightIcon && <html.div style={styles.icon}>{rightIcon}</html.div>}
+      </HStack>
     </html.button>
   );
 }
