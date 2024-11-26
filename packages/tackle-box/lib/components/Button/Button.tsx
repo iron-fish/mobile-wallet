@@ -1,6 +1,7 @@
 import { html, css } from "react-strict-dom";
 import { ComponentProps } from "react";
 import { HStack, Text } from "@/index";
+import { Icon, type IconName } from "@/components/Icon/Icon";
 
 const colors = css.defineVars({
   black: "#000",
@@ -42,7 +43,7 @@ type ButtonProps = ComponentProps<typeof html.button>;
 type Props = Pick<ButtonProps, "onClick"> & {
   disabled?: boolean;
   title: string;
-  rightIcon?: React.ReactNode;
+  rightIcon?: IconName;
 };
 
 export function Button({ title, disabled, onClick, rightIcon }: Props) {
@@ -56,7 +57,7 @@ export function Button({ title, disabled, onClick, rightIcon }: Props) {
     >
       <HStack gap={8}>
         <Text>{title}</Text>
-        {rightIcon && <html.div style={styles.icon}>{rightIcon}</html.div>}
+        {rightIcon && <Icon name={rightIcon} />}
       </HStack>
     </html.button>
   );

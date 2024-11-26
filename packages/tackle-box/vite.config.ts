@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react";
 import dts from "vite-plugin-dts";
 // import commonjs from "@rollup/plugin-commonjs";
 // import reactStrictBabelPreset from "react-strict-dom/babel-preset";
+import svgr from "vite-plugin-svgr";
 
 function getPlatform(mode: string) {
   if (!["web", "native"].includes(mode)) {
@@ -21,7 +22,14 @@ function getPlatform(mode: string) {
 export default defineConfig(({ mode }) => {
   const platform = getPlatform(mode);
 
-  const plugins: PluginOption[] = [react()];
+  const plugins: PluginOption[] = [
+    react(),
+    svgr({
+      svgrOptions: {
+        native: platform.isNative,
+      },
+    }),
+  ];
 
   // if ./dist/tackle-box.d.ts exists, delete it
   if (fs.existsSync("./dist/tackle-box.d.ts")) {
@@ -49,7 +57,13 @@ export default defineConfig(({ mode }) => {
         formats: ["umd"],
       },
       rollupOptions: {
-        external: ["react", "react-dom", "react-native", /react-native\/.*/],
+        external: [
+          "react",
+          "react-dom",
+          "react-native",
+          /react-native\/.*/,
+          "react-native-svg",
+        ],
         output: {
           globals: {
             react: "react",
