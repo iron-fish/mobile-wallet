@@ -8,6 +8,7 @@ dist
 tmp
 /out-tsc
 /target
+*.tsbuildinfo
 
 # dependencies
 node_modules

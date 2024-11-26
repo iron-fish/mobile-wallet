@@ -1,7 +1,9 @@
 import { html, css } from "react-strict-dom";
 import { ComponentProps } from "react";
 import { HStack, Text } from "@/index";
-import { colors } from "../../vars/index.stylex";
+import { Icon, type IconName } from "@/components/Icon/Icon";
+import { colors } from "@/vars/index.stylex";
+
 const styles = css.create({
   base: {
     boxSizing: "border-box",
@@ -59,9 +61,9 @@ type ButtonProps = ComponentProps<typeof html.button>;
 type Props = {
   disabled?: boolean;
   title: string;
-  rightIcon?: React.ReactNode;
   styleVariant?: "solid" | "outline" | "ghost";
   onClick?: ButtonProps["onClick"];
+  rightIcon?: IconName;
 };
 
 export function Button({
@@ -100,12 +102,12 @@ function ButtonContent({
   rightIcon,
 }: {
   title: string;
-  rightIcon?: React.ReactNode;
+  rightIcon?: IconName;
 }) {
   return (
     <HStack gap={8} justify="center">
       <Text>{title}</Text>
-      {rightIcon && <html.div style={styles.icon}>{rightIcon}</html.div>}
+      {rightIcon && <Icon name={rightIcon} />}
     </HStack>
   );
 }
