@@ -44,7 +44,7 @@ export default function UiKit() {
 
       <Button title="button" rightIcon="arrow-send" />
 
-      <Icon name="arrow-send" width="100px" height="100px" color="red" />
+      <Icon name="arrows-bridge" width="100px" height="100px" color="red" />
       <Icon name="arrow-receive" width="50px" height="50px" color="blue" />
 
       <HStack
