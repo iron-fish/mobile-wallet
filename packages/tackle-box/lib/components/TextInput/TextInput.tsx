@@ -24,7 +24,7 @@ const styles = css.create({
     paddingTop: sizing[6],
   },
   inputDisabled: {
-    backgroundColor: colors.backgroundDisabled,
+    backgroundColor: colors.background,
     color: colors.textDisabled,
     cursor: "not-allowed",
   },

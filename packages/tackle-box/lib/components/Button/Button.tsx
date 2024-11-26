@@ -1,24 +1,10 @@
 import { html, css } from "react-strict-dom";
 import { ComponentProps } from "react";
 import { HStack, Text } from "@/index";
-
-const colors = css.defineVars({
-  black: "#000",
-  white: "#fff",
-  grayLight: "#DEDFE2",
-  grayMedium: "#989898",
-  grayDark: "#353535",
-});
-
+import { colors } from "../../vars/index.stylex";
 const styles = css.create({
   base: {
-    backgroundColor: {
-      default: colors.black,
-      ":active": colors.grayDark,
-    },
-    borderWidth: 0,
     boxSizing: "border-box",
-    color: colors.white,
     textAlign: "center",
     paddingTop: 14,
     paddingBottom: 14,
@@ -27,9 +13,37 @@ const styles = css.create({
     fontSize: 20,
     borderRadius: 9999,
   },
+  solid: {
+    backgroundColor: {
+      default: colors.backgroundInverse,
+      ":active": colors.backgroundHoverInverse,
+    },
+    borderWidth: 0,
+    color: colors.textPrimaryInverse,
+  },
+  outline: {
+    backgroundColor: {
+      default: "rgba(0, 0, 0, 0.0)",
+      ":active": "rgba(0, 0, 0, 0.05)",
+    },
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: colors.border,
+    color: colors.textPrimary,
+  },
+  ghost: {
+    backgroundColor: {
+      default: "rgba(0, 0, 0, 0.0)",
+      ":active": "rgba(0, 0, 0, 0.05)",
+    },
+    borderWidth: 0,
+    borderColor: "transparent",
+    color: colors.textPrimary,
+  },
   disabled: {
-    backgroundColor: colors.grayLight,
-    color: colors.grayMedium,
+    backgroundColor: colors.backgroundDisabled,
+    borderColor: "transparent",
+    color: colors.textDisabled,
   },
   icon: {
     width: 17,
@@ -39,25 +53,56 @@ const styles = css.create({
 
 type ButtonProps = ComponentProps<typeof html.button>;
 
-type Props = Pick<ButtonProps, "onClick"> & {
+type Props = {
   disabled?: boolean;
   title: string;
   rightIcon?: React.ReactNode;
+  styleVariant: "solid" | "outline" | "ghost";
+  onClick?: ButtonProps["onClick"];
 };
 
-export function Button({ title, disabled, onClick, rightIcon }: Props) {
-  return (
+export function Button({
+  title,
+  disabled,
+  onClick,
+  rightIcon,
+  styleVariant = "solid",
+}: Props) {
+  const computedStyles = [
+    styles.base,
+    styleVariant === "solid" && styles.solid,
+    styleVariant === "outline" && styles.outline,
+    styleVariant === "ghost" && styles.ghost,
+    disabled && styles.disabled,
+  ];
+
+  return onClick ? (
     <html.button
-      style={[styles.base, disabled && styles.disabled]}
+      style={computedStyles}
       onClick={(e) => {
         if (disabled) return;
         onClick?.(e);
       }}
     >
-      <HStack gap={8}>
-        <Text>{title}</Text>
-        {rightIcon && <html.div style={styles.icon}>{rightIcon}</html.div>}
-      </HStack>
+      <ButtonContent title={title} rightIcon={rightIcon} />
     </html.button>
+  ) : (
+    <html.div style={computedStyles}>
+      <ButtonContent title={title} rightIcon={rightIcon} />
+    </html.div>
+  );
+}
+function ButtonContent({
+  title,
+  rightIcon,
+}: {
+  title: string;
+  rightIcon?: React.ReactNode;
+}) {
+  return (
+    <HStack gap={8}>
+      <Text>{title}</Text>
+      {rightIcon && <html.div style={styles.icon}>{rightIcon}</html.div>}
+    </HStack>
   );
 }
