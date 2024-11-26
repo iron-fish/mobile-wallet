@@ -41,13 +41,21 @@ const styles = css.create({
     fontSize: 12,
     lineHeight: 1.583,
   },
+  textAlign: (textAlign: "left" | "center" | "right") => ({
+    textAlign,
+  }),
 });
 
 type Props = {
   children?: ReactNode;
   size?: Sizes;
+  textAlign?: "left" | "center" | "right";
 };
 
-export function Text({ children, size = "md" }: Props) {
-  return <html.span style={[styles.base, styles[size]]}>{children}</html.span>;
+export function Text({ children, size = "md", textAlign = "left" }: Props) {
+  return (
+    <html.span style={[styles.base, styles[size], styles.textAlign(textAlign)]}>
+      {children}
+    </html.span>
+  );
 }

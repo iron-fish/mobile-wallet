@@ -5,6 +5,9 @@ import { colors } from "../../vars/index.stylex";
 const styles = css.create({
   base: {
     boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     textAlign: "center",
     paddingTop: 14,
     paddingBottom: 14,
@@ -57,7 +60,7 @@ type Props = {
   disabled?: boolean;
   title: string;
   rightIcon?: React.ReactNode;
-  styleVariant: "solid" | "outline" | "ghost";
+  styleVariant?: "solid" | "outline" | "ghost";
   onClick?: ButtonProps["onClick"];
 };
 
@@ -100,7 +103,7 @@ function ButtonContent({
   rightIcon?: React.ReactNode;
 }) {
   return (
-    <HStack gap={8}>
+    <HStack gap={8} justify="center">
       <Text>{title}</Text>
       {rightIcon && <html.div style={styles.icon}>{rightIcon}</html.div>}
     </HStack>

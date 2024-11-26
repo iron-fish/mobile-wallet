@@ -12,16 +12,37 @@ const styles = css.create({
   gap: (gap: number) => ({
     gap,
   }),
+  align: (align: string) => ({
+    alignItems: align,
+  }),
+  justify: (justify: string) => ({
+    justifyContent: justify,
+  }),
 });
 
 type StackProps = BoxProps & {
   gap?: number;
+  spacing?: number;
+  align?: string;
+  justify?: string;
 };
 
-export function HStack({ gap = 0, children, ...rest }: StackProps) {
+export function HStack({
+  gap = 0,
+  spacing,
+  align = "stretch",
+  justify = "flex-start",
+  children,
+  ...rest
+}: StackProps) {
   return (
     <Box
-      style={[styles.horizontal, styles.gap(applyBaseSpacing(gap))]}
+      style={[
+        styles.horizontal,
+        styles.gap(applyBaseSpacing(spacing ?? gap)),
+        styles.align(align),
+        styles.justify(justify),
+      ]}
       {...rest}
     >
       {children}
@@ -29,9 +50,24 @@ export function HStack({ gap = 0, children, ...rest }: StackProps) {
   );
 }
 
-export function VStack({ gap = 0, children, ...rest }: StackProps) {
+export function VStack({
+  gap = 0,
+  spacing,
+  align = "stretch",
+  justify = "flex-start",
+  children,
+  ...rest
+}: StackProps) {
   return (
-    <Box style={[styles.vertical, styles.gap(applyBaseSpacing(gap))]} {...rest}>
+    <Box
+      style={[
+        styles.vertical,
+        styles.gap(applyBaseSpacing(spacing ?? gap)),
+        styles.align(align),
+        styles.justify(justify),
+      ]}
+      {...rest}
+    >
       {children}
     </Box>
   );
