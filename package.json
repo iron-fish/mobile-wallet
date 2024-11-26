@@ -12,7 +12,6 @@
   "devDependencies": {
     "@nx/js": "18.1.2",
     "@nx/react-native": "18.1.2",
-    "babel-plugin-module-resolver": "^5.0.2",
     "nx": "18.1.2",
     "typescript": "5.6.3"
   },
