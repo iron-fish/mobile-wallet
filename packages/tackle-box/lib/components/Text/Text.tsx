@@ -6,6 +6,8 @@ type Sizes = "4xl" | "3xl" | "2xl" | "xl" | "lg" | "md" | "sm" | "xs";
 const styles = css.create({
   base: {
     fontFamily: "Favorit",
+    color: "red",
+    textAlign: "center",
   },
   "4xl": {
     fontFamily: "FavoritExtended",
