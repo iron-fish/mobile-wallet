@@ -1,10 +1,9 @@
 import { Link } from "expo-router";
-import { GestureResponderEvent, Pressable, StyleSheet } from "react-native";
+import { GestureResponderEvent, Pressable } from "react-native";
 import { Button } from "@ironfish/tackle-box";
 
 /**
- * A button that navigates to `href` when pressed. May be removed or replaced when
- * ui-kit has a pattern for this.
+ * A button that navigates to `href` when pressed.
  */
 export function LinkButton({
   title,
