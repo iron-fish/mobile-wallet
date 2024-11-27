@@ -20,6 +20,7 @@ export default function MenuDebug() {
     <View style={styles.container}>
       <LinkButton title="Pending Transactions" href="/menu/debug/pending/" />
       <LinkButton title="Unspent Notes" href="/menu/debug/unspent/" />
+      <LinkButton title="Oreowallet" href="/menu/debug/oreowallet/" />
       <View>
         {walletStatus.data && (
           <>
