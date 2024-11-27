@@ -9,17 +9,17 @@ export function LinkButton({
   title,
   href,
   onPress,
-  styleVariant = "solid",
+  variant = "solid",
 }: {
   title: string;
   href: string;
   onPress?: (event: GestureResponderEvent) => void;
-  styleVariant?: "solid" | "outline" | "ghost";
+  variant?: "solid" | "outline" | "ghost";
 }) {
   return (
     <Link href={href} asChild>
       <Pressable onPress={onPress}>
-        <Button styleVariant={styleVariant} title={title} />
+        <Button variant={variant} title={title} />
       </Pressable>
     </Link>
   );

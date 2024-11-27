@@ -8,11 +8,6 @@ import KeyPlantOrchid from "../../assets/images/key-plant--orchid.svg";
 
 const styles = StyleSheet.create({
   background: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
     zIndex: -1,
   },
 });
@@ -23,9 +18,9 @@ export default function Onboarding() {
       <LinearGradient
         colors={["#FFF4E0", "#DE83F0"]}
         locations={[0, 1]}
-        style={styles.background}
+        style={[StyleSheet.absoluteFillObject, styles.background]}
       />
-      <VStack align="center" gap={8}>
+      <VStack alignItems="center" gap={8}>
         <LogoWithText height={18} />
         <Text textAlign="center" size="3xl">
           Let's Make Web3 Private
@@ -41,17 +36,17 @@ export default function Onboarding() {
       </View>
       <VStack gap={4}>
         <LinkButton
-          styleVariant="outline"
+          variant="outline"
           title="I have an account"
           href="/onboarding/import-encoded/"
         />
         <LinkButton
-          styleVariant="solid"
+          variant="solid"
           title="Create an account"
           href="/onboarding/create/"
         />
         <LinkButton
-          styleVariant="ghost"
+          variant="ghost"
           title="Language preferences"
           href="/onboarding/language/"
         />

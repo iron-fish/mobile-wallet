@@ -61,7 +61,7 @@ type ButtonProps = ComponentProps<typeof html.button>;
 type Props = {
   disabled?: boolean;
   title: string;
-  styleVariant?: "solid" | "outline" | "ghost";
+  variant?: "solid" | "outline" | "ghost";
   onClick?: ButtonProps["onClick"];
   rightIcon?: IconName;
 };
@@ -71,13 +71,13 @@ export function Button({
   disabled,
   onClick,
   rightIcon,
-  styleVariant = "solid",
+  variant = "solid",
 }: Props) {
   const computedStyles = [
     styles.base,
-    styleVariant === "solid" && styles.solid,
-    styleVariant === "outline" && styles.outline,
-    styleVariant === "ghost" && styles.ghost,
+    variant === "solid" && styles.solid,
+    variant === "outline" && styles.outline,
+    variant === "ghost" && styles.ghost,
     disabled && styles.disabled,
   ];
 
@@ -105,7 +105,7 @@ function ButtonContent({
   rightIcon?: IconName;
 }) {
   return (
-    <HStack gap={8} justify="center">
+    <HStack gap={8} justifyContent="center">
       <Text>{title}</Text>
       {rightIcon && <Icon name={rightIcon} />}
     </HStack>

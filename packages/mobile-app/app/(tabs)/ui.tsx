@@ -27,12 +27,12 @@ export default function UiKit() {
       <Button title="Press me - filled" onClick={() => setCount(count + 1)} />
       <Box height="auto" bg="pink" borderWidth={2} borderColor="gray900">
         <Button
-          styleVariant="outline"
+          variant="outline"
           title="Press me - outlined"
           onClick={() => setCount(count + 1)}
         />
         <Button
-          styleVariant="ghost"
+          variant="ghost"
           title="Press me - ghost"
           onClick={() => setCount(count + 1)}
         />
