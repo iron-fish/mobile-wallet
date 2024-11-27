@@ -20,13 +20,22 @@ export default function UiKit() {
       style={{
         gap: 10,
         padding: 10,
-        backgroundColor: scheme === "dark" ? "#333" : "#fff",
+        backgroundColor: scheme === "dark" ? "#101010" : "#fff",
       }}
     >
       <Text size="lg">Count: {count}</Text>
-      <Button title="Press me" onClick={() => setCount(count + 1)} />
-      <Box height="auto" bg="pink" borderWidth={2} borderColor="gray">
-        <Button title="Press me" onClick={() => setCount(count + 1)} />
+      <Button title="Press me - filled" onClick={() => setCount(count + 1)} />
+      <Box height="auto" bg="pink" borderWidth={2} borderColor="gray900">
+        <Button
+          variant="outline"
+          title="Press me - outlined"
+          onClick={() => setCount(count + 1)}
+        />
+        <Button
+          variant="ghost"
+          title="Press me - ghost"
+          onClick={() => setCount(count + 1)}
+        />
         <Button disabled title="Press me" onClick={() => setCount(count + 1)} />
       </Box>
       <Text>Input value: {inputValue}</Text>
@@ -52,7 +61,7 @@ export default function UiKit() {
         height="auto"
         bg="pink"
         borderWidth={8}
-        borderColor="gray"
+        borderColor="gray900"
       >
         <Button title="Press me" onClick={() => setCount(count + 1)} />
         <Button disabled title="Press me" onClick={() => setCount(count + 1)} />
