@@ -46,7 +46,7 @@ export default function Layout() {
           }}
         />
         <Tabs.Screen
-          name="temp"
+          name="balances"
           options={{
             title: "Balances",
             tabBarIcon: ({ focused, color, size }) => (
