@@ -1,49 +1,46 @@
-import { StyleSheet } from "react-native";
-import { Box, HStack, Icon, Text } from "@ironfish/tackle-box";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { RadialGradient, Rect, Stop } from "react-native-svg";
+import {
+  Box,
+  HStack,
+  Icon,
+  IconButton,
+  Text,
+  VStack,
+} from "@ironfish/tackle-box";
+import { SafeAreaGradient } from "@/components/SafeAreaGradient/SafeAreaGradient";
 
 const GRADIENT_COLORS = ["#DE83F0", "#FFC2E8"];
 
 export default function Balances() {
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      <Svg style={[StyleSheet.absoluteFill, styles.svg]}>
-        <RadialGradient
-          id="gradient"
-          cx="50%"
-          cy="50%"
-          rx="80px"
-          ry="160px"
-          gradientUnits="userSpaceOnUse"
-        >
-          <Stop offset="0" stopColor={GRADIENT_COLORS[0]} />
-          <Stop offset="1" stopColor={GRADIENT_COLORS[1]} />
-        </RadialGradient>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#gradient)" />
-      </Svg>
+    <SafeAreaGradient from={GRADIENT_COLORS[0]} to={GRADIENT_COLORS[1]}>
+      <NavBar />
 
-      <HStack>
-        <Icon name="hamburger-menu" />
-        <Text size="lg">Account 1</Text>
-        <Icon name="gear" />
-      </HStack>
+      <VStack alignItems="center">
+        <Text size="3xl">100.55</Text>
+        <Text size="lg">IRON</Text>
 
-      <Box bg="white" mt={40}>
-        <Text size="lg">Balance</Text>
-      </Box>
-    </SafeAreaView>
+        <HStack py={8} px={6}>
+          <IconButton label="Receive" icon="arrow-receive" />
+          <IconButton label="Send" icon="arrow-send" />
+          <IconButton label="Bridge" icon="arrows-bridge" />
+        </HStack>
+      </VStack>
+
+      <Box bg="background" flexGrow={1} />
+    </SafeAreaGradient>
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "lightblue",
-  },
-  svg: {
-    height: "100%",
-    width: "100%",
-    zIndex: -1,
-  },
-});
+function NavBar() {
+  return (
+    <HStack alignItems="center" px={4} py={6}>
+      <Icon name="hamburger-menu" />
+      <Box flexGrow={1}>
+        <Text size="lg" textAlign="center">
+          Account 1
+        </Text>
+      </Box>
+      <Icon name="gear" />
+    </HStack>
+  );
+}

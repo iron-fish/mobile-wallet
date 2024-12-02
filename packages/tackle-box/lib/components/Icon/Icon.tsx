@@ -15,10 +15,10 @@ const ICONS = {
 export type IconName = keyof typeof ICONS;
 
 type Props = {
-  name?: IconName;
+  name: IconName;
 } & React.SVGProps<SVGSVGElement>;
 
-export function Icon({ name = "arrow-receive", ...props }: Props) {
+export function Icon({ name, ...props }: Props) {
   const IconComponent = ICONS[name];
 
   return <IconComponent {...props} />;

@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { css, html } from "react-strict-dom";
-import { palette, type PaletteColors } from "@/vars/colors.stylex";
+import { type Colors, getColorValue } from "@/vars/colors.stylex";
 import { StyleObj, UnitValue } from "@/utils/types";
 import {
   useMarginPaddingValues,
@@ -53,6 +53,9 @@ const styles = css.create({
   borderWidth: (width: number) => ({
     borderWidth: width,
   }),
+  flexGrow: (grow?: number) => ({
+    flexGrow: grow,
+  }),
 });
 
 export type BoxProps = {
@@ -60,9 +63,10 @@ export type BoxProps = {
   height?: UnitValue;
   width?: UnitValue;
   borderRadius?: "full" | number;
-  bg?: PaletteColors;
-  borderColor?: PaletteColors;
+  bg?: Colors;
+  borderColor?: Colors;
   borderWidth?: number;
+  flexGrow?: number;
   style?: StyleObj;
 } & MarginPadding;
 
@@ -74,6 +78,7 @@ export function Box({
   borderColor,
   borderRadius = 0,
   borderWidth = 0,
+  flexGrow,
   style,
   ...marginPadding
 }: BoxProps) {
@@ -87,9 +92,12 @@ export function Box({
         styles.margin(...margin),
         styles.padding(...padding),
         styles.borderRadius(borderRadius === "full" ? 9999 : borderRadius),
-        styles.backgroundColor(bg ? palette[bg] : undefined),
-        styles.borderColor(borderColor ? palette[borderColor] : undefined),
+        styles.backgroundColor(bg ? getColorValue(bg) : undefined),
+        styles.borderColor(
+          borderColor ? getColorValue(borderColor) : undefined,
+        ),
         styles.borderWidth(borderWidth),
+        styles.flexGrow(flexGrow),
         style,
       ]}
     >
