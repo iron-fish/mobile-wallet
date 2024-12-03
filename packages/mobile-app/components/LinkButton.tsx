@@ -10,6 +10,7 @@ export function LinkButton({
   href,
   onPress,
   variant = "solid",
+  ...rest
 }: {
   title: string;
   href: string;
@@ -19,7 +20,7 @@ export function LinkButton({
   return (
     <Link href={href} asChild>
       <Pressable onPress={onPress}>
-        <Button variant={variant} title={title} />
+        <Button variant={variant} title={title} {...rest} />
       </Pressable>
     </Link>
   );

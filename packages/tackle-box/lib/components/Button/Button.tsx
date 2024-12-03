@@ -50,6 +50,9 @@ const styles = css.create({
     borderColor: "transparent",
     color: colors.textDisabled,
   },
+  borderRadius: (radius: number) => ({
+    borderRadius: radius,
+  }),
   icon: {
     width: 17,
     height: 18,
@@ -64,6 +67,7 @@ type Props = {
   variant?: "solid" | "outline" | "ghost";
   onClick?: ButtonProps["onClick"];
   rightIcon?: IconName;
+  borderRadius?: number;
 };
 
 export function Button({
@@ -72,13 +76,18 @@ export function Button({
   onClick,
   rightIcon,
   variant = "solid",
+  borderRadius,
 }: Props) {
+  const borderRadiusStyle = borderRadius
+    ? styles.borderRadius(borderRadius)
+    : {};
   const computedStyles = [
     styles.base,
     variant === "solid" && styles.solid,
     variant === "outline" && styles.outline,
     variant === "ghost" && styles.ghost,
     disabled && styles.disabled,
+    borderRadiusStyle,
   ];
 
   return onClick ? (

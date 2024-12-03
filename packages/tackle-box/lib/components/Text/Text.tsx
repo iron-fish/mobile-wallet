@@ -1,3 +1,4 @@
+import { colors } from "@/vars/colors.stylex";
 import { ReactNode } from "react";
 import { css, html } from "react-strict-dom";
 
@@ -44,17 +45,33 @@ const styles = css.create({
   textAlign: (textAlign: "left" | "center" | "right") => ({
     textAlign,
   }),
+  muted: {
+    color: colors.textSecondary,
+  },
 });
 
 type Props = {
   children?: ReactNode;
   size?: Sizes;
   textAlign?: "left" | "center" | "right";
+  muted?: boolean;
 };
 
-export function Text({ children, size = "md", textAlign = "left" }: Props) {
+export function Text({
+  children,
+  size = "md",
+  textAlign = "left",
+  muted,
+}: Props) {
   return (
-    <html.span style={[styles.base, styles[size], styles.textAlign(textAlign)]}>
+    <html.span
+      style={[
+        styles.base,
+        styles[size],
+        styles.textAlign(textAlign),
+        muted && styles.muted,
+      ]}
+    >
       {children}
     </html.span>
   );
