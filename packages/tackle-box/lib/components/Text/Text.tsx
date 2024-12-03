@@ -1,3 +1,4 @@
+import { Colors, getColorValue } from "@/vars/colors.stylex";
 import { ReactNode } from "react";
 import { css, html } from "react-strict-dom";
 
@@ -36,17 +37,33 @@ const styles = css.create({
   textAlign: (textAlign: "left" | "center" | "right") => ({
     textAlign,
   }),
+  color: (color?: string) => ({
+    color,
+  }),
 });
 
 type Props = {
   children?: ReactNode;
   size?: Sizes;
   textAlign?: "left" | "center" | "right";
+  color?: Colors;
 };
 
-export function Text({ children, size = "md", textAlign = "left" }: Props) {
+export function Text({
+  children,
+  size = "md",
+  textAlign = "left",
+  color = "textPrimary",
+}: Props) {
   return (
-    <html.span style={[styles.base, styles[size], styles.textAlign(textAlign)]}>
+    <html.span
+      style={[
+        styles.base,
+        styles[size],
+        styles.textAlign(textAlign),
+        styles.color(getColorValue(color)),
+      ]}
+    >
       {children}
     </html.span>
   );
