@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useMemo } from "react";
 import { css, html } from "react-strict-dom";
 import { type Colors, getColorValue } from "@/vars/colors.stylex";
 import { StyleObj, UnitValue } from "@/utils/types";
@@ -6,7 +6,13 @@ import {
   useMarginPaddingValues,
   type MarginPadding,
 } from "@/utils/useMarginPaddingValues";
-
+import {
+  computeBorderRadius,
+  computeBorderWidth,
+  type DirectionalValue,
+  type BorderRadiusArgs,
+  type BorderWidthArgs,
+} from "./utils";
 const styles = css.create({
   base: {
     boxSizing: "border-box",
@@ -44,31 +50,37 @@ const styles = css.create({
     paddingBottom: bottom,
     paddingLeft: left,
   }),
-  borderRadius: (radius: number) => ({
-    borderRadius: radius,
+  borderRadius: (radius: DirectionalValue) => ({
+    borderTopLeftRadius: radius[0],
+    borderTopRightRadius: radius[1],
+    borderBottomLeftRadius: radius[2],
+    borderBottomRightRadius: radius[3],
   }),
   borderColor: (color?: string) => ({
     borderColor: color,
   }),
-  borderWidth: (width: number) => ({
-    borderWidth: width,
+  borderWidth: (width: DirectionalValue) => ({
+    borderTopWidth: width[0],
+    borderRightWidth: width[1],
+    borderBottomWidth: width[2],
+    borderLeftWidth: width[3],
   }),
   flexGrow: (grow?: number) => ({
     flexGrow: grow,
   }),
 });
 
-export type BoxProps = {
-  children?: ReactNode;
-  height?: UnitValue;
-  width?: UnitValue;
-  borderRadius?: "full" | number;
-  bg?: Colors;
-  borderColor?: Colors;
-  borderWidth?: number;
-  flexGrow?: number;
-  style?: StyleObj;
-} & MarginPadding;
+export type BoxProps = BorderRadiusArgs &
+  BorderWidthArgs & {
+    children?: ReactNode;
+    height?: UnitValue;
+    width?: UnitValue;
+    bg?: Colors;
+    borderColor?: Colors;
+    borderWidth?: number;
+    flexGrow?: number;
+    style?: StyleObj;
+  } & MarginPadding;
 
 export function Box({
   children,
@@ -77,12 +89,52 @@ export function Box({
   bg,
   borderColor,
   borderRadius = 0,
+  borderTopLeftRadius,
+  borderTopRightRadius,
+  borderBottomLeftRadius,
+  borderBottomRightRadius,
   borderWidth = 0,
+  borderTopWidth,
+  borderRightWidth,
+  borderBottomWidth,
+  borderLeftWidth,
   flexGrow,
   style,
   ...marginPadding
 }: BoxProps) {
   const { margin, padding } = useMarginPaddingValues(marginPadding);
+
+  const borderRadiusValues = useMemo(() => {
+    return computeBorderRadius({
+      borderRadius,
+      borderTopLeftRadius,
+      borderTopRightRadius,
+      borderBottomLeftRadius,
+      borderBottomRightRadius,
+    });
+  }, [
+    borderRadius,
+    borderTopLeftRadius,
+    borderTopRightRadius,
+    borderBottomLeftRadius,
+    borderBottomRightRadius,
+  ]);
+
+  const borderWidthValues = useMemo(() => {
+    return computeBorderWidth({
+      borderWidth,
+      borderTopWidth,
+      borderRightWidth,
+      borderBottomWidth,
+      borderLeftWidth,
+    });
+  }, [
+    borderWidth,
+    borderTopWidth,
+    borderRightWidth,
+    borderBottomWidth,
+    borderLeftWidth,
+  ]);
 
   return (
     <html.div
@@ -91,12 +143,12 @@ export function Box({
         styles.dimensions(height, width),
         styles.margin(...margin),
         styles.padding(...padding),
-        styles.borderRadius(borderRadius === "full" ? 9999 : borderRadius),
+        styles.borderRadius(borderRadiusValues),
         styles.backgroundColor(bg ? getColorValue(bg) : undefined),
         styles.borderColor(
           borderColor ? getColorValue(borderColor) : undefined,
         ),
-        styles.borderWidth(borderWidth),
+        styles.borderWidth(borderWidthValues),
         styles.flexGrow(flexGrow),
         style,
       ]}

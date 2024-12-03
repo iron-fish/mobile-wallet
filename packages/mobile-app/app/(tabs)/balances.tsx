@@ -26,7 +26,12 @@ export default function Balances() {
         </HStack>
       </VStack>
 
-      <Box bg="background" flexGrow={1} />
+      <Box
+        bg="background"
+        flexGrow={1}
+        borderTopLeftRadius={20}
+        borderTopRightRadius={20}
+      />
     </SafeAreaGradient>
   );
 }
