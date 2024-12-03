@@ -46,7 +46,7 @@ type Props = {
   children?: ReactNode;
   size?: Sizes;
   textAlign?: "left" | "center" | "right";
-  color?: Colors;
+  color?: Colors | "inherit";
 };
 
 export function Text({
@@ -61,7 +61,7 @@ export function Text({
         styles.base,
         styles[size],
         styles.textAlign(textAlign),
-        styles.color(getColorValue(color)),
+        styles.color(color === "inherit" ? "inherit" : getColorValue(color)),
       ]}
     >
       {children}
