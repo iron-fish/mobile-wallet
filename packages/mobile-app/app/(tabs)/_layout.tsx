@@ -27,9 +27,26 @@ export default function Layout() {
           <Button title="Close" onPress={() => setModalVisible(false)} />
         </SafeAreaView>
       </Modal>
-      <Tabs>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
         <Tabs.Screen
           name="index"
+          options={{
+            title: "Home",
+            tabBarIcon: ({ focused, color, size }) => (
+              <Ionicons
+                name={focused ? "wallet" : "wallet-outline"}
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="balances"
           options={{
             title: "Balances",
             tabBarIcon: ({ focused, color, size }) => (

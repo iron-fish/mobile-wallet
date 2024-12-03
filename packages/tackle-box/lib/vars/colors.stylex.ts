@@ -90,3 +90,15 @@ export const colors = css.defineVars({
 });
 
 export type PaletteColors = VarKeys<typeof palette>;
+
+export type VarColors = VarKeys<typeof colors>;
+
+export type Colors = PaletteColors | VarColors;
+
+export function getColorValue(color: PaletteColors | VarColors): string {
+  if (color in palette) {
+    return palette[color as PaletteColors];
+  }
+
+  return colors[color as VarColors];
+}
