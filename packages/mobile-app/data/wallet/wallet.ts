@@ -999,6 +999,80 @@ export class Wallet {
     };
   }
 
+  async sendTransactionWithSpends(
+    network: Network,
+    accountName: string,
+    transactionVersion: number,
+    transactionFee: string,
+    outputs: Output[],
+    spendComponents: {
+      note: string;
+      witnessRootHash: string;
+      witnessTreeSize: string;
+      witnessAuthPath: {
+        side: "Left" | "Right";
+        hashOfSibling: string;
+      }[];
+    }[],
+  ) {
+    assertStarted(this.state);
+    let lastTime = performance.now();
+    // Make sure the account exists
+    const account = await this.state.db.getAccount(accountName);
+    if (account == null) {
+      throw new Error(`No account found with name ${accountName}`);
+    }
+
+    if (account.viewOnly) {
+      throw new Error("Cannot send transactions from a view-only account");
+    }
+
+    console.log(`Account fetched in: ${performance.now() - lastTime}ms`);
+    lastTime = performance.now();
+
+    // Call createNote for each output you want to create
+    const notes = await Promise.all(
+      outputs.map((output) =>
+        IronfishNativeModule.createNote({
+          assetId: Uint8ArrayUtils.fromHex(output.assetId),
+          owner: Uint8ArrayUtils.fromHex(output.publicAddress),
+          sender: Uint8ArrayUtils.fromHex(account.publicAddress),
+          value: output.amount,
+          memo: Uint8ArrayUtils.fromHex(output.memoHex),
+        }),
+      ),
+    );
+
+    console.log(`Notes prepared in ${performance.now() - lastTime}ms`);
+    lastTime = performance.now();
+
+    const spendingKey = await this.state.db.getSpendingKey(
+      account.publicAddress,
+    );
+    if (spendingKey === null) {
+      throw new Error("Spending key not found");
+    }
+
+    let { sequence: latestSequence } = await Blockchain.getLatestBlock(network);
+
+    const expirationSequence = latestSequence + EXPIRATION_DELTA;
+    // TODO: Implement proper transaction fees
+    const result = await IronfishNativeModule.createTransaction(
+      transactionVersion,
+      transactionFee,
+      expirationSequence,
+      spendComponents,
+      notes.map((note) => Uint8ArrayUtils.toHex(note)),
+      Uint8ArrayUtils.fromHex(spendingKey),
+    );
+
+    console.log(`Transaction created in ${performance.now() - lastTime}ms`);
+    lastTime = performance.now();
+    console.log(Uint8ArrayUtils.toHex(result));
+
+    return result;
+  }
+
   async sendTransaction(
     network: Network,
     accountName: string,
@@ -1080,7 +1154,7 @@ export class Wallet {
     const result = await IronfishNativeModule.createTransaction(
       txnVersion,
       fee,
-      latestSequence + EXPIRATION_DELTA,
+      expirationSequence,
       spendComponents,
       notes.map((note) => Uint8ArrayUtils.toHex(note)),
       Uint8ArrayUtils.fromHex(spendingKey),
