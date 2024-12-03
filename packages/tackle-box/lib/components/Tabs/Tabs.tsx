@@ -3,7 +3,6 @@ import { HStack } from "@/components/Stack/Stack";
 import { createContext, ReactNode, useContext, useState } from "react";
 import { css, html } from "react-strict-dom";
 import { Text } from "@/components/Text/Text";
-import { colors } from "@/vars/colors.stylex";
 
 const TabsContext = createContext<{
   activeTab: string;
@@ -54,16 +53,6 @@ const triggerStyles = css.create({
     borderWidth: 0,
     paddingLeft: 16,
     paddingRight: 16,
-  },
-  activeIndicator: {
-    borderBottomWidth: 2,
-    borderColor: colors.textPrimary,
-  },
-  textActive: {
-    color: "textPrimary",
-  },
-  textInactive: {
-    color: "textSecondary",
   },
 });
 
