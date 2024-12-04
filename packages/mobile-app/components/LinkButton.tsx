@@ -10,17 +10,23 @@ export function LinkButton({
   href,
   onPress,
   variant = "solid",
-  ...rest
+  borderRadius,
+  children,
 }: {
-  title: string;
-  href: string;
+  title?: string;
+  href?: string;
   onPress?: (event: GestureResponderEvent) => void;
   variant?: "solid" | "outline" | "ghost";
+  borderRadius?: number;
+  children?: React.ReactNode;
 }) {
+  const titleProp = title && !children ? { title } : {};
   return (
-    <Link href={href} asChild>
+    <Link href={href ?? undefined} asChild>
       <Pressable onPress={onPress}>
-        <Button variant={variant} title={title} {...rest} />
+        <Button variant={variant} {...titleProp} borderRadius={borderRadius}>
+          {children}
+        </Button>
       </Pressable>
     </Link>
   );

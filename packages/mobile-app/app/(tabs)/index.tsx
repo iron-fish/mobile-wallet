@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { LinkButton } from "../../components/LinkButton";
 import { useQueries } from "@tanstack/react-query";
 import { Asset } from "../../data/facades/chain/types";
+import { Stack } from "expo-router";
 
 export default function Balances() {
   const facade = useFacade();
@@ -87,9 +88,11 @@ export default function Balances() {
 
   if (getAccountResult.data === null) {
     return (
-      <View style={styles.container}>
-        <LinkButton title="Onboarding" href="/onboarding/" />
-      </View>
+      <>
+        <View style={styles.container}>
+          <LinkButton title="Onboarding" href="/onboarding/" />
+        </View>
+      </>
     );
   }
 

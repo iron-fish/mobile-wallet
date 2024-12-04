@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import LogoWithText from "../../assets/images/logo-with-text.svg";
 import KeyPlantOrchid from "../../assets/images/key-plant--orchid.svg";
+import { Stack } from "expo-router";
 
 const styles = StyleSheet.create({
   background: {
@@ -14,7 +15,14 @@ const styles = StyleSheet.create({
 
 export default function Onboarding() {
   return (
-    <View style={{ padding: 24, flex: 1 }}>
+    <View
+      style={{
+        paddingTop: 80,
+        paddingBottom: 24,
+        paddingHorizontal: 24,
+        flex: 1,
+      }}
+    >
       <LinearGradient
         colors={["#FFF4E0", "#DE83F0"]}
         locations={[0, 1]}
