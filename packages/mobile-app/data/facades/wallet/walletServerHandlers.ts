@@ -325,8 +325,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         publicAddress: importedAccount.publicAddress,
         balances: {
           iron: {
-            assetId:
-              "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+            assetId: IRON_ASSET_ID_HEX,
             available: "0",
             confirmed: "0",
             pending: "0",
