@@ -516,6 +516,18 @@ export class WalletDb {
     };
   }
 
+  async getAccountById(id: number) {
+    return await this.db
+      .selectFrom("accounts")
+      .leftJoin("activeAccount", "accounts.id", "activeAccount.accountId")
+      .selectAll("accounts")
+      .select((eb) => [
+        eb("activeAccount.accountId", "is not", null).as("active"),
+      ])
+      .where("accounts.id", "=", id)
+      .executeTakeFirst();
+  }
+
   async getAccount(name: string) {
     return await this.db
       .selectFrom("accounts")

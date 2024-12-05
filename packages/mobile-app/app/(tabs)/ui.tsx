@@ -9,6 +9,7 @@ import {
   Icon,
 } from "@ironfish/tackle-box";
 import { useState } from "react";
+import { LinkButton } from "../../components/LinkButton";
 
 export default function UiKit() {
   const scheme = useColorScheme();
@@ -23,6 +24,7 @@ export default function UiKit() {
         backgroundColor: scheme === "dark" ? "#101010" : "#fff",
       }}
     >
+      <LinkButton title="Debug" href="/menu/debug/" />
       <Text size="lg">Count: {count}</Text>
       <Button title="Press me - filled" onClick={() => setCount(count + 1)} />
       <Box height="auto" bg="pink" borderWidth={2} borderColor="gray900">
