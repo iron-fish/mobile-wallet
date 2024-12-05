@@ -22,14 +22,12 @@ const styles = css.create({
 
 type StackProps = BoxProps & {
   gap?: number;
-  spacing?: number;
   alignItems?: string;
   justifyContent?: string;
 };
 
 export function HStack({
   gap = 0,
-  spacing,
   alignItems = "stretch",
   justifyContent = "flex-start",
   children,
@@ -39,7 +37,7 @@ export function HStack({
     <Box
       style={[
         styles.horizontal,
-        styles.gap(applyBaseSpacing(spacing ?? gap)),
+        styles.gap(applyBaseSpacing(gap)),
         styles.align(alignItems),
         styles.justify(justifyContent),
       ]}
@@ -52,7 +50,6 @@ export function HStack({
 
 export function VStack({
   gap = 0,
-  spacing,
   alignItems = "stretch",
   justifyContent = "flex-start",
   children,
@@ -62,7 +59,7 @@ export function VStack({
     <Box
       style={[
         styles.vertical,
-        styles.gap(applyBaseSpacing(spacing ?? gap)),
+        styles.gap(applyBaseSpacing(gap)),
         styles.align(alignItems),
         styles.justify(justifyContent),
       ]}

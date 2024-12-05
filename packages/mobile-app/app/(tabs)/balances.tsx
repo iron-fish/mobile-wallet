@@ -6,6 +6,7 @@ import {
   Tabs,
   Text,
   VStack,
+  Card,
 } from "@ironfish/tackle-box";
 import { SafeAreaGradient } from "@/components/SafeAreaGradient/SafeAreaGradient";
 
@@ -39,16 +40,13 @@ export default function Balances() {
             <Tabs.Trigger value="transactions">Transactions</Tabs.Trigger>
           </Tabs.List>
           <Tabs.Content value="assets">
-            <VStack>
-              <Text>Assets</Text>
-              <Text>Assets</Text>
-              <Text>Assets</Text>
-              <Text>Assets</Text>
-              <Text>Assets</Text>
+            <VStack p={4} gap={4}>
+              <AssetRow />
+              <AssetRow />
             </VStack>
           </Tabs.Content>
           <Tabs.Content value="transactions">
-            <VStack>
+            <VStack p={4}>
               <Text>Transactions</Text>
               <Text>Transactions</Text>
               <Text>Transactions</Text>
@@ -73,5 +71,35 @@ function NavBar() {
       </Box>
       <Icon name="gear" />
     </HStack>
+  );
+}
+
+function AssetBadge() {
+  return (
+    <Box
+      bg="pink"
+      height={48}
+      width={48}
+      minHeight={48}
+      minWidth={48}
+      borderRadius="full"
+    />
+  );
+}
+
+function AssetRow() {
+  return (
+    <Card>
+      <HStack alignItems="center" gap={3}>
+        <AssetBadge />
+        <VStack>
+          <Text size="sm">$IRON</Text>
+          <Text size="sm" color="textSecondary">
+            100.55
+          </Text>
+        </VStack>
+        <Icon name="chevron-right" />
+      </HStack>
+    </Card>
   );
 }
