@@ -21,7 +21,7 @@ export default function Onboarding() {
         edges={["top"]}
         style={{ flex: 1, backgroundColor: "#FFF4E0" }}
       >
-        <View style={{ flex: 1, paddingHorizontal: 24, paddingVertical: 16 }}>
+        <View style={{ flex: 1, padding: 24 }}>
           <LinearGradient
             colors={["#FFF4E0", "#DE83F0"]}
             locations={[0, 1]}
