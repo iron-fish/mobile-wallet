@@ -159,7 +159,6 @@ class OreowalletServer {
     const response =
       (await fetchResult.json()) as OreowalletServerResponse<ImportAccountResponse>;
     if (!response.data) {
-      console.log(`Import: ${response.code.toString()}`);
       // Code for "Account already exists"
       if (response.code === 601) {
         return { name: "alreadyexists" };
