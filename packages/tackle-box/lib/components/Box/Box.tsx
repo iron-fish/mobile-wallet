@@ -31,7 +31,7 @@ const styles = css.create({
   backgroundColor: (color?: string) => ({
     backgroundColor: color,
   }),
-  dimensions: (height: UnitValue, width: UnitValue) => ({
+  dimensions: (height?: UnitValue, width?: UnitValue) => ({
     height,
     width,
   }),
