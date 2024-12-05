@@ -53,6 +53,18 @@ type LatestBlockResponse = {
   };
 };
 
+type GetBalancesResponse = {
+  account: string;
+  balances: {
+    assetId: string;
+    assetName: string;
+    confirmed: string;
+    unconfirmed: string;
+    pending: string;
+    available: string;
+  }[];
+};
+
 type GetTransactionsResponse = {
   transactions: OreowalletTransaction[];
 };
@@ -114,6 +126,8 @@ type BroadcastTransactionResponse = {
   accepted: boolean;
 };
 
+const LOG_REQUESTS = true;
+
 /**
  * Contains methods for making API requests to the Oreowallet server.
  */
@@ -132,6 +146,8 @@ class OreowalletServer {
     },
   ): Promise<ImportAccountResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + "import";
+
+    LOG_REQUESTS && console.log("[OreowalletServer] Calling importAccount");
 
     const fetchResult = await fetch(url, {
       method: "POST",
@@ -159,6 +175,8 @@ class OreowalletServer {
   ): Promise<RemoveAccountResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `remove`;
 
+    LOG_REQUESTS && console.log("[OreowalletServer] Calling removeAccount");
+
     const fetchResult = await fetch(url, {
       method: "POST",
       headers: {
@@ -180,6 +198,8 @@ class OreowalletServer {
     account: { address: string },
   ): Promise<AccountStatusResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `accountStatus`;
+
+    LOG_REQUESTS && console.log("[OreowalletServer] Calling getAccountStatus");
 
     const fetchResult = await fetch(url, {
       method: "POST",
@@ -203,6 +223,8 @@ class OreowalletServer {
   ): Promise<AccountStatusResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `rescan`;
 
+    LOG_REQUESTS && console.log("[OreowalletServer] Calling rescanAccount");
+
     const fetchResult = await fetch(url, {
       method: "POST",
       headers: {
@@ -219,12 +241,39 @@ class OreowalletServer {
     return response.data;
   }
 
+  async getBalances(
+    network: Network,
+    address: string,
+    confirmations: number = 2,
+  ): Promise<GetBalancesResponse> {
+    const url = OREOWALLET_SERVER_URLS[network] + `getBalances`;
+
+    LOG_REQUESTS && console.log("[OreowalletServer] Calling getBalances");
+
+    const fetchResult = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ account: address, confirmations }),
+    });
+    const response =
+      (await fetchResult.json()) as OreowalletServerResponse<GetBalancesResponse>;
+    if (!response.data) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  }
+
   async getTransactions(
     network: Network,
     address: string,
     limit: number = 50,
   ): Promise<GetTransactionsResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `getTransactions`;
+
+    LOG_REQUESTS && console.log("[OreowalletServer] Calling getTransactions");
 
     const fetchResult = await fetch(url, {
       method: "POST",
@@ -249,6 +298,8 @@ class OreowalletServer {
   ): Promise<OreowalletTransactionDetailed | undefined> {
     const url = OREOWALLET_SERVER_URLS[network] + `getTransaction`;
 
+    LOG_REQUESTS && console.log("[OreowalletServer] Calling getTransaction");
+
     const fetchResult = await fetch(url, {
       method: "POST",
       headers: {
@@ -272,6 +323,8 @@ class OreowalletServer {
   async getLatestBlock(network: Network) {
     const url = OREOWALLET_SERVER_URLS[network] + `latestBlock`;
 
+    LOG_REQUESTS && console.log("[OreowalletServer] Calling getLatestBlock");
+
     const fetchResult = await fetch(url);
     const response =
       (await fetchResult.json()) as OreowalletServerResponse<LatestBlockResponse>;
@@ -293,6 +346,8 @@ class OreowalletServer {
     },
   ): Promise<CreateTransactionResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `createTx`;
+
+    LOG_REQUESTS && console.log("[OreowalletServer] Calling createTransaction");
 
     const fetchResult = await fetch(url, {
       method: "POST",
@@ -321,6 +376,9 @@ class OreowalletServer {
     transaction: string,
   ): Promise<BroadcastTransactionResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `broadcastTx`;
+
+    LOG_REQUESTS &&
+      console.log("[OreowalletServer] Calling broadcastTransaction");
 
     const fetchResult = await fetch(url, {
       method: "POST",

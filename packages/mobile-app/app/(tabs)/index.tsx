@@ -1,7 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import {
   ActivityIndicator,
-  Button,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -26,14 +25,14 @@ export default function Balances() {
   const getTransactionsResult = facade.getTransactions.useQuery(
     { accountName: account },
     {
-      refetchInterval: 1000,
+      refetchInterval: 5000,
     },
   );
 
   const getAccountResult = facade.getAccount.useQuery(
     {},
     {
-      refetchInterval: 1000,
+      refetchInterval: 5000,
     },
   );
 
@@ -65,11 +64,8 @@ export default function Balances() {
   );
 
   const getWalletStatusResult = facade.getWalletStatus.useQuery(undefined, {
-    refetchInterval: 1000,
+    refetchInterval: 5000,
   });
-
-  const pauseSyncing = facade.pauseSyncing.useMutation();
-  const resumeSyncing = facade.resumeSyncing.useMutation();
 
   useEffect(() => {
     if (getAccountResult.data) {
@@ -106,7 +102,7 @@ export default function Balances() {
           title="Account Settings"
         />
       </View>
-      <Text>You're currently on Testnet</Text>
+      <Text>You're currently on Mainnet</Text>
       {getAccountResult.data && (
         <>
           <Text>
@@ -127,27 +123,6 @@ export default function Balances() {
             <Text>{`Blocks Scanned: ${getAccountResult.data?.head?.sequence ?? "--"} / ${getWalletStatusResult.data.latestKnownBlock}`}</Text>
             <Text>Your balances may currently be inaccurate.</Text>
             <Text>Learn More</Text>
-            <Button
-              onPress={() => {
-                pauseSyncing.mutate(undefined);
-              }}
-              title="Pause"
-            />
-          </View>
-        )}
-      {getWalletStatusResult.data &&
-        getWalletStatusResult.data.status !== "SCANNING" && (
-          // TODO: Once scanning starts automatically, this should only show in the "PAUSED" state.
-          <View style={{ backgroundColor: "#eee" }}>
-            <Text>{`Scanning Paused: ${getAccountResult.data?.head?.sequence ?? "--"} / ${getWalletStatusResult.data.latestKnownBlock}`}</Text>
-            <Text>Your balances may currently be inaccurate.</Text>
-            <Text>Learn More</Text>
-            <Button
-              onPress={() => {
-                resumeSyncing.mutate(undefined);
-              }}
-              title="Resume"
-            />
           </View>
         )}
       <View style={{ display: "flex", flexDirection: "row" }}>
@@ -170,9 +145,7 @@ export default function Balances() {
               <Text>Block Sequence: {transaction.block?.sequence ?? ""}</Text>
               <Text>Timestamp: {transaction.timestamp.toString()}</Text>
               <Text>Status: {transaction.status.toString()}</Text>
-              <Text>
-                {`Notes (${transaction.notes.length}): ${transaction.notes.map((n) => n.value).join(", ")}`}
-              </Text>
+              <Text>Type: {transaction.type.toString()}</Text>
             </View>
           ))}
         {visibleView === "assets" && getAccountResult.data && (
