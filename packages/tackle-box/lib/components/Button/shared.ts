@@ -48,6 +48,9 @@ export const styles = css.create({
     borderColor: "transparent",
     color: colors.textDisabled,
   },
+  borderRadius: (radius: number) => ({
+    borderRadius: radius,
+  }),
   icon: {
     width: 17,
     height: 18,

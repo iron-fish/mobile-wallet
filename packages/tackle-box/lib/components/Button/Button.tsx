@@ -3,12 +3,14 @@ import { HStack, Text } from "@/index";
 import { Icon, type IconName } from "@/components/Icon/Icon";
 import { type OnClick, styles } from "./shared";
 
-type Props = {
+type ButtonProps = {
   disabled?: boolean;
-  title: string;
   variant?: "solid" | "outline" | "ghost";
   onClick?: OnClick;
   rightIcon?: IconName;
+  borderRadius?: number;
+  title?: string;
+  children?: React.ReactNode;
 };
 
 export function Button({
@@ -17,14 +19,26 @@ export function Button({
   onClick,
   rightIcon,
   variant = "solid",
-}: Props) {
+  borderRadius,
+  children,
+}: ButtonProps) {
+  const borderRadiusStyle = borderRadius
+    ? styles.borderRadius(borderRadius)
+    : {};
   const computedStyles = [
     styles.base,
     variant === "solid" && styles.solid,
     variant === "outline" && styles.outline,
     variant === "ghost" && styles.ghost,
     disabled && styles.disabled,
+    borderRadiusStyle,
   ];
+
+  const content = title ? (
+    <ButtonContent title={title} rightIcon={rightIcon} />
+  ) : (
+    children
+  );
 
   return onClick ? (
     <html.button
@@ -34,14 +48,13 @@ export function Button({
         onClick(e);
       }}
     >
-      <ButtonContent title={title} rightIcon={rightIcon} />
+      {content}
     </html.button>
   ) : (
-    <html.div style={computedStyles}>
-      <ButtonContent title={title} rightIcon={rightIcon} />
-    </html.div>
+    <html.div style={computedStyles}>{content}</html.div>
   );
 }
+
 function ButtonContent({
   title,
   rightIcon,
