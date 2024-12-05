@@ -82,6 +82,12 @@ export default function Layout() {
                   headerShown: false,
                 }}
               />
+              <Stack.Screen
+                name="onboarding"
+                options={{
+                  headerShown: false,
+                }}
+              />
             </Stack>
           </DatabaseLoader>
         </FacadeProvider>

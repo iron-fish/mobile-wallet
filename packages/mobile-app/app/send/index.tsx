@@ -2,6 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View, Text, Button, TextInput } from "react-native";
 import { useFacade } from "../../data/facades";
 import { useState } from "react";
+import { IRON_ASSET_ID_HEX } from "../../data/constants";
 
 const isValidBigInt = (num: string) => {
   if (num.length === 0) return false;
@@ -16,9 +17,8 @@ const isValidBigInt = (num: string) => {
 export default function Send() {
   const facade = useFacade();
 
-  const [selectedAssetId, setSelectedAssetId] = useState<string>(
-    "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
-  );
+  const [selectedAssetId, setSelectedAssetId] =
+    useState<string>(IRON_ASSET_ID_HEX);
   const [selectedRecipient, setSelectedRecipient] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [customFee, setCustomFee] = useState<string>("");
@@ -64,12 +64,8 @@ export default function Send() {
       )}
       <Text>Select asset</Text>
       <Button
-        title={`IRON (${getAccountResult.data?.balances.iron.available ?? 0}) ${selectedAssetId === "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c" ? "(selected)" : ""}`}
-        onPress={() =>
-          setSelectedAssetId(
-            "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
-          )
-        }
+        title={`IRON (${getAccountResult.data?.balances.iron.available ?? 0}) ${selectedAssetId === IRON_ASSET_ID_HEX ? "(selected)" : ""}`}
+        onPress={() => setSelectedAssetId(IRON_ASSET_ID_HEX)}
       />
       {getAccountResult.data?.balances.custom.map((b) => (
         <Button

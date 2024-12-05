@@ -1,69 +1,16 @@
-import { html, css } from "react-strict-dom";
-import { ComponentProps } from "react";
+import { html } from "react-strict-dom";
 import { HStack, Text } from "@/index";
 import { Icon, type IconName } from "@/components/Icon/Icon";
-import { colors } from "@/vars/index.stylex";
+import { type OnClick, styles } from "./shared";
 
-const styles = css.create({
-  base: {
-    boxSizing: "border-box",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-    paddingTop: 14,
-    paddingBottom: 14,
-    paddingLeft: 24,
-    paddingRight: 24,
-    fontSize: 20,
-    borderRadius: 9999,
-  },
-  solid: {
-    backgroundColor: {
-      default: colors.backgroundInverse,
-      ":active": colors.backgroundHoverInverse,
-    },
-    borderWidth: 0,
-    color: colors.textPrimaryInverse,
-  },
-  outline: {
-    backgroundColor: {
-      default: "rgba(0, 0, 0, 0.0)",
-      ":active": "rgba(0, 0, 0, 0.05)",
-    },
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: colors.border,
-    color: colors.textPrimary,
-  },
-  ghost: {
-    backgroundColor: {
-      default: "rgba(0, 0, 0, 0.0)",
-      ":active": "rgba(0, 0, 0, 0.05)",
-    },
-    borderWidth: 0,
-    borderColor: "transparent",
-    color: colors.textPrimary,
-  },
-  disabled: {
-    backgroundColor: colors.backgroundDisabled,
-    borderColor: "transparent",
-    color: colors.textDisabled,
-  },
-  icon: {
-    width: 17,
-    height: 18,
-  },
-});
-
-type ButtonProps = ComponentProps<typeof html.button>;
-
-type Props = {
+type ButtonProps = {
   disabled?: boolean;
-  title: string;
   variant?: "solid" | "outline" | "ghost";
-  onClick?: ButtonProps["onClick"];
+  onClick?: OnClick;
   rightIcon?: IconName;
+  borderRadius?: number;
+  title?: string;
+  children?: React.ReactNode;
 };
 
 export function Button({
@@ -72,31 +19,42 @@ export function Button({
   onClick,
   rightIcon,
   variant = "solid",
-}: Props) {
+  borderRadius,
+  children,
+}: ButtonProps) {
+  const borderRadiusStyle = borderRadius
+    ? styles.borderRadius(borderRadius)
+    : {};
   const computedStyles = [
     styles.base,
     variant === "solid" && styles.solid,
     variant === "outline" && styles.outline,
     variant === "ghost" && styles.ghost,
     disabled && styles.disabled,
+    borderRadiusStyle,
   ];
+
+  const content = title ? (
+    <ButtonContent title={title} rightIcon={rightIcon} />
+  ) : (
+    children
+  );
 
   return onClick ? (
     <html.button
       style={computedStyles}
       onClick={(e) => {
         if (disabled) return;
-        onClick?.(e);
+        onClick(e);
       }}
     >
-      <ButtonContent title={title} rightIcon={rightIcon} />
+      {content}
     </html.button>
   ) : (
-    <html.div style={computedStyles}>
-      <ButtonContent title={title} rightIcon={rightIcon} />
-    </html.div>
+    <html.div style={computedStyles}>{content}</html.div>
   );
 }
+
 function ButtonContent({
   title,
   rightIcon,
@@ -106,7 +64,7 @@ function ButtonContent({
 }) {
   return (
     <HStack gap={8} justifyContent="center">
-      <Text>{title}</Text>
+      <Text color="inherit">{title}</Text>
       {rightIcon && <Icon name={rightIcon} />}
     </HStack>
   );

@@ -9,7 +9,7 @@ import {
   WalletStatus,
 } from "./types";
 import { oreoWallet } from "../../wallet/oreowalletWallet";
-import { Network } from "../../constants";
+import { IRON_ASSET_ID_HEX, Network } from "../../constants";
 import * as Uint8ArrayUtils from "../../../utils/uint8Array";
 
 import {
@@ -19,9 +19,6 @@ import {
   TransactionStatus,
 } from "@ironfish/sdk";
 import { OreowalletServerApi } from "../../oreowalletServerApi/oreowalletServerApi";
-
-const IRON_ASSET_ID_HEX =
-  "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c";
 
 export const walletHandlers = f.facade<WalletHandlers>({
   createAccount: f.handler.mutation(
