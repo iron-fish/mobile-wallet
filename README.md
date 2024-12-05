@@ -12,6 +12,8 @@ This project was generated using [Nx](https://nx.dev).
 
 ### Running the Mobile App
 
+1. The app uses demo data by default. To use wallet servers instead, copy `packages/mobile-app/.env.template` to `packages/mobile-app/.env` and set `EXPO_PUBLIC_DEMO_API=false`.
+
 1. In a terminal, build and run the iOS app:
    - `nx ios mobile-app`
 

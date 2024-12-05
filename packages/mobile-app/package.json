@@ -28,7 +28,6 @@
     "kysely": "^0.27.3",
     "kysely-expo": "2.0.3",
     "long": "^5.2.3",
-    "process": "^0.11.10",
     "protobufjs": "^7.3.0",
     "react": "18.2.0",
     "react-native": "0.75.4",
