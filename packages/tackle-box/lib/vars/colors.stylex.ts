@@ -17,6 +17,7 @@ export const palette = css.defineVars({
   black: "#101010",
   white: "#FFFFFF",
   pink: "#FFC0CB",
+  transparent: "transparent",
 });
 
 // Theme tokens

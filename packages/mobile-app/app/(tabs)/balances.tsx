@@ -3,6 +3,7 @@ import {
   HStack,
   Icon,
   IconButton,
+  Tabs,
   Text,
   VStack,
 } from "@ironfish/tackle-box";
@@ -31,7 +32,32 @@ export default function Balances() {
         flexGrow={1}
         borderTopLeftRadius={20}
         borderTopRightRadius={20}
-      />
+      >
+        <Tabs.Root defaultValue="assets">
+          <Tabs.List>
+            <Tabs.Trigger value="assets">Assets</Tabs.Trigger>
+            <Tabs.Trigger value="transactions">Transactions</Tabs.Trigger>
+          </Tabs.List>
+          <Tabs.Content value="assets">
+            <VStack>
+              <Text>Assets</Text>
+              <Text>Assets</Text>
+              <Text>Assets</Text>
+              <Text>Assets</Text>
+              <Text>Assets</Text>
+            </VStack>
+          </Tabs.Content>
+          <Tabs.Content value="transactions">
+            <VStack>
+              <Text>Transactions</Text>
+              <Text>Transactions</Text>
+              <Text>Transactions</Text>
+              <Text>Transactions</Text>
+              <Text>Transactions</Text>
+            </VStack>
+          </Tabs.Content>
+        </Tabs.Root>
+      </Box>
     </SafeAreaGradient>
   );
 }

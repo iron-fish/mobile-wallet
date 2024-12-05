@@ -64,7 +64,7 @@ function ButtonContent({
 }) {
   return (
     <HStack gap={8} justifyContent="center">
-      <Text>{title}</Text>
+      <Text color="inherit">{title}</Text>
       {rightIcon && <Icon name={rightIcon} />}
     </HStack>
   );

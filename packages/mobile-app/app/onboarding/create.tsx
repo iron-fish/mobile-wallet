@@ -28,7 +28,7 @@ export default function OnboardingCreate() {
           <Text textAlign="center" size="xl">
             Protect your account
           </Text>
-          <Text textAlign="center" muted>
+          <Text textAlign="center" color="textSecondary">
             Enabling biometric security or a PIN, your wallet becomes
             exclusively accessible to you, providing a unique layer of
             protection.
@@ -44,7 +44,7 @@ export default function OnboardingCreate() {
           <HStack alignItems="center" gap={4}>
             <Icon name="face-id" />
             <Text>
-              Face ID <Text muted>(Recommended)</Text>
+              Face ID <Text color="textSecondary">(Recommended)</Text>
             </Text>
           </HStack>
           <Icon name="chevron-right" />
