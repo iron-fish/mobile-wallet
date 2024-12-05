@@ -1,5 +1,5 @@
 import { ReactNode, useMemo } from "react";
-import { css, html } from "react-strict-dom";
+import { css } from "react-strict-dom";
 import { type Colors, getColorValue } from "@/vars/colors.stylex";
 import { StyleObj, UnitValue } from "@/utils/types";
 import {
@@ -13,6 +13,12 @@ import {
   type BorderRadiusArgs,
   type BorderWidthArgs,
 } from "./utils";
+import {
+  Polymorphic,
+  PolymorphicComponentProps,
+  RSDElementTypes,
+} from "../Polymorphic/Polymorphic";
+
 const styles = css.create({
   base: {
     boxSizing: "border-box",
@@ -82,7 +88,7 @@ export type BoxProps = BorderRadiusArgs &
     style?: StyleObj;
   } & MarginPadding;
 
-export function Box({
+export function Box<TAsProp extends RSDElementTypes = "div">({
   children,
   height = "auto",
   width = "100%",
@@ -100,9 +106,38 @@ export function Box({
   borderLeftWidth,
   flexGrow,
   style,
-  ...marginPadding
-}: BoxProps) {
-  const { margin, padding } = useMarginPaddingValues(marginPadding);
+  m,
+  mx,
+  my,
+  mt,
+  mr,
+  mb,
+  ml,
+  p,
+  px,
+  py,
+  pt,
+  pr,
+  pb,
+  pl,
+  ...rest
+}: PolymorphicComponentProps<TAsProp, BoxProps>) {
+  const { margin, padding } = useMarginPaddingValues({
+    m,
+    mx,
+    my,
+    mt,
+    mr,
+    mb,
+    ml,
+    p,
+    px,
+    py,
+    pt,
+    pr,
+    pb,
+    pl,
+  });
 
   const borderRadiusValues = useMemo(() => {
     return computeBorderRadius({
@@ -137,7 +172,7 @@ export function Box({
   ]);
 
   return (
-    <html.div
+    <Polymorphic
       style={[
         styles.base,
         styles.dimensions(height, width),
@@ -152,8 +187,9 @@ export function Box({
         styles.flexGrow(flexGrow),
         style,
       ]}
+      {...rest}
     >
       {children}
-    </html.div>
+    </Polymorphic>
   );
 }
