@@ -21,7 +21,7 @@ export default function Layout() {
       <Tabs.Screen
         name="balances"
         options={{
-          title: "Balances",
+          headerShown: false,
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons
               name={focused ? "wallet" : "wallet-outline"}

@@ -2,31 +2,21 @@ import { Link } from "expo-router";
 import { GestureResponderEvent, Pressable } from "react-native";
 import { Button } from "@ironfish/tackle-box";
 
-/**
- * A button that navigates to `href` when pressed.
- */
-export function LinkButton({
-  title,
-  href,
-  onPress,
-  variant = "solid",
-  borderRadius,
-  children,
-}: {
-  title?: string;
-  href?: string;
+type LinkButtonProps = {
+  href: string;
   onPress?: (event: GestureResponderEvent) => void;
+  disabled?: boolean;
   variant?: "solid" | "outline" | "ghost";
   borderRadius?: number;
+  title?: string;
   children?: React.ReactNode;
-}) {
-  const titleProp = title && !children ? { title } : {};
+};
+
+export function LinkButton({ href, onPress, ...buttonProps }: LinkButtonProps) {
   return (
-    <Link href={href ?? undefined} asChild>
+    <Link href={href} asChild>
       <Pressable onPress={onPress}>
-        <Button variant={variant} {...titleProp} borderRadius={borderRadius}>
-          {children}
-        </Button>
+        <Button {...buttonProps} />
       </Pressable>
     </Link>
   );

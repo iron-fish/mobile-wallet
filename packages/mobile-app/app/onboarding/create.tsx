@@ -5,16 +5,15 @@ import SecureOctopus from "@/assets/images/secure-octopus.svg";
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#fff",
     alignItems: "center",
+    backgroundColor: "#fff",
+    flex: 1,
     justifyContent: "center",
     paddingBottom: 48,
   },
   content: {
-    display: "flex",
-    flex: 1,
     alignItems: "center",
+    flex: 1,
     justifyContent: "space-around",
     paddingHorizontal: 16,
   },

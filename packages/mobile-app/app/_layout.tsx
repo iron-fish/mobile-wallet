@@ -80,7 +80,6 @@ export default function Layout() {
                 name="(tabs)"
                 options={{
                   headerShown: false,
-                  headerTitle: "",
                 }}
               />
               <Stack.Screen
