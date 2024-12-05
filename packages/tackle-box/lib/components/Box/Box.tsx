@@ -26,13 +26,18 @@ const styles = css.create({
     flexDirection: "column",
     alignItems: "stretch",
     justifyContent: "flex-start",
+    position: "relative",
   },
   backgroundColor: (color?: string) => ({
     backgroundColor: color,
   }),
-  dimensions: (height: UnitValue, width: UnitValue) => ({
+  dimensions: (height?: UnitValue, width?: UnitValue) => ({
     height,
     width,
+  }),
+  minDimensions: (minHeight?: UnitValue, minWidth?: UnitValue) => ({
+    minHeight,
+    minWidth,
   }),
   margin: (
     top: UnitValue,
@@ -77,21 +82,26 @@ const styles = css.create({
 });
 
 export type BoxProps = BorderRadiusArgs &
-  BorderWidthArgs & {
+  BorderWidthArgs &
+  MarginPadding & {
     children?: ReactNode;
     height?: UnitValue;
     width?: UnitValue;
+    minHeight?: UnitValue;
+    minWidth?: UnitValue;
     bg?: Colors;
     borderColor?: Colors;
     borderWidth?: number;
     flexGrow?: number;
     style?: StyleObj;
-  } & MarginPadding;
+  };
 
 export function Box<TAsProp extends RSDElementTypes = "div">({
   children,
   height = "auto",
   width = "100%",
+  minHeight,
+  minWidth,
   bg,
   borderColor,
   borderRadius = 0,
@@ -176,6 +186,7 @@ export function Box<TAsProp extends RSDElementTypes = "div">({
       style={[
         styles.base,
         styles.dimensions(height, width),
+        styles.minDimensions(minHeight, minWidth),
         styles.margin(...margin),
         styles.padding(...padding),
         styles.borderRadius(borderRadiusValues),
