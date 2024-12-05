@@ -1,5 +1,5 @@
 global.Buffer = require("buffer").Buffer;
-global.process = require("process");
+process.argv = [];
 
 require("expo-router/entry");
 
