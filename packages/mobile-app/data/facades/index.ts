@@ -7,10 +7,10 @@ import { chainHandlers } from "./chain/oreowalletHandlers";
 import { chainDemoHandlers } from "./chain/demoHandlers";
 import { contactsDemoHandlers } from "./contacts/demoHandlers";
 
-const DEMO = true;
+const DEMO_API = Boolean(process.env.EXPO_PUBLIC_DEMO_API ?? true);
 
 export const facadeContext = createFacadeContext(
-  DEMO
+  DEMO_API
     ? {
         ...appDemoHandlers,
         ...chainDemoHandlers,
