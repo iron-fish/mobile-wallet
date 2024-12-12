@@ -7,6 +7,8 @@ import {
   Text,
   VStack,
   Card,
+  useBottomSheet,
+  Button,
 } from "@ironfish/tackle-box";
 import { SafeAreaGradient } from "@/components/SafeAreaGradient/SafeAreaGradient";
 import { View } from "react-native";
@@ -58,11 +60,7 @@ export default function Balances() {
               </Tabs.Content>
               <Tabs.Content value="transactions">
                 <VStack flexGrow={1} p={4} pb={16}>
-                  <Text>Transactions</Text>
-                  <Text>Transactions</Text>
-                  <Text>Transactions</Text>
-                  <Text>Transactions</Text>
-                  <Text>Transactions</Text>
+                  <BottomSheetDemo />
                 </VStack>
               </Tabs.Content>
             </Tabs.Root>
@@ -126,5 +124,50 @@ function AssetRow() {
         <Icon name="chevron-right" />
       </HStack>
     </Card>
+  );
+}
+
+function BottomSheetDemo() {
+  const bottomSheet = useBottomSheet();
+
+  return (
+    <VStack gap={2}>
+      <Button
+        title="Show Bottom Sheet"
+        onClick={() => {
+          bottomSheet.show({
+            title: "Account Syncing",
+            body: <AccountSyncingDetails onClose={bottomSheet.hide} />,
+          });
+        }}
+      />
+    </VStack>
+  );
+}
+
+function AccountSyncingDetails({ onClose }: { onClose: () => void }) {
+  return (
+    <Box>
+      <Text color="textSecondary" textAlign="center">
+        The blockchain is currently syncing with your accounts. Your balance may
+        be inaccurate and sending transactions will be disabled until the sync
+        is done.
+      </Text>
+      <VStack mt={8} mb={20} gap={4}>
+        <VStack>
+          <Text color="textSecondary">Node Status:</Text>
+          <Text size="lg">Syncing Blocks</Text>
+        </VStack>
+        <VStack>
+          <Text color="textSecondary">Progress:</Text>
+          <Text size="lg">42.3%</Text>
+        </VStack>
+        <VStack>
+          <Text color="textSecondary">Blocks Scanned:</Text>
+          <Text size="lg">33645/74346</Text>
+        </VStack>
+      </VStack>
+      <Button title="Close" onClick={onClose} />
+    </Box>
   );
 }
