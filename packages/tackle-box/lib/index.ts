@@ -7,5 +7,8 @@ export { IconButton } from "@/components/Button/IconButton";
 export { Tabs } from "@/components/Tabs/Tabs";
 export { Text } from "@/components/Text/Text";
 export { TextInput } from "@/components/TextInput/TextInput";
-
+export {
+  BottomSheetProvider,
+  useBottomSheet,
+} from "@/components/BottomSheet/BottomSheet";
 export { css } from "react-strict-dom";

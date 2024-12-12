@@ -4,12 +4,7 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
-import {
-  ActivityIndicator,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-} from "react-native";
+import { ActivityIndicator, SafeAreaView, StyleSheet } from "react-native";
 import {
   MutationCache,
   QueryClient,
@@ -20,6 +15,7 @@ import { useColorScheme } from "react-native";
 import { FacadeProvider, useFacade } from "../data/facades";
 import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
+import { BottomSheetProvider, Text } from "@ironfish/tackle-box";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,20 +71,22 @@ export default function Layout() {
       <QueryClientProvider client={queryClient}>
         <FacadeProvider>
           <DatabaseLoader>
-            <Stack>
-              <Stack.Screen
-                name="(tabs)"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="onboarding"
-                options={{
-                  headerShown: false,
-                }}
-              />
-            </Stack>
+            <BottomSheetProvider>
+              <Stack>
+                <Stack.Screen
+                  name="(tabs)"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="onboarding"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+              </Stack>
+            </BottomSheetProvider>
           </DatabaseLoader>
         </FacadeProvider>
       </QueryClientProvider>
