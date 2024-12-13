@@ -11,6 +11,7 @@ import {
 } from "./types";
 import { AccountFormat, LanguageKey, TransactionStatus } from "@ironfish/sdk";
 import { generateKey } from "ironfish-native-module";
+import { IRON_ASSET_ID_HEX } from "../../constants";
 
 const ACCOUNTS: Account[] = [
   {
@@ -20,8 +21,7 @@ const ACCOUNTS: Account[] = [
     viewOnly: false,
     balances: {
       iron: {
-        assetId:
-          "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+        assetId: IRON_ASSET_ID_HEX,
         available: "0",
         confirmed: "0",
         pending: "0",
@@ -39,8 +39,7 @@ const ACCOUNTS: Account[] = [
     viewOnly: true,
     balances: {
       iron: {
-        assetId:
-          "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+        assetId: IRON_ASSET_ID_HEX,
         available: "0",
         confirmed: "0",
         pending: "0",
@@ -58,8 +57,7 @@ const ACCOUNTS: Account[] = [
     viewOnly: false,
     balances: {
       iron: {
-        assetId:
-          "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+        assetId: IRON_ASSET_ID_HEX,
         available: "0",
         confirmed: "0",
         pending: "0",
@@ -95,8 +93,7 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
       head: null,
       balances: {
         iron: {
-          assetId:
-            "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+          assetId: IRON_ASSET_ID_HEX,
           available: "0",
           confirmed: "0",
           pending: "0",
@@ -172,8 +169,7 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
         timestamp: new Date(new Date().setDate(new Date().getDate() - 1)),
         assetBalanceDeltas: [
           {
-            assetId:
-              "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+            assetId: IRON_ASSET_ID_HEX,
             delta: "20",
           },
         ],
@@ -190,8 +186,7 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
         mints: [],
         notes: [
           {
-            assetId:
-              "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+            assetId: IRON_ASSET_ID_HEX,
             hash: "3434291950e34661d8a89114dd77524ad95e7cb78fe50d29f1c9067adc1c2d4c",
             memo: "Hello world",
             memoHex: "48656c6c6f20776f726c64",
@@ -226,8 +221,7 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
           timestamp: new Date(new Date().setDate(new Date().getDate() - 1)),
           assetBalanceDeltas: [
             {
-              assetId:
-                "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+              assetId: IRON_ASSET_ID_HEX,
               delta: "20",
             },
           ],
@@ -244,8 +238,7 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
           mints: [],
           notes: [
             {
-              assetId:
-                "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+              assetId: IRON_ASSET_ID_HEX,
               hash: "3434291950e34661d8a89114dd77524ad95e7cb78fe50d29f1c9067adc1c2d4c",
               memo: "Hello world",
               memoHex: "48656c6c6f20776f726c64",
@@ -275,8 +268,7 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
         head: null,
         balances: {
           iron: {
-            assetId:
-              "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+            assetId: IRON_ASSET_ID_HEX,
             available: "0",
             confirmed: "0",
             pending: "0",

@@ -25,7 +25,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "react-strict-dom": "^0.0.28"
+    "react-strict-dom": "^0.0.29"
   },
   "peerDependencies": {
     "react": "^18",

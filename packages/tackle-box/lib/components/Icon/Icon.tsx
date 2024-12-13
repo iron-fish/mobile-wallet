@@ -8,6 +8,7 @@ import Gear from "./svg/gear.svg?react";
 import HamburgerMenu from "./svg/hamburger-menu.svg?react";
 import FaceId from "./svg/face-id.svg?react";
 import NumberPadOrchid from "./svg/number-pad--orchid.svg?react";
+
 const ICONS = {
   "arrow-receive": ArrowReceive,
   "arrow-send": ArrowSend,

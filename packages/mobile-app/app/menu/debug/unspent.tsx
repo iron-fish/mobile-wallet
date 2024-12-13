@@ -1,6 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Network } from "../../../data/constants";
+import { IRON_ASSET_ID_HEX, Network } from "../../../data/constants";
 import { wallet } from "../../../data/wallet/wallet";
 import { Blockchain } from "../../../data/blockchain";
 import * as Uint8ArrayUtils from "../../../utils/uint8Array";
@@ -50,9 +50,7 @@ export default function MenuDebugUnspentNotes() {
               seq.sequence,
               2,
               account?.id,
-              Uint8ArrayUtils.fromHex(
-                "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
-              ),
+              Uint8ArrayUtils.fromHex(IRON_ASSET_ID_HEX),
               Network.TESTNET,
             );
             setNotes(notes);

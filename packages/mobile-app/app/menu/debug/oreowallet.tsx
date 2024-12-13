@@ -1,6 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { Button, StyleSheet, Text, View } from "react-native";
-import { Network } from "../../../data/constants";
+import { IRON_ASSET_ID_HEX, Network } from "../../../data/constants";
 import { OreowalletServerApi } from "../../../data/oreowalletServerApi/oreowalletServerApi";
 import { useFacade } from "../../../data/facades";
 import {
@@ -81,8 +81,7 @@ export default function MenuDebugOreowallet() {
                     // TODO: Insert an address here
                     publicAddress: "",
                     amount: "100",
-                    assetId:
-                      "51f33a2f14f92735e562dc658a5639279ddca3d5079a6d1242b2a588a9cbf44c",
+                    assetId: IRON_ASSET_ID_HEX,
                   },
                 ],
               },
