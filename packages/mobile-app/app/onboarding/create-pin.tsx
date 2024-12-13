@@ -1,69 +1,65 @@
-import { StyleSheet, View, KeyboardAvoidingView, Platform } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
-import { Box, Button, PinInput, Text, VStack, css } from "@ironfish/tackle-box";
+import { StyleSheet, KeyboardAvoidingView, Platform, View } from "react-native";
+import { useHeaderHeight } from "@react-navigation/elements";
+import { Button } from "@ironfish/tackle-box";
+import { Stack, useRouter } from "expo-router";
+import { usePin } from "../../hooks/usePin";
+import { PinInputComponent } from "@/components/PinInputComponent";
 
 const styles = StyleSheet.create({
   keyboardAvoidingView: {
     flex: 1,
-    justifyContent: "space-between",
-    alignItems: "center",
     backgroundColor: "white",
   },
-  root: {
+  innerContainer: {
     flex: 1,
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 24,
-    // backgroundColor: "white",
-  },
-  cell: {
-    width: 40,
-    height: 40,
-    lineHeight: 40,
-    fontSize: 24,
-    borderWidth: 2,
-    borderColor: "transparent",
-    textAlign: "center",
-    borderRadius: 10,
-  },
-  filledCell: {
-    width: 40,
-    height: 40,
-    lineHeight: 40,
-    fontSize: 24,
-    borderWidth: 2,
-    borderColor: "transparent",
-    textAlign: "center",
-    borderRadius: 10,
-    color: "red",
-  },
-  focusCell: {
-    borderColor: "#000",
+    paddingHorizontal: 16,
+    paddingVertical: 32,
   },
 });
 
+const createPinText =
+  "Set a 4-8 digit PIN to prevent others from accessing your Iron Fish account.";
+
 export default function CreatePin() {
-  const [value, setValue] = useState("");
+  const { pinValue, setPinValue, isPinValid, error, setError, MAX_PIN_LENGTH } =
+    usePin();
+  const headerHeight = useHeaderHeight();
+  const router = useRouter();
 
   return (
-    <KeyboardAvoidingView
-      style={styles.keyboardAvoidingView}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <VStack gap={16}>
-        <Text color="textSecondary" textAlign="center">
-          Set a 4-8 digit PIN to prevent others from accessing your Iron Fish
-          account.
-        </Text>
-        <PinInput
-          pinValue={value}
-          onChange={setValue}
-          pinLength={8}
-          aria-label="Security PIN input"
-        />
-      </VStack>
-      <Button title="Continue" />
-    </KeyboardAvoidingView>
+    <>
+      <Stack.Screen
+        options={{
+          headerTitle: "Create your PIN",
+        }}
+      />
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={headerHeight}
+      >
+        <View style={styles.innerContainer}>
+          <PinInputComponent
+            pinLength={MAX_PIN_LENGTH}
+            onPinChange={setPinValue}
+            error={error}
+            setError={setError}
+            promptText={createPinText}
+          />
+          <Button
+            disabled={!isPinValid}
+            title="Continue"
+            onClick={() =>
+              router.push({
+                pathname: "/onboarding/confirm-pin",
+                params: { createPinValue: pinValue },
+              })
+            }
+          />
+        </View>
+      </KeyboardAvoidingView>
+    </>
   );
 }

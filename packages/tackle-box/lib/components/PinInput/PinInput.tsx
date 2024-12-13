@@ -1,26 +1,19 @@
-import {
-  useState,
-  useRef,
-  KeyboardEvent,
-  ClipboardEvent,
-  useEffect,
-} from "react";
+import { useState, useRef, KeyboardEvent, useEffect } from "react";
 import { html, css } from "react-strict-dom";
 import { Icon } from "../Icon/Icon";
-import { Text } from "@/components/Text/Text";
 import { colors } from "@/vars/colors.stylex";
 
 const styles = css.create({
   container: {
-    borderColor: colors.border,
-    borderRadius: 8,
+    borderColor: colors.borderLight,
+    borderRadius: 3,
     borderWidth: 1,
-    boxSizing: "border-box",
     display: "flex",
+    height: 60,
     justifyContent: "space-around",
     flexDirection: "row",
+    paddingInline: 16,
     position: "relative",
-    width: "100%",
   },
   input: {
     height: 36,
@@ -39,9 +32,6 @@ const styles = css.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  inputFocused: {
-    // outline: "none",
-  },
   visuallyHidden: {
     position: "absolute",
     width: 1,
@@ -49,12 +39,14 @@ const styles = css.create({
     padding: 0,
     margin: -1,
     overflow: "hidden",
-    // whiteSpace: "nowrap",
     borderWidth: 0,
-    opacity: 0.015,
   },
-  inputFilled: {
+  inputMasked: {
     color: "orchid",
+  },
+  inputUnmasked: {
+    color: colors.textPrimary,
+    fontSize: 36,
   },
   eyeIcon: {
     borderColor: "transparent",
@@ -79,6 +71,7 @@ type PinInputProps = {
 
 const MASKING_ICON = "●";
 
+// Note: This does not support pasting
 export function PinInput({
   pinLength = 8,
   pinValue,
@@ -92,8 +85,9 @@ export function PinInput({
 
   // We need to run masking whenever the showPin state changes
   useEffect(() => {
-    if (!displayValues.length && pinValue) {
+    if (displayValues.length !== pinValue?.length) {
       handleMasking("", pinValue);
+      focusInput(pinValue.length);
     }
   });
 
@@ -104,12 +98,11 @@ export function PinInput({
   const handleChange = (index: number, inputValue: string) => {
     const isBackspace = inputValue === "";
     if (!/^\d*$/.test(inputValue) && !isBackspace) return;
-    console.log("running handleChange and isBackspace", isBackspace);
+
     if (isBackspace) {
       // Remove last character from pinValue and set it
       const newPinValue = pinValue.slice(0, -1);
       onChange(newPinValue);
-      console.log("newPinValue", newPinValue);
       handleMasking(inputValue, newPinValue);
       focusInput(index);
     } else {
@@ -163,83 +156,71 @@ export function PinInput({
     }
   };
 
-  const handlePaste = (e: ClipboardEvent) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData("text").slice(0, pinLength);
-    if (!/^\d*$/.test(pastedData)) return;
-    onChange(pastedData.padEnd(pinLength, ""));
-  };
-
   return (
-    <>
-      <html.div>
-        <Text>InputValue: {pinValue}</Text>
-        <Text>DisplayValues: {displayValues.join("")}</Text>
-        <Text>showPin: {showPin ? "true" : "false"}</Text>
-      </html.div>
-      <html.div style={styles.container} role="group" aria-label={ariaLabel}>
-        <html.input
-          type="password"
-          inputMode="numeric"
-          style={styles.visuallyHidden}
-          aria-hidden={true}
-          onPaste={handlePaste}
-        />
-        <html.div style={styles.inputContainer}>
-          {Array.from({ length: pinLength }).map((_, index) => {
-            const inputValue = displayValues?.[index] || "";
-            return (
-              <html.input
-                key={index}
-                ref={(el) => (inputRefs.current[index] = el)}
-                type="text"
-                placeholder={MASKING_ICON}
-                inputMode="numeric"
-                maxLength={1}
-                value={inputValue}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  console.log("running onChange");
-                  handleChange(index, e.target.value);
-                }}
-                onKeyDown={(e) => {
-                  // The onChange event will handle the backspace case if a value exists
-                  if (!inputValue) {
-                    handleKeyDown(index, e as KeyboardEvent);
-                  }
-                }}
-                onFocus={() => {
-                  let nextAvailableInput;
+    <html.div style={styles.container} role="group" aria-label={ariaLabel}>
+      <html.div style={styles.inputContainer}>
+        {Array.from({ length: pinLength }).map((_, index) => {
+          const inputValue = displayValues?.[index] || "";
+          return (
+            <html.input
+              key={index}
+              ref={(el) => (inputRefs.current[index] = el)}
+              type="text"
+              placeholder={MASKING_ICON}
+              inputMode="numeric"
+              maxLength={1}
+              value={inputValue}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                console.log("running onChange");
+                console.log("e.target.value", e.target.value);
+                handleChange(index, e.target.value);
+              }}
+              onKeyDown={(e) => {
+                // The onChange event will handle the backspace case if a value exists
+                if (!inputValue) {
+                  handleKeyDown(index, e as KeyboardEvent);
+                }
+              }}
+              onFocus={() => {
+                let nextAvailableInput;
 
-                  if (!pinValue) {
-                    nextAvailableInput = inputRefs.current[0];
-                  } else if (pinValue.length < pinLength) {
-                    nextAvailableInput = inputRefs.current[pinValue.length];
-                  } else {
-                    nextAvailableInput = inputRefs.current[pinLength];
-                  }
-                  if (nextAvailableInput) {
-                    nextAvailableInput.focus();
-                  }
-                }}
-                style={[styles.input, styles.inputFilled]}
-                aria-label={`Pin location ${index + 1}`}
-              />
-            );
-          })}
-          <html.button
-            onClick={() => {
-              const newShowPin = !showPin;
-              setShowPin(newShowPin);
-              handleMasking("", pinValue, newShowPin);
-            }}
-            aria-label={showPin ? "Show PIN" : "Hide PIN"}
-            style={styles.eyeIcon}
-          >
-            <Icon name={showPin ? "eye-slash" : "eye"} />
-          </html.button>
+                if (!pinValue) {
+                  nextAvailableInput = inputRefs.current[0];
+                } else if (pinValue.length < pinLength) {
+                  nextAvailableInput = inputRefs.current[pinValue.length];
+                } else {
+                  nextAvailableInput = inputRefs.current[pinLength];
+                }
+                if (nextAvailableInput) {
+                  nextAvailableInput.focus();
+                }
+              }}
+              style={[
+                styles.input,
+                showPin && inputValue
+                  ? styles.inputUnmasked
+                  : styles.inputMasked,
+              ]}
+              aria-label={`Pin location ${index + 1}`}
+            />
+          );
+        })}
+        <html.button
+          onClick={() => {
+            const newShowPin = !showPin;
+            setShowPin(newShowPin);
+            handleMasking("", pinValue, newShowPin);
+          }}
+          aria-label={showPin ? "Show PIN" : "Hide PIN"}
+          style={styles.eyeIcon}
+        >
+          <Icon name={showPin ? "eye-slash" : "eye"} />
+        </html.button>
+        <html.div aria-live="polite" style={styles.visuallyHidden}>
+          {showPin ? "PIN is visible" : "PIN is hidden"}
         </html.div>
       </html.div>
-    </>
+    </html.div>
   );
 }
 
