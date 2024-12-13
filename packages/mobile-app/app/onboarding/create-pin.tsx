@@ -1,7 +1,7 @@
 import { StyleSheet, KeyboardAvoidingView, Platform, View } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { Button } from "@ironfish/tackle-box";
-import { Stack, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { usePin } from "../../hooks/usePin";
 import { PinInputComponent } from "@/components/PinInputComponent";
 
@@ -29,37 +29,30 @@ export default function CreatePin() {
   const router = useRouter();
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerTitle: "Create your PIN",
-        }}
-      />
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoidingView}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={headerHeight}
-      >
-        <View style={styles.innerContainer}>
-          <PinInputComponent
-            pinLength={MAX_PIN_LENGTH}
-            onPinChange={setPinValue}
-            error={error}
-            setError={setError}
-            promptText={createPinText}
-          />
-          <Button
-            disabled={!isPinValid}
-            title="Continue"
-            onClick={() =>
-              router.push({
-                pathname: "/onboarding/confirm-pin",
-                params: { createPinValue: pinValue },
-              })
-            }
-          />
-        </View>
-      </KeyboardAvoidingView>
-    </>
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoidingView}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={headerHeight}
+    >
+      <View style={styles.innerContainer}>
+        <PinInputComponent
+          pinLength={MAX_PIN_LENGTH}
+          onPinChange={setPinValue}
+          error={error}
+          setError={setError}
+          promptText={createPinText}
+        />
+        <Button
+          disabled={!isPinValid}
+          title="Continue"
+          onClick={() =>
+            router.push({
+              pathname: "/onboarding/confirm-pin",
+              params: { createPinValue: pinValue },
+            })
+          }
+        />
+      </View>
+    </KeyboardAvoidingView>
   );
 }

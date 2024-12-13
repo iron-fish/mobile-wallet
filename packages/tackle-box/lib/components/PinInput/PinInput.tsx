@@ -91,10 +91,6 @@ export function PinInput({
     }
   });
 
-  const focusInput = (index: number) => {
-    inputRefs.current[index]?.focus();
-  };
-
   const handleChange = (index: number, inputValue: string) => {
     const isBackspace = inputValue === "";
     if (!/^\d*$/.test(inputValue) && !isBackspace) return;
@@ -156,6 +152,26 @@ export function PinInput({
     }
   };
 
+  const focusInput = (index: number) => {
+    inputRefs.current[index]?.focus();
+  };
+
+  // Focus the next available input
+  const handleOnFocus = () => {
+    let nextAvailableInput;
+
+    if (!pinValue) {
+      nextAvailableInput = inputRefs.current[0];
+    } else if (pinValue.length < pinLength) {
+      nextAvailableInput = inputRefs.current[pinValue.length];
+    } else {
+      nextAvailableInput = inputRefs.current[pinLength];
+    }
+    if (nextAvailableInput) {
+      nextAvailableInput.focus();
+    }
+  };
+
   return (
     <html.div style={styles.container} role="group" aria-label={ariaLabel}>
       <html.div style={styles.inputContainer}>
@@ -171,8 +187,6 @@ export function PinInput({
               maxLength={1}
               value={inputValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                console.log("running onChange");
-                console.log("e.target.value", e.target.value);
                 handleChange(index, e.target.value);
               }}
               onKeyDown={(e) => {
@@ -182,18 +196,7 @@ export function PinInput({
                 }
               }}
               onFocus={() => {
-                let nextAvailableInput;
-
-                if (!pinValue) {
-                  nextAvailableInput = inputRefs.current[0];
-                } else if (pinValue.length < pinLength) {
-                  nextAvailableInput = inputRefs.current[pinValue.length];
-                } else {
-                  nextAvailableInput = inputRefs.current[pinLength];
-                }
-                if (nextAvailableInput) {
-                  nextAvailableInput.focus();
-                }
+                handleOnFocus();
               }}
               style={[
                 styles.input,

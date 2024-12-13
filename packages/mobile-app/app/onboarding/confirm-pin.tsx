@@ -1,9 +1,9 @@
 import { StyleSheet, KeyboardAvoidingView, Platform, View } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { Button } from "@ironfish/tackle-box";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { usePin } from "../../hooks/usePin";
-import { PinInputComponent } from "@/components/PinInputComponent"; // Adjust the import path as necessary
+import { PinInputComponent } from "@/components/PinInputComponent";
 
 const styles = StyleSheet.create({
   keyboardAvoidingView: {
@@ -48,7 +48,7 @@ export default function ConfirmPin() {
             if (createPinValue !== pinValue) {
               setError("PINs do not match");
             } else {
-              console.log("PINs match - success");
+              router.push("/onboarding/name-account");
             }
           }}
         />
