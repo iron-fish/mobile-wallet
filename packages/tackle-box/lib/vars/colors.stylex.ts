@@ -39,6 +39,14 @@ export const colors = css.defineVars({
     default: palette.gray800,
     "@media (prefers-color-scheme: dark)": palette.gray100,
   },
+  backgroundActive: {
+    default: palette.gray100,
+    "@media (prefers-color-scheme: dark)": palette.gray800,
+  },
+  backgroundActiveInverse: {
+    default: palette.gray800,
+    "@media (prefers-color-scheme: dark)": palette.gray100,
+  },
   backgroundDisabled: {
     default: palette.gray100,
     "@media (prefers-color-scheme: dark)": palette.gray800,

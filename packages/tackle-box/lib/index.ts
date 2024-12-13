@@ -5,5 +5,6 @@ export { HStack, VStack } from "@/components/Stack/Stack";
 export { Text } from "@/components/Text/Text";
 export { TextInput } from "@/components/TextInput/TextInput";
 export { Icon } from "@/components/Icon/Icon";
+export { PinInput } from "@/components/PinInput/PinInput";
 export { Tabs } from "@/components/Tabs/Tabs";
 export { css } from "react-strict-dom";
