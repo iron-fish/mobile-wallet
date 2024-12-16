@@ -147,7 +147,6 @@ export function PinInput({
 
   const handleKeyDown = (index: number, e: KeyboardEvent) => {
     if (e.key === "Backspace" && index > 0) {
-      console.log("running handleKeyDown and isBackspace", index);
       handleChange(index - 1, "");
     }
   };
