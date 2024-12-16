@@ -50,7 +50,11 @@ export default function OnboardingCreate() {
           <Icon name="chevron-right" />
         </HStack>
       </LinkButton>
-      <LinkButton borderRadius={1} variant="ghost" href="/onboarding/pin">
+      <LinkButton
+        borderRadius={1}
+        variant="ghost"
+        href="/onboarding/create-pin"
+      >
         <HStack justifyContent="space-between" alignItems="center" gap={8}>
           <HStack alignItems="center" gap={4}>
             <Icon name="number-pad-orchid" />

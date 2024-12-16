@@ -17,6 +17,7 @@ export const palette = css.defineVars({
   black: "#101010",
   white: "#FFFFFF",
   pink: "#FFC0CB",
+  red: "#F15929",
   transparent: "transparent",
 });
 
@@ -36,6 +37,14 @@ export const colors = css.defineVars({
     "@media (prefers-color-scheme: dark)": palette.gray800,
   },
   backgroundHoverInverse: {
+    default: palette.gray800,
+    "@media (prefers-color-scheme: dark)": palette.gray100,
+  },
+  backgroundActive: {
+    default: palette.gray100,
+    "@media (prefers-color-scheme: dark)": palette.gray800,
+  },
+  backgroundActiveInverse: {
     default: palette.gray800,
     "@media (prefers-color-scheme: dark)": palette.gray100,
   },
@@ -78,10 +87,17 @@ export const colors = css.defineVars({
     default: palette.gray700,
     "@media (prefers-color-scheme: dark)": palette.gray300,
   },
+  textError: {
+    default: palette.red,
+  },
 
   // Border and outline colors
   border: {
     default: palette.gray900,
+    "@media (prefers-color-scheme: dark)": palette.gray700,
+  },
+  borderLight: {
+    default: palette.gray300,
     "@media (prefers-color-scheme: dark)": palette.gray700,
   },
   divider: {

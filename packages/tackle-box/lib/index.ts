@@ -7,6 +7,7 @@ export { IconButton } from "@/components/Button/IconButton";
 export { Tabs } from "@/components/Tabs/Tabs";
 export { Text } from "@/components/Text/Text";
 export { TextInput } from "@/components/TextInput/TextInput";
+export { PinInput } from "@/components/PinInput/PinInput";
 export {
   BottomSheetProvider,
   useBottomSheet,
