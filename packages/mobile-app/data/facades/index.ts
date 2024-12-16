@@ -7,7 +7,15 @@ import { chainHandlers } from "./chain/oreowalletHandlers";
 import { chainDemoHandlers } from "./chain/demoHandlers";
 import { contactsDemoHandlers } from "./contacts/demoHandlers";
 
-const DEMO_API = Boolean(process.env.EXPO_PUBLIC_DEMO_API ?? true);
+const DEMO_API = (() => {
+  const val = (process.env.EXPO_PUBLIC_DEMO_API ?? "true").toLowerCase().trim();
+
+  if (val !== "true" && val !== "false") {
+    throw new Error(`Invalid value for EXPO_PUBLIC_DEMO_API: ${val}`);
+  }
+
+  return val === "true";
+})();
 
 export const facadeContext = createFacadeContext(
   DEMO_API
