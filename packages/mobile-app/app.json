@@ -12,7 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "bundleIdentifier": "com.ironfish.mobileapp",
       "infoPlist": {
@@ -57,7 +59,9 @@
           }
         }
       ],
-      "./plugins/withPointerEvents.js"
+      "./plugins/withPointerEvents.js",
+      "expo-font",
+      "expo-sqlite"
     ]
   }
 }

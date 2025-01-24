@@ -4,7 +4,7 @@ export default function OnboardingLayout() {
   return (
     <Stack
       screenOptions={{
-        headerBackTitleVisible: false,
+        headerBackVisible: false,
       }}
     >
       <Stack.Screen
