@@ -1,7 +1,6 @@
-import { View, StyleSheet, StatusBar } from "react-native";
+import { View, StyleSheet, StatusBar, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinkButton } from "../../components/LinkButton";
-import { VStack, Text } from "@ironfish/tackle-box";
 import { LinearGradient } from "expo-linear-gradient";
 
 import LogoWithText from "../../assets/images/logo-with-text.svg";
@@ -10,6 +9,17 @@ import KeyPlantOrchid from "../../assets/images/key-plant--orchid.svg";
 const styles = StyleSheet.create({
   background: {
     zIndex: -1,
+  },
+  verticalStack: {
+    gap: 32,
+    alignItems: "center",
+  },
+  buttonStack: {
+    gap: 16,
+  },
+  titleText: {
+    fontSize: 24,
+    textAlign: "center",
   },
 });
 
@@ -27,12 +37,10 @@ export default function Onboarding() {
             locations={[0, 1]}
             style={[StyleSheet.absoluteFillObject, styles.background]}
           />
-          <VStack alignItems="center" gap={8}>
+          <View style={styles.verticalStack}>
             <LogoWithText height={18} />
-            <Text textAlign="center" size="3xl">
-              Let's Make Web3 Private
-            </Text>
-          </VStack>
+            <Text style={styles.titleText}>Let's Make Web3 Private</Text>
+          </View>
           <View
             style={{
               flex: 1,
@@ -41,7 +49,7 @@ export default function Onboarding() {
           >
             <KeyPlantOrchid style={{ aspectRatio: 0.5 }} />
           </View>
-          <VStack gap={4}>
+          <View style={styles.buttonStack}>
             <LinkButton
               variant="outline"
               title="I have an account"
@@ -57,7 +65,7 @@ export default function Onboarding() {
               title="Language preferences"
               href="/onboarding/language/"
             />
-          </VStack>
+          </View>
         </View>
       </SafeAreaView>
       {/*

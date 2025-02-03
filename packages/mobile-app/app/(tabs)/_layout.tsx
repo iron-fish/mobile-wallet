@@ -55,15 +55,6 @@ export default function Layout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="ui"
-        options={{
-          title: "UI Kit",
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="paint-brush" size={size} color={color} />
-          ),
-        }}
-      />
     </Tabs>
   );
 }
