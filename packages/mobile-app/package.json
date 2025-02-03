@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@ironfish/sdk": "2.2.0",
-    "@ironfish/tackle-box": "*",
     "data-facade": "*",
     "expo": "^52.0.0",
     "expo-constants": "~17.0.4",

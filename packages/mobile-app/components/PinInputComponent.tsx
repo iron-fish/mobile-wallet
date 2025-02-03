@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { PinInput, Text, VStack } from "@ironfish/tackle-box";
+import { View, Text, TextInput, StyleSheet, Platform } from "react-native";
 
 interface PinInputComponentProps {
   pinLength: number;
@@ -8,6 +8,41 @@ interface PinInputComponentProps {
   setError: (error: string | null) => void;
   promptText: string;
 }
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: "center",
+    gap: 16,
+  },
+  promptText: {
+    fontSize: 16,
+    color: "#666666",
+    textAlign: "center",
+    paddingHorizontal: 16,
+  },
+  pinInput: {
+    width: "80%",
+    height: 50,
+    fontSize: 24,
+    textAlign: "center",
+    letterSpacing: 16,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 8,
+    ...Platform.select({
+      ios: {
+        padding: 12,
+      },
+      android: {
+        padding: 8,
+      },
+    }),
+  },
+  errorText: {
+    fontSize: 14,
+    color: "#FF3B30",
+    textAlign: "center",
+  },
+});
 
 export function PinInputComponent({
   pinLength,
@@ -19,27 +54,26 @@ export function PinInputComponent({
   const [pinValue, setPinValue] = useState("");
 
   const handlePinChange = (value: string) => {
+    // Only allow numbers and limit to pinLength
+    const numericValue = value.replace(/[^0-9]/g, "").slice(0, pinLength);
     setError(null);
-    setPinValue(value);
-    onPinChange(value);
+    setPinValue(numericValue);
+    onPinChange(numericValue);
   };
 
   return (
-    <VStack gap={8}>
-      <Text size="md" color="textSecondary" textAlign="center">
-        {promptText}
-      </Text>
-      <PinInput
-        pinValue={pinValue}
-        onChange={handlePinChange}
-        pinLength={pinLength}
-        aria-label="Security PIN input"
+    <View style={styles.container}>
+      <Text style={styles.promptText}>{promptText}</Text>
+      <TextInput
+        style={styles.pinInput}
+        value={pinValue}
+        onChangeText={handlePinChange}
+        keyboardType="number-pad"
+        maxLength={pinLength}
+        secureTextEntry={true}
+        autoFocus={true}
       />
-      {error && (
-        <Text size="sm" color="textError" textAlign="center">
-          {error}
-        </Text>
-      )}
-    </VStack>
+      {error && <Text style={styles.errorText}>{error}</Text>}
+    </View>
   );
 }

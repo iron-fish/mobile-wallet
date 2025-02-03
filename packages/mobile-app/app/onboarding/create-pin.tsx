@@ -1,6 +1,12 @@
-import { StyleSheet, KeyboardAvoidingView, Platform, View } from "react-native";
+import {
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  View,
+  TouchableOpacity,
+  Text,
+} from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { Button } from "@ironfish/tackle-box";
 import { useRouter } from "expo-router";
 import { usePin } from "../../hooks/usePin";
 import { PinInputComponent } from "@/components/PinInputComponent";
@@ -16,6 +22,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 32,
+  },
+  button: {
+    backgroundColor: "#007AFF",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    width: "100%",
+    alignItems: "center",
+  },
+  buttonDisabled: {
+    backgroundColor: "#A1A1A1",
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 
@@ -42,16 +64,18 @@ export default function CreatePin() {
           setError={setError}
           promptText={createPinText}
         />
-        <Button
+        <TouchableOpacity
+          style={[styles.button, !isPinValid && styles.buttonDisabled]}
           disabled={!isPinValid}
-          title="Continue"
-          onClick={() =>
+          onPress={() =>
             router.push({
               pathname: "/onboarding/confirm-pin",
               params: { createPinValue: pinValue },
             })
           }
-        />
+        >
+          <Text style={styles.buttonText}>Continue</Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );

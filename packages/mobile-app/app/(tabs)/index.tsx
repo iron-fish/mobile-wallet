@@ -2,6 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import {
   ActivityIndicator,
   Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -75,22 +76,22 @@ export default function Balances() {
 
   if (getAccountResult.isLoading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <ActivityIndicator size="large" />
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (getAccountResult.data === null) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <LinkButton title="Onboarding" href="/onboarding/" />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={{ display: "flex", flexDirection: "row" }}>
         <LinkButton href="/menu/" title="Menu" />
         <LinkButton
@@ -180,7 +181,7 @@ export default function Balances() {
         )}
       </ScrollView>
       <StatusBar style="auto" />
-    </View>
+    </SafeAreaView>
   );
 }
 

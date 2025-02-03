@@ -19,16 +19,6 @@ This project was generated using [Nx](https://nx.dev).
 
 - Alternatively, install this [VSCode extension](https://ide.swmansion.com/) for running the app within your editor
 
-### Developing Tackle-Box Components
-
-When making changes to the shared component library (@ironfish/tackle-box), you'll need three terminal windows:
-
-1. Run the mobile app:
-
-2. Watch and rebuild tackle-box changes:
-   - `cd packages/tackle-box`
-   - `npm run dev:native`
-
 ## Running tasks
 
 To execute tasks with Nx use the following syntax:

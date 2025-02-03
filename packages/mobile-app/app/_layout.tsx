@@ -11,11 +11,10 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 
-import { useColorScheme } from "react-native";
+import { useColorScheme, Text } from "react-native";
 import { FacadeProvider, useFacade } from "../data/facades";
 import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
-import { BottomSheetProvider, Text } from "@ironfish/tackle-box";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,22 +70,20 @@ export default function Layout() {
       <QueryClientProvider client={queryClient}>
         <FacadeProvider>
           <DatabaseLoader>
-            <BottomSheetProvider>
-              <Stack>
-                <Stack.Screen
-                  name="(tabs)"
-                  options={{
-                    headerShown: false,
-                  }}
-                />
-                <Stack.Screen
-                  name="onboarding"
-                  options={{
-                    headerShown: false,
-                  }}
-                />
-              </Stack>
-            </BottomSheetProvider>
+            <Stack>
+              <Stack.Screen
+                name="(tabs)"
+                options={{
+                  headerShown: false,
+                }}
+              />
+              <Stack.Screen
+                name="onboarding"
+                options={{
+                  headerShown: false,
+                }}
+              />
+            </Stack>
           </DatabaseLoader>
         </FacadeProvider>
       </QueryClientProvider>
