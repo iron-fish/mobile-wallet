@@ -15,6 +15,10 @@ import { useColorScheme, Text } from "react-native";
 import { FacadeProvider, useFacade } from "../data/facades";
 import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
+import { TamaguiProvider, createTamagui } from "tamagui";
+import { defaultConfig } from "@tamagui/config/v4";
+
+const config = createTamagui(defaultConfig);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -67,26 +71,28 @@ export default function Layout() {
 
   return (
     <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
-      <QueryClientProvider client={queryClient}>
-        <FacadeProvider>
-          <DatabaseLoader>
-            <Stack>
-              <Stack.Screen
-                name="(tabs)"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="onboarding"
-                options={{
-                  headerShown: false,
-                }}
-              />
-            </Stack>
-          </DatabaseLoader>
-        </FacadeProvider>
-      </QueryClientProvider>
+      <TamaguiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          <FacadeProvider>
+            <DatabaseLoader>
+              <Stack>
+                <Stack.Screen
+                  name="(tabs)"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="onboarding"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+              </Stack>
+            </DatabaseLoader>
+          </FacadeProvider>
+        </QueryClientProvider>
+      </TamaguiProvider>
     </ThemeProvider>
   );
 }

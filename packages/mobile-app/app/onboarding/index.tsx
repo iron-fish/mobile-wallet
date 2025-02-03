@@ -51,7 +51,7 @@ export default function Onboarding() {
           </View>
           <View style={styles.buttonStack}>
             <LinkButton
-              variant="outline"
+              variant="outlined"
               title="I have an account"
               href="/onboarding/import-encoded/"
             />
