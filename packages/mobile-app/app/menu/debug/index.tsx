@@ -21,6 +21,7 @@ export default function MenuDebug() {
       <LinkButton title="Pending Transactions" href="/menu/debug/pending/" />
       <LinkButton title="Unspent Notes" href="/menu/debug/unspent/" />
       <LinkButton title="Oreowallet" href="/menu/debug/oreowallet/" />
+      <LinkButton title="Browser" href="/menu/debug/browser/" />
       <View>
         {walletStatus.data && (
           <>
