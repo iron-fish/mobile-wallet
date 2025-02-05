@@ -2,6 +2,7 @@
   "name": "data-facade",
   "version": "0.0.1",
   "description": "",
+  "author": "IF Labs <engineering@iflabs.network> (https://iflabs.network)",
   "license": "MPL-2.0",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
