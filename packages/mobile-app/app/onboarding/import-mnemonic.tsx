@@ -69,6 +69,7 @@ export default function ImportMnemonic() {
       });
       router.push("/(tabs)/");
     } catch (error) {
+      console.error("Import account error:", error);
       setPhraseError(
         "Failed to import account. Please check your mnemonic phrase and try again.",
       );
