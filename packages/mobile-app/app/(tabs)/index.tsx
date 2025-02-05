@@ -64,10 +64,10 @@ export default function Balances() {
   );
 
   const getWalletStatusResult = facade.getWalletStatus.useQuery(
-    { accountName: account },
+    { accountName },
     {
       refetchInterval: 5000,
-      enabled: account !== "",
+      enabled: accountName !== "",
     },
   );
 
