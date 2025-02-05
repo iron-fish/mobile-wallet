@@ -99,8 +99,13 @@ export class Wallet {
 
     if (!account) return;
 
+    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+      name: account.name,
+    });
+
     const status = await OreowalletServerApi.getAccountStatus(network, {
-      address: account.publicAddress,
+      publicAddress: account.publicAddress,
+      viewKey: decodedAccount.viewKey,
     });
 
     const balances = await this.getBalances(account.id, network);
@@ -124,13 +129,16 @@ export class Wallet {
 
     return await Promise.all(
       accounts.map(async (a) => {
-        console.log(`account ${a.publicAddress}`);
         const balances = await this.getBalances(a.id, network);
-        console.log("got balances");
-        const status = await OreowalletServerApi.getAccountStatus(network, {
-          address: a.publicAddress,
+
+        const decodedAccount = decodeAccount(a.viewOnlyAccount, {
+          name: a.name,
         });
-        console.log("got status");
+
+        const status = await OreowalletServerApi.getAccountStatus(network, {
+          publicAddress: a.publicAddress,
+          viewKey: decodedAccount.viewKey,
+        });
         return {
           ...a,
           head: status.account.head
@@ -158,9 +166,14 @@ export class Wallet {
 
     if (!account) return;
 
+    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+      name: account.name,
+    });
+
     const balances = await this.getBalances(account.id, network);
     const status = await OreowalletServerApi.getAccountStatus(network, {
-      address: account.publicAddress,
+      publicAddress: account.publicAddress,
+      viewKey: decodedAccount.viewKey,
     });
 
     return {
@@ -198,9 +211,13 @@ export class Wallet {
     const account = await this.state.db.getAccountById(accountId);
     if (!account) return [];
 
+    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+      name: account.name,
+    });
+
     const response = await OreowalletServerApi.getBalances(
       network,
-      account.publicAddress,
+      { publicAddress: account.publicAddress, viewKey: decodedAccount.viewKey },
       CONFIRMATIONS,
     );
 
@@ -290,9 +307,13 @@ export class Wallet {
       throw new Error(`No account found with name ${accountName}`);
     }
 
+    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+      name: account.name,
+    });
+
     const txn = await OreowalletServerApi.getTransaction(
       network,
-      account.publicAddress,
+      { publicAddress: account.publicAddress, viewKey: decodedAccount.viewKey },
       Uint8ArrayUtils.toHex(transactionHash),
     );
 
@@ -316,9 +337,13 @@ export class Wallet {
       throw new Error(`No account found with name ${accountName}`);
     }
 
+    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+      name: account.name,
+    });
+
     const results = await OreowalletServerApi.getTransactions(
       network,
-      account.publicAddress,
+      { publicAddress: account.publicAddress, viewKey: decodedAccount.viewKey },
       50,
     );
 
@@ -358,11 +383,18 @@ export class Wallet {
       throw new Error("Cannot send transactions from a view-only account");
     }
 
+    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+      name: account.name,
+    });
+
     // Attempt to fund the transaction
     const createTransactionResponse =
       await OreowalletServerApi.createTransaction(
         network,
-        account.publicAddress,
+        {
+          publicAddress: account.publicAddress,
+          viewKey: decodedAccount.viewKey,
+        },
         {
           outputs: outputs.map((output) => ({
             publicAddress: account.publicAddress,
@@ -408,12 +440,16 @@ export class Wallet {
       throw new Error("Cannot send transactions from a view-only account");
     }
 
+    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+      name: account.name,
+    });
+
     console.log(`Account fetched in: ${performance.now() - lastTime}ms`);
     lastTime = performance.now();
 
     const createTransactionResult = await OreowalletServerApi.createTransaction(
       network,
-      account.publicAddress,
+      { publicAddress: account.publicAddress, viewKey: decodedAccount.viewKey },
       {
         outputs,
         fee,
