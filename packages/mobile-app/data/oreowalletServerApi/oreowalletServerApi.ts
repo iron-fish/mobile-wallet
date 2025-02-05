@@ -195,7 +195,7 @@ class OreowalletServer {
 
       return result;
     } catch (e: unknown) {
-      console.log(url)
+      console.log(url);
       console.error(e instanceof Error ? e.message : JSON.stringify(e));
       throw e;
     }
@@ -357,13 +357,14 @@ class OreowalletServer {
     return response.data.transaction;
   }
 
-  async getLatestBlock(network: Network) {
+  async getLatestBlock(network: Network, account: AccountInfo) {
     const url = OREOWALLET_SERVER_URLS[network] + `latestBlock`;
 
     LOG_REQUESTS && console.log("[OreowalletServer] Calling getLatestBlock");
 
     const response = await this.fetchOreo<LatestBlockResponse>(url, {
       method: "GET",
+      account,
     });
 
     if (!response.data) {

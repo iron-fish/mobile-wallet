@@ -139,7 +139,7 @@ export type WalletHandlers = {
   getTransaction: Query<
     (args: { accountName: string; hash: string }) => Transaction | null
   >;
-  getWalletStatus: Query<() => WalletStatus>;
+  getWalletStatus: Query<(args: { accountName: string }) => WalletStatus>;
   importAccount: Mutation<
     (args: { account: string; name?: string }) => Account
   >;

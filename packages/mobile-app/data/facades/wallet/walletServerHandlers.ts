@@ -306,10 +306,15 @@ export const walletHandlers = f.facade<WalletHandlers>({
       }));
     },
   ),
-  getWalletStatus: f.handler.query(async (): Promise<WalletStatus> => {
-    const block = await Blockchain.getLatestBlock(Network.TESTNET);
-    return { status: wallet.scanState.type, latestKnownBlock: block.sequence };
-  }),
+  getWalletStatus: f.handler.query(
+    async ({ accountName }: { accountName: string }): Promise<WalletStatus> => {
+      const block = await Blockchain.getLatestBlock(Network.TESTNET);
+      return {
+        status: wallet.scanState.type,
+        latestKnownBlock: block.sequence,
+      };
+    },
+  ),
   importAccount: f.handler.mutation(
     async ({
       account,

@@ -14,6 +14,7 @@ import { Blockchain } from "../blockchain";
 import { Output } from "../facades/wallet/types";
 import { getFee } from "@ironfish/sdk/build/src/memPool";
 import { OreowalletServerApi } from "../oreowalletServerApi/oreowalletServerApi";
+import { IronFishApi } from "../api/api";
 
 type StartedState = { type: "STARTED"; db: WalletDb; assetLoader: AssetLoader };
 type WalletState = { type: "STOPPED" } | { type: "LOADING" } | StartedState;
@@ -63,7 +64,7 @@ export class Wallet {
 
     const key = IronfishNativeModule.generateKey();
 
-    const latestBlock = await OreowalletServerApi.getLatestBlock(network);
+    const latestBlock = await IronFishApi.getHead(network);
 
     await OreowalletServerApi.importAccount(network, {
       viewKey: key.viewKey,
@@ -71,15 +72,15 @@ export class Wallet {
       outgoingViewKey: key.outgoingViewKey,
       publicAddress: key.publicAddress,
       createdAt: {
-        hash: latestBlock.currentBlockIdentifier.hash,
-        sequence: Number(latestBlock.currentBlockIdentifier.index),
+        hash: latestBlock.hash,
+        sequence: latestBlock.sequence,
       },
     });
 
     return await this.state.db.createAccount({
       createdAt: {
-        hash: Buffer.from(latestBlock.currentBlockIdentifier.hash, "hex"),
-        sequence: Number(latestBlock.currentBlockIdentifier.index),
+        hash: Buffer.from(latestBlock.hash, "hex"),
+        sequence: latestBlock.sequence,
       },
       spendingKey: key.spendingKey,
       incomingViewKey: key.incomingViewKey,
@@ -496,7 +497,10 @@ export class Wallet {
       throw new Error("Spending key not found");
     }
 
-    const latestBlock = await OreowalletServerApi.getLatestBlock(network);
+    const latestBlock = await OreowalletServerApi.getLatestBlock(network, {
+      publicAddress: account.publicAddress,
+      viewKey: decodedAccount.viewKey,
+    });
 
     console.log(`Latest block fetched in ${performance.now() - lastTime}ms`);
     lastTime = performance.now();
