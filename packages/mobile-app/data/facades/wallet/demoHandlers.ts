@@ -255,9 +255,11 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
       ];
     },
   ),
-  getWalletStatus: f.handler.query(async () => {
-    return WALLET_STATUS;
-  }),
+  getWalletStatus: f.handler.query(
+    async ({ accountName }: { accountName: string }) => {
+      return WALLET_STATUS;
+    },
+  ),
   importAccount: f.handler.mutation(
     async ({ account, name }: { account: string; name: string }) => {
       const k = generateKey();

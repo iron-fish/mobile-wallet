@@ -20,3 +20,22 @@ export interface SerializedVerifiedAssetMetadata {
   logo_uri?: string;
   website?: string;
 }
+
+export interface SerializedHead {
+  id: number;
+  hash: string;
+  sequence: number;
+  previous_block_hash: string;
+  main: boolean;
+  difficulty: number;
+  transactions_count: number;
+  timestamp: string;
+  graffiti: string;
+  size: number;
+  time_since_last_block_ms: number;
+  object: "block";
+  hash_rate: number;
+  reward: string;
+  circulating_supply: number;
+  total_supply: number;
+}
