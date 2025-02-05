@@ -52,7 +52,7 @@ module.exports = (() => {
       path.resolve(projectRoot, "node_modules"),
       path.resolve(monorepoRoot, "node_modules"),
     ],
-    disableHierarchicalLookup: true,
+    // disableHierarchicalLookup: true,
     resolveRequest: (context, moduleName, platform) => {
       if (shims[moduleName]) {
         return shims[moduleName];
@@ -97,7 +97,6 @@ module.exports = (() => {
   config.transformer = {
     ...transformer,
     unstable_allowRequireContext: true,
-    babelTransformerPath: require.resolve("react-native-svg-transformer/expo"),
   };
 
   return config;
