@@ -54,7 +54,7 @@ class MessageHandler {
       ) {
         throw new Error("Invalid message");
       }
-    } catch (e) {
+    } catch {
       console.error(`Invalid message: ${data}`);
       return;
     }
