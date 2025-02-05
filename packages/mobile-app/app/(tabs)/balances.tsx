@@ -1,6 +1,17 @@
 import { SafeAreaGradient } from "@/components/SafeAreaGradient/SafeAreaGradient";
 import { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  Layout,
+  Text,
+  Button,
+  Card,
+  Tab,
+  TabBar,
+  Icon,
+  IconProps,
+  useTheme,
+} from "@ui-kitten/components";
+import { StyleSheet } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -9,8 +20,26 @@ import Animated, {
 
 const GRADIENT_COLORS = ["#DE83F0", "#FFC2E8"];
 
+const MenuIcon = (props: IconProps) => <Icon {...props} name="menu-outline" />;
+const SettingsIcon = (props: IconProps) => (
+  <Icon {...props} name="settings-outline" />
+);
+const ReceiveIcon = (props: IconProps) => (
+  <Icon {...props} name="download-outline" />
+);
+const SendIcon = (props: IconProps) => (
+  <Icon {...props} name="upload-outline" />
+);
+const BridgeIcon = (props: IconProps) => (
+  <Icon {...props} name="swap-outline" />
+);
+const ChevronIcon = (props: IconProps) => (
+  <Icon {...props} name="chevron-right-outline" />
+);
+
 export default function Balances() {
   const scrollYOffset = useSharedValue(0);
+  const theme = useTheme();
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollYOffset.value = event.contentOffset.y;
@@ -23,46 +52,35 @@ export default function Balances() {
         onScroll={scrollHandler}
         contentContainerStyle={{ flexGrow: 1 }}
       >
-        <View style={styles.container}>
+        <Layout style={styles.container}>
           <AccountHeader offsetY={scrollYOffset} />
 
-          <View style={styles.contentContainer}>
+          <Layout style={styles.contentContainer}>
             <TabsRoot defaultTab="assets" />
-          </View>
-        </View>
+          </Layout>
+        </Layout>
       </Animated.ScrollView>
     </SafeAreaGradient>
   );
 }
 
 function TabsRoot({ defaultTab }: { defaultTab: string }) {
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [selectedIndex, setSelectedIndex] = useState(
+    defaultTab === "assets" ? 0 : 1,
+  );
 
   return (
-    <View>
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === "assets" && styles.activeTabButton,
-          ]}
-          onPress={() => setActiveTab("assets")}
-        >
-          <Text style={styles.tabButtonText}>Assets</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === "transactions" && styles.activeTabButton,
-          ]}
-          onPress={() => setActiveTab("transactions")}
-        >
-          <Text style={styles.tabButtonText}>Transactions</Text>
-        </TouchableOpacity>
-      </View>
+    <Layout>
+      <TabBar
+        selectedIndex={selectedIndex}
+        onSelect={(index) => setSelectedIndex(index)}
+      >
+        <Tab title="Assets" />
+        <Tab title="Transactions" />
+      </TabBar>
 
-      <View style={styles.tabContent}>
-        {activeTab === "assets" && (
+      <Layout style={styles.tabContent}>
+        {selectedIndex === 0 && (
           <>
             <AssetRow />
             <AssetRow />
@@ -72,56 +90,88 @@ function TabsRoot({ defaultTab }: { defaultTab: string }) {
             <AssetRow />
           </>
         )}
-        {activeTab === "transactions" && <BottomSheetDemo />}
-      </View>
-    </View>
+        {selectedIndex === 1 && <BottomSheetDemo />}
+      </Layout>
+    </Layout>
   );
 }
 
 function AccountHeader({ offsetY }: { offsetY: SharedValue<number> }) {
   return (
     <Animated.View style={{ transform: [{ translateY: offsetY }] }}>
-      <View style={styles.headerTop}>
-        <Text style={styles.menuIcon}>☰</Text>
-        <Text style={styles.headerTitle}>Account 1</Text>
-        <Text style={styles.settingsIcon}>⚙️</Text>
-      </View>
-      <View style={styles.headerBalance}>
-        <Text style={styles.balanceAmount}>100.55</Text>
-        <Text style={styles.balanceCurrency}>IRON</Text>
+      <Layout style={styles.headerTop}>
+        <Button
+          appearance="ghost"
+          accessoryLeft={MenuIcon}
+          style={styles.iconButton}
+        />
+        <Text category="h5" style={styles.headerTitle}>
+          Account 1
+        </Text>
+        <Button
+          appearance="ghost"
+          accessoryLeft={SettingsIcon}
+          style={styles.iconButton}
+        />
+      </Layout>
+      <Layout style={styles.headerBalance}>
+        <Text category="h1" style={styles.balanceAmount}>
+          100.55
+        </Text>
+        <Text category="s1" appearance="hint">
+          IRON
+        </Text>
 
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>↓ Receive</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>↑ Send</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>⇄ Bridge</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        <Layout style={styles.actionButtons}>
+          <Button
+            appearance="ghost"
+            accessoryLeft={ReceiveIcon}
+            style={styles.actionButton}
+          >
+            Receive
+          </Button>
+          <Button
+            appearance="ghost"
+            accessoryLeft={SendIcon}
+            style={styles.actionButton}
+          >
+            Send
+          </Button>
+          <Button
+            appearance="ghost"
+            accessoryLeft={BridgeIcon}
+            style={styles.actionButton}
+          >
+            Bridge
+          </Button>
+        </Layout>
+      </Layout>
     </Animated.View>
   );
 }
 
 function AssetBadge() {
-  return <View style={styles.assetBadge} />;
+  return <Layout style={styles.assetBadge} />;
 }
 
 function AssetRow() {
   return (
-    <TouchableOpacity style={styles.assetCard}>
-      <View style={styles.assetCardContent}>
+    <Card style={styles.assetCard} onPress={() => {}}>
+      <Layout style={styles.assetCardContent}>
         <AssetBadge />
-        <View style={styles.assetInfo}>
-          <Text style={styles.assetSymbol}>$IRON</Text>
-          <Text style={styles.assetAmount}>100.55</Text>
-        </View>
-        <Text style={styles.chevron}>›</Text>
-      </View>
-    </TouchableOpacity>
+        <Layout style={styles.assetInfo}>
+          <Text category="s1">$IRON</Text>
+          <Text category="p2" appearance="hint">
+            100.55
+          </Text>
+        </Layout>
+        <Icon
+          style={styles.chevron}
+          fill="#8F9BB3"
+          name="chevron-right-outline"
+        />
+      </Layout>
+    </Card>
   );
 }
 
@@ -129,51 +179,48 @@ function BottomSheetDemo() {
   const [open, setOpen] = useState(false);
 
   return (
-    <View>
-      <TouchableOpacity
-        style={styles.sheetButton}
-        onPress={() => setOpen(true)}
-      >
-        <Text>Show Bottom Sheet</Text>
-      </TouchableOpacity>
+    <Layout>
+      <Button onPress={() => setOpen(true)} style={styles.sheetButton}>
+        Show Bottom Sheet
+      </Button>
 
       {open && (
-        <View style={styles.bottomSheet}>
+        <Layout style={styles.bottomSheet}>
           <AccountSyncingDetails onClose={() => setOpen(false)} />
-        </View>
+        </Layout>
       )}
-    </View>
+    </Layout>
   );
 }
 
 function AccountSyncingDetails({ onClose }: { onClose: () => void }) {
   return (
-    <View style={styles.syncDetails}>
-      <Text style={styles.syncText}>
+    <Layout style={styles.syncDetails}>
+      <Text appearance="hint" style={styles.syncText}>
         The blockchain is currently syncing with your accounts. Your balance may
         be inaccurate and sending transactions will be disabled until the sync
         is done.
       </Text>
 
-      <View style={styles.syncStats}>
-        <View style={styles.syncRow}>
-          <Text style={styles.syncLabel}>Node Status:</Text>
-          <Text style={styles.syncValue}>Syncing Blocks</Text>
-        </View>
-        <View style={styles.syncRow}>
-          <Text style={styles.syncLabel}>Progress:</Text>
-          <Text style={styles.syncValue}>42.3%</Text>
-        </View>
-        <View style={styles.syncRow}>
-          <Text style={styles.syncLabel}>Blocks Scanned:</Text>
-          <Text style={styles.syncValue}>33645/74346</Text>
-        </View>
-      </View>
+      <Layout style={styles.syncStats}>
+        <Layout style={styles.syncRow}>
+          <Text appearance="hint">Node Status:</Text>
+          <Text>Syncing Blocks</Text>
+        </Layout>
+        <Layout style={styles.syncRow}>
+          <Text appearance="hint">Progress:</Text>
+          <Text>42.3%</Text>
+        </Layout>
+        <Layout style={styles.syncRow}>
+          <Text appearance="hint">Blocks Scanned:</Text>
+          <Text>33645/74346</Text>
+        </Layout>
+      </Layout>
 
-      <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-        <Text>Close</Text>
-      </TouchableOpacity>
-    </View>
+      <Button appearance="ghost" onPress={onClose} style={styles.closeButton}>
+        Close
+      </Button>
+    </Layout>
   );
 }
 
@@ -187,23 +234,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
   },
-  tabContainer: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E1E1E1",
-  },
-  tabButton: {
-    flex: 1,
-    padding: 16,
-    alignItems: "center",
-  },
-  activeTabButton: {
-    borderBottomWidth: 2,
-    borderBottomColor: "#000",
-  },
-  tabButtonText: {
-    fontSize: 16,
-  },
   tabContent: {
     padding: 16,
     paddingBottom: 24,
@@ -215,39 +245,28 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     alignItems: "center",
   },
-  menuIcon: {
-    fontSize: 24,
+  iconButton: {
+    padding: 0,
   },
   headerTitle: {
     flex: 1,
     textAlign: "center",
-    fontSize: 20,
-    fontWeight: "600",
-  },
-  settingsIcon: {
-    fontSize: 24,
   },
   headerBalance: {
     alignItems: "center",
     gap: 8,
   },
   balanceAmount: {
-    fontSize: 24,
-    fontWeight: "600",
-  },
-  balanceCurrency: {
-    fontSize: 16,
+    textAlign: "center",
   },
   actionButtons: {
     flexDirection: "row",
     padding: 24,
     gap: 16,
+    justifyContent: "center",
   },
   actionButton: {
-    alignItems: "center",
-  },
-  actionButtonText: {
-    fontSize: 16,
+    flexDirection: "column",
   },
   assetBadge: {
     width: 40,
@@ -261,11 +280,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   assetCard: {
-    borderWidth: 1,
-    borderColor: "#E1E1E1",
-    borderRadius: 8,
-    padding: 16,
-    backgroundColor: "#fff",
+    marginVertical: 4,
   },
   assetCardContent: {
     flexDirection: "row",
@@ -274,22 +289,14 @@ const styles = StyleSheet.create({
   },
   assetInfo: {
     gap: 4,
-  },
-  assetSymbol: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  assetAmount: {
-    fontSize: 14,
-    color: "#666",
+    flex: 1,
   },
   chevron: {
-    marginLeft: "auto",
-    fontSize: 20,
+    width: 24,
+    height: 24,
   },
   sheetButton: {
-    padding: 16,
-    alignItems: "center",
+    margin: 16,
   },
   bottomSheet: {
     position: "absolute",
@@ -310,7 +317,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   syncText: {
-    color: "#666",
+    textAlign: "center",
   },
   syncStats: {
     gap: 16,
@@ -320,14 +327,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  syncLabel: {
-    color: "#666",
-  },
-  syncValue: {
-    fontWeight: "500",
-  },
   closeButton: {
-    padding: 16,
-    alignItems: "center",
+    marginTop: 8,
   },
 });
