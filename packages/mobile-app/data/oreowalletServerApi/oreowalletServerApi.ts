@@ -406,6 +406,7 @@ class OreowalletServer {
 
   async broadcastTransaction(
     network: Network,
+    account: AccountInfo,
     transaction: string,
   ): Promise<BroadcastTransactionResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `broadcastTx`;
@@ -414,6 +415,7 @@ class OreowalletServer {
 
     const response = await this.fetchOreo<BroadcastTransactionResponse>(url, {
       method: "POST",
+      account,
       body: { transaction },
     });
 

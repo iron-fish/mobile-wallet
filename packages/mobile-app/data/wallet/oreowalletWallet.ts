@@ -518,6 +518,7 @@ export class Wallet {
 
     const broadcastResult = await OreowalletServerApi.broadcastTransaction(
       network,
+      { publicAddress: account.publicAddress, viewKey: decodedAccount.viewKey },
       Uint8ArrayUtils.toHex(postedTransaction),
     );
 
