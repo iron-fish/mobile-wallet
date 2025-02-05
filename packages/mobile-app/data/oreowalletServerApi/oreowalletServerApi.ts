@@ -1,4 +1,6 @@
 import { Network } from "../constants";
+import * as Crypto from "expo-crypto";
+import * as Uint8ArrayUtils from "../../utils/uint8Array";
 
 const OREOWALLET_SERVER_URLS: Record<Network, string> = {
   [Network.MAINNET]: "https://api.oreowallet.com/",
@@ -12,12 +14,14 @@ const OREOWALLET_SERVER_URLS: Record<Network, string> = {
 //   [Network.TESTNET]: "https://prover.oreowallet.com/",
 // };
 
+type OreowalletSuccessServerResponse<T> = {
+  data: T;
+  error: undefined;
+  code: number;
+};
+
 type OreowalletServerResponse<T> =
-  | {
-      data: T;
-      error: undefined;
-      code: number;
-    }
+  | OreowalletSuccessServerResponse<T>
   | {
       data: undefined;
       error: string;
@@ -128,10 +132,75 @@ type BroadcastTransactionResponse = {
 
 const LOG_REQUESTS = true;
 
+type AccountInfo = { publicAddress: string; viewKey: string };
+
 /**
  * Contains methods for making API requests to the Oreowallet server.
  */
 class OreowalletServer {
+  private viewKeyToAuthTokenCache: Map<string, string> = new Map();
+
+  private async getAuthToken(account: AccountInfo) {
+    let base64Token = this.viewKeyToAuthTokenCache.get(account.viewKey);
+    if (base64Token) return base64Token;
+
+    const hash = Uint8ArrayUtils.toHex(
+      new Uint8Array(
+        await Crypto.digest(
+          Crypto.CryptoDigestAlgorithm.SHA256,
+          Uint8ArrayUtils.fromHex(account.viewKey),
+        ),
+      ),
+    );
+    const token = `${account.publicAddress}:${hash}`;
+    base64Token = Buffer.from(token).toString("base64");
+    this.viewKeyToAuthTokenCache.set(account.viewKey, base64Token);
+
+    return base64Token;
+  }
+
+  private async fetchOreo<T>(
+    url: string,
+    options: {
+      method: "POST" | "GET";
+      account?: AccountInfo;
+      body?: unknown;
+    },
+  ): Promise<OreowalletServerResponse<T>> {
+    try {
+      const fetchResult = await fetch(url, {
+        method: options.method,
+        headers: {
+          "Content-Type": "application/json",
+          ...(options.account
+            ? {
+                Authorization: `Basic ${await this.getAuthToken(options.account)}`,
+              }
+            : {}),
+        },
+        ...(options.body ? { body: JSON.stringify(options.body) } : {}),
+      });
+
+      const responseText = await fetchResult.text();
+
+      if (!fetchResult.ok) {
+        throw new Error(responseText);
+      }
+
+      const result = JSON.parse(responseText) as OreowalletServerResponse<T>;
+
+      if (result.error) {
+        console.error(result.error);
+      }
+
+      return result;
+    } catch (e: unknown) {
+      console.log(url);
+      console.error(e instanceof Error ? e.message : JSON.stringify(e));
+      throw e;
+    }
+  }
+
   async importAccount(
     network: Network,
     account: {
@@ -146,18 +215,13 @@ class OreowalletServer {
     },
   ): Promise<ImportAccountResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + "import";
-
     LOG_REQUESTS && console.log("[OreowalletServer] Calling importAccount");
 
-    const fetchResult = await fetch(url, {
+    const response = await this.fetchOreo<ImportAccountResponse>(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(account),
+      body: account,
     });
-    const response =
-      (await fetchResult.json()) as OreowalletServerResponse<ImportAccountResponse>;
+
     if (!response.data) {
       // Code for "Account already exists"
       if (response.code === 601) {
@@ -165,51 +229,42 @@ class OreowalletServer {
       }
       throw new Error(response.error);
     }
-
     return response.data;
   }
 
   async removeAccount(
     network: Network,
-    account: { address: string },
+    account: AccountInfo,
   ): Promise<RemoveAccountResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `remove`;
-
     LOG_REQUESTS && console.log("[OreowalletServer] Calling removeAccount");
 
-    const fetchResult = await fetch(url, {
+    const response = await this.fetchOreo<RemoveAccountResponse>(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(account),
+      account,
+      body: { account: account.publicAddress },
     });
-    const response =
-      (await fetchResult.json()) as OreowalletServerResponse<RemoveAccountResponse>;
+
     if (!response.data) {
       throw new Error(response.error);
     }
-
     return response.data;
   }
 
   async getAccountStatus(
     network: Network,
-    account: { address: string },
+    account: AccountInfo,
   ): Promise<AccountStatusResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `accountStatus`;
 
     LOG_REQUESTS && console.log("[OreowalletServer] Calling getAccountStatus");
 
-    const fetchResult = await fetch(url, {
+    const response = await this.fetchOreo<AccountStatusResponse>(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ account: account.address }),
+      account,
+      body: { account: account.publicAddress },
     });
-    const response =
-      (await fetchResult.json()) as OreowalletServerResponse<AccountStatusResponse>;
+
     if (!response.data) {
       throw new Error(response.error);
     }
@@ -219,46 +274,38 @@ class OreowalletServer {
 
   async rescanAccount(
     network: Network,
-    account: { address: string },
+    account: AccountInfo,
   ): Promise<AccountStatusResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `rescan`;
-
     LOG_REQUESTS && console.log("[OreowalletServer] Calling rescanAccount");
 
-    const fetchResult = await fetch(url, {
+    const response = await this.fetchOreo<AccountStatusResponse>(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ account: account.address }),
+      account,
+      body: { account: account.publicAddress },
     });
-    const response =
-      (await fetchResult.json()) as OreowalletServerResponse<AccountStatusResponse>;
+
     if (!response.data) {
       throw new Error(response.error);
     }
-
     return response.data;
   }
 
   async getBalances(
     network: Network,
-    address: string,
+    account: AccountInfo,
     confirmations: number = 2,
   ): Promise<GetBalancesResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `getBalances`;
 
     LOG_REQUESTS && console.log("[OreowalletServer] Calling getBalances");
 
-    const fetchResult = await fetch(url, {
+    const response = await this.fetchOreo<GetBalancesResponse>(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ account: address, confirmations }),
+      account,
+      body: { account: account.publicAddress, confirmations },
     });
-    const response =
-      (await fetchResult.json()) as OreowalletServerResponse<GetBalancesResponse>;
+
     if (!response.data) {
       throw new Error(response.error);
     }
@@ -268,47 +315,38 @@ class OreowalletServer {
 
   async getTransactions(
     network: Network,
-    address: string,
+    account: AccountInfo,
     limit: number = 50,
   ): Promise<GetTransactionsResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `getTransactions`;
-
     LOG_REQUESTS && console.log("[OreowalletServer] Calling getTransactions");
 
-    const fetchResult = await fetch(url, {
+    const response = await this.fetchOreo<GetTransactionsResponse>(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ account: address, limit }),
+      account,
+      body: { account: account.publicAddress, limit },
     });
-    const response =
-      (await fetchResult.json()) as OreowalletServerResponse<GetTransactionsResponse>;
+
     if (!response.data) {
       throw new Error(response.error);
     }
-
     return response.data;
   }
 
   async getTransaction(
     network: Network,
-    address: string,
+    account: AccountInfo,
     hash: string,
   ): Promise<OreowalletTransactionDetailed | undefined> {
     const url = OREOWALLET_SERVER_URLS[network] + `getTransaction`;
-
     LOG_REQUESTS && console.log("[OreowalletServer] Calling getTransaction");
 
-    const fetchResult = await fetch(url, {
+    const response = await this.fetchOreo<GetTransactionResponse>(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ account: address, hash }),
+      account,
+      body: { account: account.publicAddress, hash },
     });
-    const response =
-      (await fetchResult.json()) as OreowalletServerResponse<GetTransactionResponse>;
+
     if (!response.data) {
       // Code for "Transaction not found for account"
       if (response.code === 611) {
@@ -316,18 +354,19 @@ class OreowalletServer {
       }
       throw new Error(response.error);
     }
-
     return response.data.transaction;
   }
 
-  async getLatestBlock(network: Network) {
+  async getLatestBlock(network: Network, account: AccountInfo) {
     const url = OREOWALLET_SERVER_URLS[network] + `latestBlock`;
 
     LOG_REQUESTS && console.log("[OreowalletServer] Calling getLatestBlock");
 
-    const fetchResult = await fetch(url);
-    const response =
-      (await fetchResult.json()) as OreowalletServerResponse<LatestBlockResponse>;
+    const response = await this.fetchOreo<LatestBlockResponse>(url, {
+      method: "GET",
+      account,
+    });
+
     if (!response.data) {
       throw new Error(response.error);
     }
@@ -337,7 +376,7 @@ class OreowalletServer {
 
   async createTransaction(
     network: Network,
-    address: string,
+    account: AccountInfo,
     transactionParameters: {
       fee?: string;
       outputs?: Output[];
@@ -346,55 +385,44 @@ class OreowalletServer {
     },
   ): Promise<CreateTransactionResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `createTx`;
-
     LOG_REQUESTS && console.log("[OreowalletServer] Calling createTransaction");
 
-    const fetchResult = await fetch(url, {
+    const response = await this.fetchOreo<CreateTransactionResponse>(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        account: address,
+      account,
+      body: {
+        account: account.publicAddress,
         outputs: transactionParameters.outputs ?? [],
         mints: transactionParameters.mints ?? [],
         burns: transactionParameters.burns ?? [],
         fee: transactionParameters.fee,
-      }),
+      },
     });
-    const response =
-      (await fetchResult.json()) as OreowalletServerResponse<CreateTransactionResponse>;
+
     if (!response.data) {
       throw new Error(response.error);
     }
-
     return response.data;
   }
 
   async broadcastTransaction(
     network: Network,
+    account: AccountInfo,
     transaction: string,
   ): Promise<BroadcastTransactionResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `broadcastTx`;
-
     LOG_REQUESTS &&
       console.log("[OreowalletServer] Calling broadcastTransaction");
 
-    const fetchResult = await fetch(url, {
+    const response = await this.fetchOreo<BroadcastTransactionResponse>(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        transaction,
-      }),
+      account,
+      body: { transaction },
     });
-    const response =
-      (await fetchResult.json()) as OreowalletServerResponse<BroadcastTransactionResponse>;
+
     if (!response.data) {
       throw new Error(response.error);
     }
-
     return response.data;
   }
 }

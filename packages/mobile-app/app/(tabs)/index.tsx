@@ -63,9 +63,13 @@ export default function Balances() {
     },
   );
 
-  const getWalletStatusResult = facade.getWalletStatus.useQuery(undefined, {
-    refetchInterval: 5000,
-  });
+  const getWalletStatusResult = facade.getWalletStatus.useQuery(
+    { accountName: account },
+    {
+      refetchInterval: 5000,
+      enabled: account !== "",
+    },
+  );
 
   if (isLoading) {
     return (
