@@ -64,22 +64,6 @@ export default function OnboardingCreate() {
       <LinkButton
         borderRadius={1}
         variant="ghost"
-        href="/onboarding/biometrics"
-      >
-        <View style={styles.buttonRow}>
-          <View style={styles.buttonContent}>
-            <Text>🔒</Text>
-            <Text style={styles.buttonText}>
-              Face ID{" "}
-              <Text style={styles.buttonTextSecondary}>(Recommended)</Text>
-            </Text>
-          </View>
-          <Text>›</Text>
-        </View>
-      </LinkButton>
-      <LinkButton
-        borderRadius={1}
-        variant="ghost"
         href="/onboarding/create-pin"
       >
         <View style={styles.buttonRow}>

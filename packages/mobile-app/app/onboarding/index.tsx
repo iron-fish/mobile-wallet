@@ -60,11 +60,6 @@ export default function Onboarding() {
               title="Create an account"
               href="/onboarding/create/"
             />
-            <LinkButton
-              variant="ghost"
-              title="Language preferences"
-              href="/onboarding/language/"
-            />
           </View>
         </View>
       </SafeAreaView>

@@ -23,7 +23,7 @@ export default function Balances() {
         onScroll={scrollHandler}
         contentContainerStyle={{ flexGrow: 1 }}
       >
-        <View style={{ flexGrow: 1 }}>
+        <View style={styles.container}>
           <AccountHeader offsetY={scrollYOffset} />
 
           <View style={styles.contentContainer}>
@@ -40,36 +40,40 @@ function TabsRoot({ defaultTab }: { defaultTab: string }) {
 
   return (
     <View>
-      <View style={styles.tabList}>
+      <View style={styles.tabContainer}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === "assets" && styles.activeTab]}
+          style={[
+            styles.tabButton,
+            activeTab === "assets" && styles.activeTabButton,
+          ]}
           onPress={() => setActiveTab("assets")}
         >
-          <Text style={styles.tabText}>Assets</Text>
+          <Text style={styles.tabButtonText}>Assets</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === "transactions" && styles.activeTab]}
+          style={[
+            styles.tabButton,
+            activeTab === "transactions" && styles.activeTabButton,
+          ]}
           onPress={() => setActiveTab("transactions")}
         >
-          <Text style={styles.tabText}>Transactions</Text>
+          <Text style={styles.tabButtonText}>Transactions</Text>
         </TouchableOpacity>
       </View>
 
-      {activeTab === "assets" && (
-        <View style={styles.tabContent}>
-          <AssetRow />
-          <AssetRow />
-          <AssetRow />
-          <AssetRow />
-          <AssetRow />
-          <AssetRow />
-        </View>
-      )}
-      {activeTab === "transactions" && (
-        <View style={styles.tabContent}>
-          <BottomSheetDemo />
-        </View>
-      )}
+      <View style={styles.tabContent}>
+        {activeTab === "assets" && (
+          <>
+            <AssetRow />
+            <AssetRow />
+            <AssetRow />
+            <AssetRow />
+            <AssetRow />
+            <AssetRow />
+          </>
+        )}
+        {activeTab === "transactions" && <BottomSheetDemo />}
+      </View>
     </View>
   );
 }
@@ -78,26 +82,23 @@ function AccountHeader({ offsetY }: { offsetY: SharedValue<number> }) {
   return (
     <Animated.View style={{ transform: [{ translateY: offsetY }] }}>
       <View style={styles.headerTop}>
-        <Text>☰</Text>
+        <Text style={styles.menuIcon}>☰</Text>
         <Text style={styles.headerTitle}>Account 1</Text>
-        <Text>⚙️</Text>
+        <Text style={styles.settingsIcon}>⚙️</Text>
       </View>
-      <View style={styles.headerContent}>
-        <Text style={styles.balanceText}>100.55</Text>
-        <Text style={styles.currencyText}>IRON</Text>
+      <View style={styles.headerBalance}>
+        <Text style={styles.balanceAmount}>100.55</Text>
+        <Text style={styles.balanceCurrency}>IRON</Text>
 
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Text>↓</Text>
-            <Text>Receive</Text>
+          <TouchableOpacity style={styles.actionButton}>
+            <Text style={styles.actionButtonText}>↓ Receive</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Text>↑</Text>
-            <Text>Send</Text>
+          <TouchableOpacity style={styles.actionButton}>
+            <Text style={styles.actionButtonText}>↑ Send</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Text>⇄</Text>
-            <Text>Bridge</Text>
+          <TouchableOpacity style={styles.actionButton}>
+            <Text style={styles.actionButtonText}>⇄ Bridge</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -111,34 +112,34 @@ function AssetBadge() {
 
 function AssetRow() {
   return (
-    <View style={styles.card}>
-      <View style={styles.assetRow}>
+    <TouchableOpacity style={styles.assetCard}>
+      <View style={styles.assetCardContent}>
         <AssetBadge />
-        <View>
-          <Text>$IRON</Text>
-          <Text style={styles.secondaryText}>100.55</Text>
+        <View style={styles.assetInfo}>
+          <Text style={styles.assetSymbol}>$IRON</Text>
+          <Text style={styles.assetAmount}>100.55</Text>
         </View>
-        <Text>›</Text>
+        <Text style={styles.chevron}>›</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 function BottomSheetDemo() {
-  const [isVisible, setIsVisible] = useState(false);
+  const [open, setOpen] = useState(false);
 
   return (
-    <View style={styles.bottomSheetDemo}>
+    <View>
       <TouchableOpacity
-        style={styles.button}
-        onPress={() => setIsVisible(true)}
+        style={styles.sheetButton}
+        onPress={() => setOpen(true)}
       >
-        <Text style={styles.buttonText}>Show Bottom Sheet</Text>
+        <Text>Show Bottom Sheet</Text>
       </TouchableOpacity>
 
-      {isVisible && (
+      {open && (
         <View style={styles.bottomSheet}>
-          <AccountSyncingDetails onClose={() => setIsVisible(false)} />
+          <AccountSyncingDetails onClose={() => setOpen(false)} />
         </View>
       )}
     </View>
@@ -147,126 +148,148 @@ function BottomSheetDemo() {
 
 function AccountSyncingDetails({ onClose }: { onClose: () => void }) {
   return (
-    <View>
-      <Text style={styles.secondaryText}>
+    <View style={styles.syncDetails}>
+      <Text style={styles.syncText}>
         The blockchain is currently syncing with your accounts. Your balance may
         be inaccurate and sending transactions will be disabled until the sync
         is done.
       </Text>
-      <View style={styles.syncDetails}>
-        <View>
-          <Text style={styles.secondaryText}>Node Status:</Text>
-          <Text style={styles.detailText}>Syncing Blocks</Text>
+
+      <View style={styles.syncStats}>
+        <View style={styles.syncRow}>
+          <Text style={styles.syncLabel}>Node Status:</Text>
+          <Text style={styles.syncValue}>Syncing Blocks</Text>
         </View>
-        <View>
-          <Text style={styles.secondaryText}>Progress:</Text>
-          <Text style={styles.detailText}>42.3%</Text>
+        <View style={styles.syncRow}>
+          <Text style={styles.syncLabel}>Progress:</Text>
+          <Text style={styles.syncValue}>42.3%</Text>
         </View>
-        <View>
-          <Text style={styles.secondaryText}>Blocks Scanned:</Text>
-          <Text style={styles.detailText}>33645/74346</Text>
+        <View style={styles.syncRow}>
+          <Text style={styles.syncLabel}>Blocks Scanned:</Text>
+          <Text style={styles.syncValue}>33645/74346</Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.button} onPress={onClose}>
-        <Text style={styles.buttonText}>Close</Text>
+
+      <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+        <Text>Close</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  contentContainer: {
-    backgroundColor: "#fff",
-    flexGrow: 1,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  container: {
+    flex: 1,
   },
-  tabList: {
+  contentContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  tabContainer: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#E1E1E1",
   },
-  tab: {
+  tabButton: {
     flex: 1,
     padding: 16,
     alignItems: "center",
   },
-  activeTab: {
+  activeTabButton: {
     borderBottomWidth: 2,
     borderBottomColor: "#000",
   },
-  tabText: {
+  tabButtonText: {
     fontSize: 16,
   },
   tabContent: {
     padding: 16,
-    paddingBottom: 64,
+    paddingBottom: 24,
     gap: 16,
   },
   headerTop: {
     flexDirection: "row",
-    alignItems: "center",
     padding: 16,
     paddingVertical: 24,
+    alignItems: "center",
+  },
+  menuIcon: {
+    fontSize: 24,
   },
   headerTitle: {
     flex: 1,
     textAlign: "center",
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: "600",
   },
-  headerContent: {
+  settingsIcon: {
+    fontSize: 24,
+  },
+  headerBalance: {
     alignItems: "center",
+    gap: 8,
   },
-  balanceText: {
-    fontSize: 32,
+  balanceAmount: {
+    fontSize: 24,
+    fontWeight: "600",
   },
-  currencyText: {
-    fontSize: 18,
+  balanceCurrency: {
+    fontSize: 16,
   },
   actionButtons: {
     flexDirection: "row",
     padding: 24,
     gap: 16,
   },
-  iconButton: {
+  actionButton: {
     alignItems: "center",
-    gap: 8,
+  },
+  actionButtonText: {
+    fontSize: 16,
   },
   assetBadge: {
-    backgroundColor: "pink",
-    height: 48,
-    width: 48,
-    borderRadius: 24,
-  },
-  card: {
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#E1E1E1",
+    elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 2,
   },
-  assetRow: {
+  assetCard: {
+    borderWidth: 1,
+    borderColor: "#E1E1E1",
+    borderRadius: 8,
+    padding: 16,
+    backgroundColor: "#fff",
+  },
+  assetCardContent: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
-  secondaryText: {
+  assetInfo: {
+    gap: 4,
+  },
+  assetSymbol: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  assetAmount: {
+    fontSize: 14,
     color: "#666",
   },
-  bottomSheetDemo: {
-    gap: 8,
+  chevron: {
+    marginLeft: "auto",
+    fontSize: 20,
   },
-  button: {
-    backgroundColor: "#000",
+  sheetButton: {
     padding: 16,
-    borderRadius: 8,
     alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
   },
   bottomSheet: {
     position: "absolute",
@@ -277,17 +300,34 @@ const styles = StyleSheet.create({
     padding: 16,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
+    elevation: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.25,
     shadowRadius: 4,
   },
   syncDetails: {
-    marginTop: 32,
-    marginBottom: 80,
     gap: 16,
   },
-  detailText: {
-    fontSize: 18,
+  syncText: {
+    color: "#666",
+  },
+  syncStats: {
+    gap: 16,
+    marginVertical: 24,
+  },
+  syncRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  syncLabel: {
+    color: "#666",
+  },
+  syncValue: {
+    fontWeight: "500",
+  },
+  closeButton: {
+    padding: 16,
+    alignItems: "center",
   },
 });
