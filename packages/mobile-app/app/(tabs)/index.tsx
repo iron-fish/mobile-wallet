@@ -48,7 +48,6 @@ export default function Balances() {
   const facade = useFacade();
   const { account, accountName, isLoading } = useAccount();
   const scrollYOffset = useSharedValue(0);
-  const theme = useTheme();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
