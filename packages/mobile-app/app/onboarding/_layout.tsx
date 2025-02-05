@@ -20,21 +20,9 @@ export default function OnboardingLayout() {
         }}
       />
       <Stack.Screen
-        name="name-account"
-        options={{
-          title: "Name your account",
-        }}
-      />
-      <Stack.Screen
         name="create-pin"
         options={{
           title: "Create Your PIN",
-        }}
-      />
-      <Stack.Screen
-        name="confirm-pin"
-        options={{
-          title: "Confirm Your PIN",
         }}
       />
     </Stack>

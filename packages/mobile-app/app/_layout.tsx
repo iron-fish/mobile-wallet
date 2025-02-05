@@ -15,10 +15,9 @@ import { useColorScheme, Text } from "react-native";
 import { FacadeProvider, useFacade } from "../data/facades";
 import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
-import { TamaguiProvider, createTamagui } from "tamagui";
-import { defaultConfig } from "@tamagui/config/v4";
-
-const config = createTamagui(defaultConfig);
+import { AccountProvider } from "../providers/AccountProvider";
+import * as eva from "@eva-design/eva";
+import { ApplicationProvider } from "@ui-kitten/components";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,28 +70,30 @@ export default function Layout() {
 
   return (
     <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
-      <TamaguiProvider config={config}>
+      <ApplicationProvider {...eva} theme={eva.light}>
         <QueryClientProvider client={queryClient}>
           <FacadeProvider>
             <DatabaseLoader>
-              <Stack>
-                <Stack.Screen
-                  name="(tabs)"
-                  options={{
-                    headerShown: false,
-                  }}
-                />
-                <Stack.Screen
-                  name="onboarding"
-                  options={{
-                    headerShown: false,
-                  }}
-                />
-              </Stack>
+              <AccountProvider>
+                <Stack>
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{
+                      headerShown: false,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="onboarding"
+                    options={{
+                      headerShown: false,
+                    }}
+                  />
+                </Stack>
+              </AccountProvider>
             </DatabaseLoader>
           </FacadeProvider>
         </QueryClientProvider>
-      </TamaguiProvider>
+      </ApplicationProvider>
     </ThemeProvider>
   );
 }

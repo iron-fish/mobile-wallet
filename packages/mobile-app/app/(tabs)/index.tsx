@@ -9,29 +9,28 @@ import {
   View,
 } from "react-native";
 import { useFacade } from "../../data/facades";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LinkButton } from "../../components/LinkButton";
 import { useQueries } from "@tanstack/react-query";
 import { Asset } from "../../data/facades/chain/types";
+import { useAccount } from "../../providers/AccountProvider";
+
+interface Balance {
+  assetId: string;
+  confirmed: string;
+  available: string;
+}
 
 export default function Balances() {
   const facade = useFacade();
-
-  const [account, setAccount] = useState<string>("");
+  const { account, accountName, isLoading } = useAccount();
 
   const [visibleView, setVisibleView] = useState<"transactions" | "assets">(
     "transactions",
   );
 
   const getTransactionsResult = facade.getTransactions.useQuery(
-    { accountName: account },
-    {
-      refetchInterval: 5000,
-    },
-  );
-
-  const getAccountResult = facade.getAccount.useQuery(
-    {},
+    { accountName },
     {
       refetchInterval: 5000,
     },
@@ -39,7 +38,7 @@ export default function Balances() {
 
   const getCustomAssets = useQueries({
     queries:
-      getAccountResult.data?.balances.custom.map((b) => {
+      account?.balances.custom.map((b: Balance) => {
         return {
           refetchInterval: 1000,
           queryFn: () => facade.getAsset.resolver({ assetId: b.assetId }),
@@ -56,40 +55,26 @@ export default function Balances() {
 
   const getIronAsset = facade.getAsset.useQuery(
     {
-      assetId: getAccountResult.data?.balances.iron.assetId ?? "",
+      assetId: account?.balances.iron.assetId ?? "",
     },
     {
       refetchInterval: 1000,
-      enabled: !!getAccountResult.data,
+      enabled: !!account,
     },
   );
 
   const getWalletStatusResult = facade.getWalletStatus.useQuery(
-    { accountName: account },
+    { accountName },
     {
       refetchInterval: 5000,
-      enabled: account !== "",
+      enabled: accountName !== "",
     },
   );
 
-  useEffect(() => {
-    if (getAccountResult.data) {
-      setAccount(getAccountResult.data.name);
-    }
-  }, [getAccountResult.data]);
-
-  if (getAccountResult.isLoading) {
+  if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <ActivityIndicator size="large" />
-      </SafeAreaView>
-    );
-  }
-
-  if (getAccountResult.data === null) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <LinkButton title="Onboarding" href="/onboarding/" />
       </SafeAreaView>
     );
   }
@@ -100,21 +85,20 @@ export default function Balances() {
         <LinkButton href="/menu/" title="Menu" />
         <LinkButton
           href="/account-select/"
-          title={getAccountResult.data?.name ?? "Account 1"}
+          title={accountName || "Account 1"}
         />
         <LinkButton
-          href={`/account-settings/?accountName=${getAccountResult.data?.name}`}
+          href={`/account-settings/?accountName=${accountName}`}
           title="Account Settings"
         />
       </View>
       <Text>You're currently on Mainnet</Text>
-      {getAccountResult.data && (
+      {account && (
         <>
           <Text>
-            {getAccountResult.data.balances.iron.confirmed ===
-            getAccountResult.data.balances.iron.available
-              ? `${getAccountResult.data.balances.iron.confirmed}`
-              : `${getAccountResult.data.balances.iron.confirmed} (${getAccountResult.data.balances.iron.available} available to spend)`}
+            {account.balances.iron.confirmed === account.balances.iron.available
+              ? `${account.balances.iron.confirmed}`
+              : `${account.balances.iron.confirmed} (${account.balances.iron.available} available to spend)`}
           </Text>
           {getIronAsset.data && (
             <Text>{`${getIronAsset.data.verification.status === "verified" ? `${getIronAsset.data.verification.symbol} (Verified)` : `${getIronAsset.data.name} (Unverified)`}`}</Text>
@@ -125,7 +109,7 @@ export default function Balances() {
         getWalletStatusResult.data.status === "SCANNING" && (
           // TODO: Only show this if the wallet is behind a certain number of blocks to avoid flickering
           <View style={{ backgroundColor: "#eee" }}>
-            <Text>{`Blocks Scanned: ${getAccountResult.data?.head?.sequence ?? "--"} / ${getWalletStatusResult.data.latestKnownBlock}`}</Text>
+            <Text>{`Blocks Scanned: ${account?.head?.sequence ?? "--"} / ${getWalletStatusResult.data.latestKnownBlock}`}</Text>
             <Text>Your balances may currently be inaccurate.</Text>
             <Text>Learn More</Text>
           </View>
@@ -153,7 +137,7 @@ export default function Balances() {
               <Text>Type: {transaction.type.toString()}</Text>
             </View>
           ))}
-        {visibleView === "assets" && getAccountResult.data && (
+        {visibleView === "assets" && account && (
           <View>
             <View>
               <Text>
@@ -161,11 +145,11 @@ export default function Balances() {
                   ? getIronAsset.data.verification.status === "verified"
                     ? `${getIronAsset.data.verification.symbol} (Verified)`
                     : `${getIronAsset.data.name} (Unverified)`
-                  : getAccountResult.data.balances.iron.assetId}
+                  : account.balances.iron.assetId}
               </Text>
-              <Text>{getAccountResult.data.balances.iron.confirmed}</Text>
+              <Text>{account.balances.iron.confirmed}</Text>
             </View>
-            {getAccountResult.data.balances.custom.map((balance) => {
+            {account.balances.custom.map((balance) => {
               const asset = assetMap.get(balance.assetId);
 
               return (

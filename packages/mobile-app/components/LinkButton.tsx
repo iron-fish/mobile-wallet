@@ -1,6 +1,6 @@
-import { Link } from "expo-router";
-import { GestureResponderEvent } from "react-native";
-import { Button } from "tamagui";
+import { useRouter } from "expo-router";
+import { GestureResponderEvent, StyleProp, ViewStyle } from "react-native";
+import { Button } from "@ui-kitten/components";
 
 type LinkButtonProps = {
   href: string;
@@ -9,7 +9,8 @@ type LinkButtonProps = {
   variant?: "solid" | "outlined" | "ghost";
   borderRadius?: number;
   title?: string;
-  children?: React.ReactNode;
+  children?: string;
+  style?: StyleProp<ViewStyle>;
 };
 
 export function LinkButton({
@@ -20,20 +21,41 @@ export function LinkButton({
   borderRadius = 8,
   title,
   children,
+  style,
 }: LinkButtonProps) {
+  const router = useRouter();
+
+  const handlePress = (e: GestureResponderEvent) => {
+    if (disabled) return;
+
+    if (onPress) {
+      onPress(e);
+    }
+    if (href) {
+      router.push(href);
+    }
+  };
+
+  // Map our variant prop to UI Kitten's appearance prop
+  const getAppearance = () => {
+    switch (variant) {
+      case "outlined":
+        return "outline";
+      case "ghost":
+        return "ghost";
+      default:
+        return "filled";
+    }
+  };
+
   return (
-    <Link href={href} asChild>
-      <Button
-        size="$4"
-        disabled={disabled}
-        onPress={onPress}
-        borderRadius={borderRadius}
-        opacity={disabled ? 0.5 : 1}
-        variant={variant === "outlined" ? "outlined" : undefined}
-        backgroundColor={variant === "ghost" ? "transparent" : undefined}
-      >
-        {title || children}
-      </Button>
-    </Link>
+    <Button
+      appearance={getAppearance()}
+      disabled={disabled}
+      onPress={handlePress}
+      style={[{ borderRadius }, style]}
+    >
+      {title || children || ""}
+    </Button>
   );
 }

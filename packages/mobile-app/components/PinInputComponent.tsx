@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Platform } from "react-native";
 
 interface PinInputComponentProps {
@@ -7,6 +6,7 @@ interface PinInputComponentProps {
   error?: string | null;
   setError: (error: string | null) => void;
   promptText: string;
+  value: string;
 }
 
 const styles = StyleSheet.create({
@@ -50,14 +50,12 @@ export function PinInputComponent({
   error,
   setError,
   promptText,
+  value,
 }: PinInputComponentProps) {
-  const [pinValue, setPinValue] = useState("");
-
   const handlePinChange = (value: string) => {
     // Only allow numbers and limit to pinLength
     const numericValue = value.replace(/[^0-9]/g, "").slice(0, pinLength);
     setError(null);
-    setPinValue(numericValue);
     onPinChange(numericValue);
   };
 
@@ -66,7 +64,7 @@ export function PinInputComponent({
       <Text style={styles.promptText}>{promptText}</Text>
       <TextInput
         style={styles.pinInput}
-        value={pinValue}
+        value={value}
         onChangeText={handlePinChange}
         keyboardType="number-pad"
         maxLength={pinLength}
