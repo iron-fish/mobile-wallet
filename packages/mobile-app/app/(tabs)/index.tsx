@@ -9,7 +9,6 @@ import {
   TabBar,
   Icon,
   IconProps,
-  useTheme,
   Spinner,
 } from "@ui-kitten/components";
 import { StyleSheet } from "react-native";
