@@ -66,13 +66,7 @@ export default function OnboardingCreate() {
         variant="ghost"
         href="/onboarding/create-pin"
       >
-        <View style={styles.buttonRow}>
-          <View style={styles.buttonContent}>
-            <Text>🔢</Text>
-            <Text style={styles.buttonText}>Create a custom PIN</Text>
-          </View>
-          <Text>›</Text>
-        </View>
+        Create a custom PIN
       </LinkButton>
     </View>
   );
