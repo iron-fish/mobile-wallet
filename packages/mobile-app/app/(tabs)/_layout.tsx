@@ -19,20 +19,6 @@ export default function Layout() {
         }}
       />
       <Tabs.Screen
-        name="balances"
-        options={{
-          title: "Balances",
-          headerShown: false,
-          tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons
-              name={focused ? "wallet" : "wallet-outline"}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="transact"
         options={{
           title: "Transact",
