@@ -1,6 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { Button, StyleSheet, Text, View } from "react-native";
-import { useFacade } from "../../../data/facades";
+import { Button, StyleSheet, View } from "react-native";
 import { Network } from "../../../data/constants";
 import { wallet } from "../../../data/wallet/wallet";
 import { reverseScan } from "../../../data/debug/reverseScan";
