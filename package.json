@@ -1,6 +1,7 @@
 {
   "name": "mobile-wallet",
   "version": "0.0.0",
+  "author": "IF Labs <engineering@iflabs.network> (https://iflabs.network)",
   "license": "MPL-2.0",
   "private": true,
   "scripts": {

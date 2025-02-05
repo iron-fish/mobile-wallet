@@ -2,6 +2,8 @@
   "name": "mobile-app",
   "version": "0.0.1",
   "main": "index.js",
+  "author": "IF Labs <engineering@iflabs.network> (https://iflabs.network)",
+  "license": "MPL-2.0",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
