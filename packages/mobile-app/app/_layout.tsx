@@ -17,7 +17,8 @@ import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { AccountProvider } from "../providers/AccountProvider";
 import * as eva from "@eva-design/eva";
-import { ApplicationProvider } from "@ui-kitten/components";
+import { ApplicationProvider, IconRegistry } from "@ui-kitten/components";
+import { EvaIconsPack } from "@ui-kitten/eva-icons";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,13 +35,18 @@ const queryClient = new QueryClient({
 
 function DatabaseLoader({ children }: { children?: React.ReactNode }) {
   const facade = useFacade();
-  const [status, setStatus] = useState<string>("loading");
+  const [status, setStatus] = useState<"loading" | "loaded">("loading");
   const { mutateAsync: loadDatabases } = facade.loadDatabases.useMutation();
 
   useEffect(() => {
     const fn = async () => {
       const result = await loadDatabases(undefined);
-      setStatus(result);
+
+      if (result !== "loaded") {
+        throw new Error("Failed to load databases");
+      }
+
+      setStatus("loaded");
     };
     fn();
   }, [loadDatabases]);
@@ -52,11 +58,9 @@ function DatabaseLoader({ children }: { children?: React.ReactNode }) {
         <Text>Loading databases...</Text>
       </SafeAreaView>
     );
-  } else if (status === "loaded") {
-    return children;
-  } else {
-    throw new Error(`Unknown status ${status}`);
   }
+
+  return children;
 }
 
 export default function Layout() {
@@ -70,6 +74,7 @@ export default function Layout() {
 
   return (
     <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
+      <IconRegistry icons={EvaIconsPack} />
       <ApplicationProvider {...eva} theme={eva.light}>
         <QueryClientProvider client={queryClient}>
           <FacadeProvider>
@@ -80,6 +85,13 @@ export default function Layout() {
                     name="(tabs)"
                     options={{
                       headerShown: false,
+                      title: "Account",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="menu"
+                    options={{
+                      title: "Menu",
                     }}
                   />
                   <Stack.Screen

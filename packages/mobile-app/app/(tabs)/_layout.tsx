@@ -8,21 +8,7 @@ export default function Layout() {
         name="index"
         options={{
           headerShown: false,
-          title: "Home",
-          tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons
-              name={focused ? "wallet" : "wallet-outline"}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="balances"
-        options={{
-          title: "Balances",
-          headerShown: false,
+          title: "Account",
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons
               name={focused ? "wallet" : "wallet-outline"}
