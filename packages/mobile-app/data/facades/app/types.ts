@@ -1,12 +1,7 @@
 import { Query, Mutation } from "data-facade";
+import { AppSettingsType } from "../../settings/db";
 
-export type AppSettings = {
-  locale: string;
-  theme: string;
-  network: "mainnet" | "testnet";
-  mainnetWalletServer: string;
-  testnetWalletServer: string;
-};
+export type AppSettings = AppSettingsType;
 
 export type AppHandlers = {
   getAppSettings: Query<() => AppSettings>;
@@ -14,5 +9,7 @@ export type AppHandlers = {
     (args?: { type: "transaction" | "block"; hash: string }) => string | null
   >;
   loadDatabases: Mutation<() => string>;
-  setAppSettings: Mutation<(args: { settings: Partial<AppSettings> }) => void>;
+  setAppSetting: Mutation<
+    (args: { key: keyof AppSettings; value: string | undefined }) => void
+  >;
 };

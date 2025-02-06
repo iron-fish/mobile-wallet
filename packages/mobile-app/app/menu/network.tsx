@@ -2,11 +2,18 @@ import { StatusBar } from "expo-status-bar";
 import { Button, Modal, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import { useFacade } from "@/data/facades";
+import { SettingsKey } from "@/data/settings/db";
+import { Network } from "@/data/constants";
 
 export default function MenuNetwork() {
   const router = useRouter();
 
   const [modalVisible, setModalVisible] = useState(false);
+
+  const facade = useFacade();
+
+  const setAppSetting = facade.setAppSetting.useMutation();
 
   return (
     <View style={styles.container}>
@@ -19,7 +26,13 @@ export default function MenuNetwork() {
           </Text>
           <Button
             title="Yes, Change Network"
-            onPress={() => setModalVisible(false)}
+            onPress={() => {
+              setAppSetting.mutate({
+                key: SettingsKey.Network,
+                value: Network.TESTNET,
+              });
+              setModalVisible(false);
+            }}
           />
           <Button
             title="I changed my mind"

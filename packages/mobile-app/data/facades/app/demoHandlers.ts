@@ -1,5 +1,6 @@
 import { f } from "data-facade";
 import { AppHandlers, AppSettings } from "./types";
+import { Network } from "@/data/constants";
 
 export const appDemoHandlers = f.facade<AppHandlers>({
   loadDatabases: f.handler.mutation(async () => {
@@ -8,11 +9,8 @@ export const appDemoHandlers = f.facade<AppHandlers>({
   }),
   getAppSettings: f.handler.query(async (): Promise<AppSettings> => {
     return {
-      locale: "en",
-      theme: "default",
-      network: "testnet",
-      mainnetWalletServer: "",
-      testnetWalletServer: "",
+      pin: undefined,
+      network: Network.TESTNET,
     };
   }),
   getExplorerUrl: f.handler.query(
@@ -40,8 +38,8 @@ export const appDemoHandlers = f.facade<AppHandlers>({
       return url;
     },
   ),
-  setAppSettings: f.handler.mutation(
-    async (args: { settings: Partial<AppSettings> }) => {
+  setAppSetting: f.handler.mutation(
+    async (args: { key: keyof AppSettings; value: string | undefined }) => {
       return;
     },
   ),
