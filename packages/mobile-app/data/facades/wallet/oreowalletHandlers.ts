@@ -14,6 +14,7 @@ import * as Uint8ArrayUtils from "../../../utils/uint8Array";
 
 import {
   AccountFormat,
+  decodeAccount,
   LanguageKey,
   LanguageUtils,
   TransactionStatus,
@@ -298,13 +299,31 @@ export const walletHandlers = f.facade<WalletHandlers>({
       }));
     },
   ),
-  getWalletStatus: f.handler.query(async (): Promise<WalletStatus> => {
-    const response = await OreowalletServerApi.getLatestBlock(Network.MAINNET);
-    return {
-      status: oreoWallet.scanState.type,
-      latestKnownBlock: Number(response.currentBlockIdentifier.index),
-    };
-  }),
+  getWalletStatus: f.handler.query(
+    async ({ accountName }: { accountName: string }): Promise<WalletStatus> => {
+      const exportedAcc = await oreoWallet.exportAccount(
+        accountName,
+        AccountFormat.Base64Json,
+        {
+          viewOnly: true,
+        },
+      );
+
+      const decodedAccount = decodeAccount(exportedAcc);
+
+      const response = await OreowalletServerApi.getLatestBlock(
+        Network.MAINNET,
+        {
+          publicAddress: decodedAccount.publicAddress,
+          viewKey: decodedAccount.viewKey,
+        },
+      );
+      return {
+        status: oreoWallet.scanState.type,
+        latestKnownBlock: Number(response.currentBlockIdentifier.index),
+      };
+    },
+  ),
   importAccount: f.handler.mutation(
     async ({
       account,

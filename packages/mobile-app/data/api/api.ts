@@ -1,5 +1,5 @@
 import { Network } from "../constants";
-import { SerializedAsset } from "./types";
+import { SerializedAsset, SerializedHead } from "./types";
 
 const API_SERVER_URLS: Record<Network, string> = {
   [Network.MAINNET]: "https://api.ironfish.network/",
@@ -22,6 +22,16 @@ class IFApi {
     let assetDownload = (await fetchResult.json()) as SerializedAsset;
 
     return assetDownload;
+  }
+
+  async getHead(network: Network): Promise<SerializedHead> {
+    const url = API_SERVER_URLS[network] + `blocks/head`;
+    console.log(`requesting head: ${url}`);
+
+    const fetchResult = await fetch(url);
+    let head = (await fetchResult.json()) as SerializedHead;
+
+    return head;
   }
 }
 
