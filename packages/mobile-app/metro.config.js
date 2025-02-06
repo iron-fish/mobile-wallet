@@ -52,7 +52,6 @@ module.exports = (() => {
       path.resolve(projectRoot, "node_modules"),
       path.resolve(monorepoRoot, "node_modules"),
     ],
-    // disableHierarchicalLookup: true,
     resolveRequest: (context, moduleName, platform) => {
       if (shims[moduleName]) {
         return shims[moduleName];
@@ -88,10 +87,6 @@ module.exports = (() => {
       worker_threads: resolver.emptyModulePath,
       v8: resolver.emptyModulePath,
     },
-    assetExts: resolver.assetExts.filter((ext) => ext !== "svg"),
-    sourceExts: [...resolver.sourceExts, "svg"],
-    unstable_enablePackageExports: true,
-    unstable_conditionNames: ["browser", "require", "react-native"],
   };
 
   config.transformer = {
