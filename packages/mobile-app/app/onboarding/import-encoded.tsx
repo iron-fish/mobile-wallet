@@ -1,6 +1,5 @@
-import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View } from "react-native";
-import { Button, Input, Layout, Modal, Text } from "@ui-kitten/components";
+import { Button, Input, Layout, Text } from "@ui-kitten/components";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useFacade } from "../../data/facades";
@@ -13,98 +12,112 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: "center",
     gap: 24,
+  },
+  description: {
+    textAlign: "center",
+    marginBottom: 8,
   },
   inputContainer: {
     gap: 16,
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
+  encodedInput: {
+    minHeight: 120,
+    textAlignVertical: "top",
   },
-  modalContent: {
-    backgroundColor: "white",
-    padding: 24,
-    borderRadius: 8,
-    alignItems: "center",
-    gap: 16,
+  errorText: {
+    color: "#FF3B30",
+    fontSize: 14,
+    marginTop: 4,
   },
 });
 
 export default function ImportEncoded() {
   const router = useRouter();
-  const [modalVisible, setModalVisible] = useState(false);
   const [accountName, setAccountName] = useState("");
-  const [encodedAccount, setEncodedAccount] = useState("");
+  const [encodedKey, setEncodedKey] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [encodedError, setEncodedError] = useState("");
 
   const facade = useFacade();
   const importAccount = facade.importAccount.useMutation();
 
+  const handleContinue = async () => {
+    let hasError = false;
+
+    if (accountName.length < 3) {
+      setNameError("Account name must be at least 3 characters");
+      hasError = true;
+    }
+
+    if (!encodedKey.trim()) {
+      setEncodedError("Please enter your encoded key");
+      hasError = true;
+    }
+
+    if (hasError) return;
+
+    try {
+      await importAccount.mutateAsync({
+        account: encodedKey,
+        name: accountName,
+      });
+      router.push("/(tabs)/");
+    } catch (error) {
+      console.error("Import account error:", error);
+      setEncodedError(
+        "Failed to import account. Please check your encoded key and try again.",
+      );
+    }
+  };
+
   return (
     <Layout style={styles.container}>
       <View style={styles.content}>
-        <Text category="h5" style={{ textAlign: "center" }}>
-          Import Encoded Account
-        </Text>
-
-        <Text>
+        <Text category="p1" style={styles.description}>
           Paste the complete string into the provided text field below.
         </Text>
 
         <View style={styles.inputContainer}>
-          <Input
-            label="Account Name"
-            placeholder="Enter account name"
-            value={accountName}
-            onChangeText={setAccountName}
-          />
-
-          <Input
-            label="Encoded Key"
-            placeholder="Paste encoded key here"
-            value={encodedAccount}
-            onChangeText={setEncodedAccount}
-            multiline
-          />
-        </View>
-
-        <Button
-          onPress={async () => {
-            await importAccount.mutateAsync({
-              account: encodedAccount,
-              name: accountName,
-            });
-            setModalVisible(true);
-          }}
-        >
-          Import Account
-        </Button>
-      </View>
-
-      <Modal visible={modalVisible}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text category="h6">Account Imported!</Text>
-            <Text>
-              Before you start managing your digital assets, we need to scan the
-              blockchain. This may take some time.
-            </Text>
-            <Button
-              onPress={() => {
-                router.push("/(tabs)/");
-                setModalVisible(false);
+          <View>
+            <Input
+              label="Account Name"
+              placeholder="Account Name"
+              value={accountName}
+              onChangeText={(text) => {
+                setAccountName(text);
+                setNameError("");
               }}
-            >
-              Let's go!
-            </Button>
+              status={nameError ? "danger" : "basic"}
+            />
+            {nameError ? (
+              <Text style={styles.errorText}>{nameError}</Text>
+            ) : null}
+          </View>
+
+          <View>
+            <Input
+              label="Encoded Key"
+              placeholder="Encoded key"
+              value={encodedKey}
+              onChangeText={(text) => {
+                setEncodedKey(text);
+                setEncodedError("");
+              }}
+              multiline
+              textStyle={styles.encodedInput}
+              status={encodedError ? "danger" : "basic"}
+            />
+            {encodedError ? (
+              <Text style={styles.errorText}>{encodedError}</Text>
+            ) : null}
           </View>
         </View>
-      </Modal>
 
-      <StatusBar style="auto" />
+        <Button onPress={handleContinue} disabled={!accountName || !encodedKey}>
+          Continue
+        </Button>
+      </View>
     </Layout>
   );
 }
