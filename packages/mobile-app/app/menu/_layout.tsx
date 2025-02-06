@@ -22,18 +22,6 @@ export default function MenuLayout() {
         }}
       />
       <Stack.Screen
-        name="language/index"
-        options={{
-          title: "Language",
-        }}
-      />
-      <Stack.Screen
-        name="theme/index"
-        options={{
-          title: "Theme",
-        }}
-      />
-      <Stack.Screen
         name="network/index"
         options={{
           title: "Network",
