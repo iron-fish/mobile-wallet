@@ -1,7 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
-import { useFacade } from "../../data/facades";
+import { useFacade } from "@/data/facades";
 import { useState } from "react";
 
 export default function AccountName() {
