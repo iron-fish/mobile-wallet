@@ -1,33 +1,54 @@
 import { StatusBar } from "expo-status-bar";
-import { Button, StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
+import {
+  Icon,
+  IconElement,
+  Layout,
+  Menu,
+  MenuItem,
+} from "@ui-kitten/components";
 import { useRouter } from "expo-router";
-import { LinkButton } from "../../components/LinkButton";
 
-export default function Menu() {
+const ForwardIcon = (props: any): IconElement => (
+  <Icon {...props} name="arrow-ios-forward" />
+);
+
+const menuItems = [
+  { title: "Security", href: "menu/security" },
+  { title: "Notifications", href: "menu/notifications" },
+  { title: "Network", href: "menu/network" },
+  { title: "Debug", href: "menu/debug" },
+  { title: "About the app", href: "menu/about" },
+];
+
+export default function MenuScreen() {
   const router = useRouter();
 
-  return (
-    <View style={styles.container}>
-      <Button title="Close" onPress={() => router.dismiss()} />
-      <LinkButton title="Security" href="/menu/security/" />
-      <LinkButton title="Notifications" href="/menu/notifications/" />
-      <LinkButton title="Language" href="/menu/language/" />
-      <LinkButton title="Theme" href="/menu/theme/" />
-      <LinkButton title="Network" href="/menu/network" />
-      <LinkButton title="Learn" href="/menu/learn/" />
-      <LinkButton title="Debug" href="/menu/debug/" />
-      <LinkButton title="About the app" href="/menu/about/" />
+  const handleSelect = (index: number) => {
+    router.push(menuItems[index].href);
+  };
 
+  return (
+    <Layout style={styles.container} level="1">
+      <Menu style={styles.menu} onSelect={(index) => handleSelect(index.row)}>
+        {menuItems.map((item, index) => (
+          <MenuItem
+            key={index}
+            title={item.title}
+            accessoryRight={ForwardIcon}
+          />
+        ))}
+      </Menu>
       <StatusBar style="auto" />
-    </View>
+    </Layout>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
+  },
+  menu: {
+    flex: 1,
   },
 });
