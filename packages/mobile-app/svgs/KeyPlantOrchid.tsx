@@ -1,4 +1,3 @@
-import { StyleProp, ViewStyle } from "react-native";
 import { SvgXml } from "react-native-svg";
 
 const svgContent = `<svg width="238" height="365" viewBox="0 0 238 365" fill="none" xmlns="http://www.w3.org/2000/svg">

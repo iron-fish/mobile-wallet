@@ -1,7 +1,4 @@
-import { ViewStyle } from "react-native";
-
-import { StyleProp } from "react-native";
-import { NumberProp, SvgXml } from "react-native-svg";
+import { SvgXml } from "react-native-svg";
 
 const svgContent = `<svg
   width="166"
