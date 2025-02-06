@@ -21,7 +21,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     gap: 16,
   },
-  encodedInput: {
+  phraseInput: {
     minHeight: 120,
     textAlignVertical: "top",
   },
@@ -32,15 +32,20 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function ImportEncoded() {
+export default function ImportMnemonic() {
   const router = useRouter();
   const [accountName, setAccountName] = useState("");
-  const [encodedKey, setEncodedKey] = useState("");
+  const [phrase, setPhrase] = useState("");
   const [nameError, setNameError] = useState("");
-  const [encodedError, setEncodedError] = useState("");
+  const [phraseError, setPhraseError] = useState("");
 
   const facade = useFacade();
   const importAccount = facade.importAccount.useMutation();
+
+  const validatePhrase = (text: string) => {
+    const words = text.trim().split(/\s+/);
+    return words.length === 24;
+  };
 
   const handleContinue = async () => {
     let hasError = false;
@@ -50,8 +55,8 @@ export default function ImportEncoded() {
       hasError = true;
     }
 
-    if (!encodedKey.trim()) {
-      setEncodedError("Please enter your encoded key");
+    if (!validatePhrase(phrase)) {
+      setPhraseError("Please enter all 24 words of your mnemonic phrase");
       hasError = true;
     }
 
@@ -59,14 +64,14 @@ export default function ImportEncoded() {
 
     try {
       await importAccount.mutateAsync({
-        account: encodedKey,
+        account: phrase,
         name: accountName,
       });
       router.push("/(tabs)/");
     } catch (error) {
       console.error("Import account error:", error);
-      setEncodedError(
-        "Failed to import account. Please check your encoded key and try again.",
+      setPhraseError(
+        "Failed to import account. Please check your mnemonic phrase and try again.",
       );
     }
   };
@@ -75,7 +80,7 @@ export default function ImportEncoded() {
     <Layout style={styles.container}>
       <View style={styles.content}>
         <Text category="p1" style={styles.description}>
-          Paste the complete string into the provided text field below.
+          Restore an existing account with your 24 word mnemonic phrase
         </Text>
 
         <View style={styles.inputContainer}>
@@ -97,24 +102,24 @@ export default function ImportEncoded() {
 
           <View>
             <Input
-              label="Encoded Key"
-              placeholder="Encoded key"
-              value={encodedKey}
+              label="Mnemonic Phrase"
+              placeholder="Mnemonic phrase"
+              value={phrase}
               onChangeText={(text) => {
-                setEncodedKey(text);
-                setEncodedError("");
+                setPhrase(text);
+                setPhraseError("");
               }}
               multiline
-              textStyle={styles.encodedInput}
-              status={encodedError ? "danger" : "basic"}
+              textStyle={styles.phraseInput}
+              status={phraseError ? "danger" : "basic"}
             />
-            {encodedError ? (
-              <Text style={styles.errorText}>{encodedError}</Text>
+            {phraseError ? (
+              <Text style={styles.errorText}>{phraseError}</Text>
             ) : null}
           </View>
         </View>
 
-        <Button onPress={handleContinue} disabled={!accountName || !encodedKey}>
+        <Button onPress={handleContinue} disabled={!accountName || !phrase}>
           Continue
         </Button>
       </View>
