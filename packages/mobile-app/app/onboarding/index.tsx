@@ -53,7 +53,7 @@ export default function Onboarding() {
             <LinkButton
               variant="outlined"
               title="I have an account"
-              href="/onboarding/import-encoded/"
+              href="/onboarding/create?next=import-account"
             />
             <LinkButton
               variant="solid"

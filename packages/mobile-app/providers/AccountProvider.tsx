@@ -46,6 +46,14 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
     const inAuthGroup = segments[0] === "onboarding";
     const hasAccount = getAccountResult.data !== null;
+    console.log(
+      "AccountProvider - segments:",
+      segments,
+      "hasAccount:",
+      hasAccount,
+      "inAuthGroup:",
+      inAuthGroup,
+    );
 
     if (!hasAccount && !inAuthGroup) {
       // Redirect to the onboarding flow if there's no account

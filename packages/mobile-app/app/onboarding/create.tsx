@@ -1,6 +1,7 @@
 import { StyleSheet, View, Text } from "react-native";
 import { LinkButton } from "@/components/LinkButton";
 import SecureOctopus from "@/assets/images/secure-octopus.svg";
+import { useLocalSearchParams } from "expo-router";
 
 const styles = StyleSheet.create({
   container: {
@@ -48,6 +49,12 @@ const styles = StyleSheet.create({
 });
 
 export default function OnboardingCreate() {
+  const { next } = useLocalSearchParams();
+
+  const pinHref = next
+    ? `/onboarding/create-pin?next=${next}`
+    : "/onboarding/create-pin";
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -55,17 +62,12 @@ export default function OnboardingCreate() {
         <View style={styles.textStack}>
           <Text style={styles.title}>Protect your account</Text>
           <Text style={styles.description}>
-            Enabling biometric security or a PIN, your wallet becomes
-            exclusively accessible to you, providing a unique layer of
-            protection.
+            By enabling a PIN, your wallet becomes exclusively accessible to
+            you, providing a unique layer of protection.
           </Text>
         </View>
       </View>
-      <LinkButton
-        borderRadius={1}
-        variant="ghost"
-        href="/onboarding/create-pin"
-      >
+      <LinkButton borderRadius={1} variant="ghost" href={pinHref}>
         Create a custom PIN
       </LinkButton>
     </View>

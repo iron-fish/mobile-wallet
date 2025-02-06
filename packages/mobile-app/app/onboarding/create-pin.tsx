@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { PinInputComponent } from "@/components/PinInputComponent";
 import { useState } from "react";
 import { useFacade } from "../../data/facades";
@@ -87,8 +87,10 @@ export default function CreatePin() {
   const [nameError, setNameError] = useState("");
   const headerHeight = useHeaderHeight();
   const router = useRouter();
+  const { next } = useLocalSearchParams();
   const facade = useFacade();
   const createAccount = facade.createAccount.useMutation();
+  const isImportFlow = next === "import-account";
 
   const isPinValid = (pin: string) => {
     return (
@@ -124,6 +126,13 @@ export default function CreatePin() {
         setConfirmPinValue(""); // Reset confirmation value on mismatch
         return;
       }
+
+      // If we're in the import flow, go to import selection
+      if (next === "import-account") {
+        router.push("/onboarding/import-account");
+        return;
+      }
+
       setStep("name");
       return;
     }
@@ -171,9 +180,11 @@ export default function CreatePin() {
           <View
             style={[styles.stepDot, step === "confirm" && styles.stepDotActive]}
           />
-          <View
-            style={[styles.stepDot, step === "name" && styles.stepDotActive]}
-          />
+          {!isImportFlow && (
+            <View
+              style={[styles.stepDot, step === "name" && styles.stepDotActive]}
+            />
+          )}
         </View>
 
         {step === "name" ? (
