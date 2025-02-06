@@ -3,8 +3,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinkButton } from "../../components/LinkButton";
 import { LinearGradient } from "expo-linear-gradient";
 
-import LogoWithText from "../../assets/images/logo-with-text.svg";
-import KeyPlantOrchid from "../../assets/images/key-plant--orchid.svg";
+import { KeyPlantOrchid } from "@/svgs/KeyPlantOrchid";
+import { LogoWithText } from "@/svgs/LogoWithText";
 
 const styles = StyleSheet.create({
   background: {
@@ -38,16 +38,17 @@ export default function Onboarding() {
             style={[StyleSheet.absoluteFillObject, styles.background]}
           />
           <View style={styles.verticalStack}>
-            <LogoWithText height={18} />
+            <LogoWithText />
             <Text style={styles.titleText}>Let's Make Web3 Private</Text>
           </View>
           <View
             style={{
               flex: 1,
               alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <KeyPlantOrchid style={{ aspectRatio: 0.5 }} />
+            <KeyPlantOrchid />
           </View>
           <View style={styles.buttonStack}>
             <LinkButton

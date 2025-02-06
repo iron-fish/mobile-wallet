@@ -1,8 +1,7 @@
 import { StyleSheet, View, Text } from "react-native";
 import { LinkButton } from "@/components/LinkButton";
-import SecureOctopus from "@/assets/images/secure-octopus.svg";
 import { useLocalSearchParams } from "expo-router";
-
+import { SecureOctopus } from "@/svgs/SecureOctopus";
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
