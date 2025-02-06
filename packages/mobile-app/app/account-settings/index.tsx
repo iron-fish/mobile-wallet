@@ -1,18 +1,90 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Switch, Text, View } from "react-native";
-import { LinkButton } from "../../components/LinkButton";
+import {
+  Icon,
+  IconElement,
+  Layout,
+  Menu,
+  MenuItem,
+  Toggle,
+} from "@ui-kitten/components";
+import { StyleSheet } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { useLocalSearchParams } from "expo-router";
 import { useFacade } from "../../data/facades";
+
+const ForwardIcon = (props: any): IconElement => (
+  <Icon {...props} name="arrow-ios-forward" />
+);
+
+const ACCOUNT_SETTINGS_ROUTES = {
+  accountSelect: {
+    title: "Account Select",
+    href: "account-select",
+  },
+  accountName: {
+    title: "Account Name",
+    href: "account-settings/account-name",
+  },
+  address: {
+    title: "Address",
+    href: "address",
+  },
+  exportAccount: {
+    title: "Export Account",
+    href: "account-settings/export-account",
+  },
+  removeAccount: {
+    title: "Remove Account",
+    href: "account-settings/remove-account",
+  },
+  addAccount: {
+    title: "Add Account",
+    href: "add-account",
+  },
+} as const;
+
+export const accountSettingsRoutes = Object.values(ACCOUNT_SETTINGS_ROUTES).map(
+  (item) => {
+    return {
+      title: item.title,
+      href: item.href,
+      path: item.href.concat("/index"),
+    };
+  },
+);
+function getMenuItems({
+  currentAccountName,
+  currentAccountBalance,
+}: {
+  currentAccountName: string;
+  currentAccountBalance: string;
+}) {
+  return Object.entries(ACCOUNT_SETTINGS_ROUTES).map(([key, route]) => {
+    if (key === "accountSelect") {
+      return {
+        title: `${currentAccountName} (${currentAccountBalance} $IRON)`,
+        href: route.href,
+      };
+    }
+    if (key === "removeAccount") {
+      return {
+        title: route.title,
+        href: route.href.concat(`?accountName=${currentAccountName}`),
+      };
+    }
+    return route;
+  });
+}
 
 export default function AccountSettings() {
   const { accountName } = useLocalSearchParams<{ accountName: string }>();
+  const router = useRouter();
+
   if (accountName === undefined) {
     throw new Error("accountName is required");
   }
 
   const facade = useFacade();
-
   const [hideBalances, setHideBalances] = useState(false);
 
   const getAccountResult = facade.getAccount.useQuery(
@@ -22,39 +94,58 @@ export default function AccountSettings() {
     },
   );
 
+  const menuItems = getMenuItems({
+    currentAccountName: getAccountResult.data?.name ?? "Unknown",
+    currentAccountBalance:
+      getAccountResult.data?.balances.iron.confirmed ?? "0",
+  });
+
+  const handleSelect = (index: number) => {
+    router.push(menuItems[index].href);
+  };
+
   return (
-    <View style={styles.container}>
-      <LinkButton
-        title={`${getAccountResult.data?.name} (${getAccountResult.data?.balances.iron.confirmed} $IRON)`}
-        href="/account-select/"
-      />
-      <LinkButton title="Account Name" href="/account-settings/account-name" />
-      <LinkButton title="Address" href="/address" />
-      <LinkButton
-        title="Export Account"
-        href="/account-settings/export-account/"
-      />
-      <View
-        style={{ display: "flex", flexDirection: "row", alignItems: "center" }}
-      >
-        <Text>Hide Balances</Text>
-        <Switch value={hideBalances} onValueChange={setHideBalances} />
-      </View>
-      <LinkButton
-        title="Remove Account"
-        href={`/account-settings/remove-account/?accountName=${getAccountResult.data?.name}`}
-      />
-      <LinkButton title="Add Account" href="/add-account/" />
-      <StatusBar style="auto" />
-    </View>
+    <>
+      <Stack.Screen options={{ title: accountName }} />
+      <Layout style={styles.container} level="1">
+        <Menu style={styles.menu}>
+          {menuItems
+            .map((item, index) => (
+              <MenuItem
+                key={index}
+                title={item.title}
+                accessoryRight={ForwardIcon}
+                onPress={() => handleSelect(index)}
+              />
+            ))
+            .concat(
+              <MenuItem
+                key="hide-balances"
+                title="Hide Balances"
+                accessoryRight={() => (
+                  <Toggle
+                    checked={hideBalances}
+                    onChange={setHideBalances}
+                    style={styles.toggle}
+                  />
+                )}
+              />,
+            )}
+        </Menu>
+        <StatusBar style="auto" />
+      </Layout>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
+  },
+  menu: {
+    flex: 1,
+  },
+  toggle: {
+    marginRight: 8,
   },
 });

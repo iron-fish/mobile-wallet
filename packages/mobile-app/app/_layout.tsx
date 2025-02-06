@@ -19,6 +19,8 @@ import { AccountProvider } from "../providers/AccountProvider";
 import * as eva from "@eva-design/eva";
 import { ApplicationProvider, IconRegistry } from "@ui-kitten/components";
 import { EvaIconsPack } from "@ui-kitten/eva-icons";
+import { menuItems } from "./menu";
+import { accountSettingsRoutes } from "./account-settings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -82,6 +84,12 @@ export default function Layout() {
               <AccountProvider>
                 <Stack>
                   <Stack.Screen
+                    name="onboarding"
+                    options={{
+                      headerShown: false,
+                    }}
+                  />
+                  <Stack.Screen
                     name="(tabs)"
                     options={{
                       headerShown: false,
@@ -89,17 +97,29 @@ export default function Layout() {
                     }}
                   />
                   <Stack.Screen
-                    name="menu"
+                    name="menu/index"
                     options={{
                       title: "Menu",
                     }}
                   />
-                  <Stack.Screen
-                    name="onboarding"
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
+                  {menuItems.map((item) => {
+                    return (
+                      <Stack.Screen
+                        key={item.title}
+                        name={item.path}
+                        options={{ title: item.title }}
+                      />
+                    );
+                  })}
+                  {accountSettingsRoutes.map((item) => {
+                    return (
+                      <Stack.Screen
+                        key={item.title}
+                        name={item.path}
+                        options={{ title: item.title }}
+                      />
+                    );
+                  })}
                 </Stack>
               </AccountProvider>
             </DatabaseLoader>

@@ -2,7 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import { Button, Modal, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { useFacade } from "../../data/facades";
+import { useFacade } from "../../../data/facades";
 
 export default function RemoveAccount() {
   const router = useRouter();

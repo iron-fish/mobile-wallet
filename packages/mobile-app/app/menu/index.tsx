@@ -13,13 +13,36 @@ const ForwardIcon = (props: any): IconElement => (
   <Icon {...props} name="arrow-ios-forward" />
 );
 
-const menuItems = [
-  { title: "Security", href: "menu/security" },
-  { title: "Notifications", href: "menu/notifications" },
-  { title: "Network", href: "menu/network" },
-  { title: "Debug", href: "menu/debug" },
-  { title: "About the app", href: "menu/about" },
-];
+const MENU_ROUTES = {
+  security: {
+    title: "Security",
+    href: "menu/security",
+  },
+  notifications: {
+    title: "Notifications",
+    href: "menu/notifications",
+  },
+  network: {
+    title: "Network",
+    href: "menu/network",
+  },
+  debug: {
+    title: "Debug",
+    href: "menu/debug",
+  },
+  about: {
+    title: "About the app",
+    href: "menu/about",
+  },
+} as const;
+
+export const menuItems = Object.values(MENU_ROUTES).map((item) => {
+  return {
+    title: item.title,
+    href: item.href,
+    path: item.href.concat("/index"),
+  };
+});
 
 export default function MenuScreen() {
   const router = useRouter();
