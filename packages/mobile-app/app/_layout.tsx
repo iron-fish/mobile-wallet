@@ -35,13 +35,18 @@ const queryClient = new QueryClient({
 
 function DatabaseLoader({ children }: { children?: React.ReactNode }) {
   const facade = useFacade();
-  const [status, setStatus] = useState<string>("loading");
+  const [status, setStatus] = useState<"loading" | "loaded">("loading");
   const { mutateAsync: loadDatabases } = facade.loadDatabases.useMutation();
 
   useEffect(() => {
     const fn = async () => {
       const result = await loadDatabases(undefined);
-      setStatus(result);
+
+      if (result !== "loaded") {
+        throw new Error("Failed to load databases");
+      }
+
+      setStatus("loaded");
     };
     fn();
   }, [loadDatabases]);
@@ -53,11 +58,9 @@ function DatabaseLoader({ children }: { children?: React.ReactNode }) {
         <Text>Loading databases...</Text>
       </SafeAreaView>
     );
-  } else if (status === "loaded") {
-    return children;
-  } else {
-    throw new Error(`Unknown status ${status}`);
   }
+
+  return children;
 }
 
 export default function Layout() {
@@ -82,6 +85,13 @@ export default function Layout() {
                     name="(tabs)"
                     options={{
                       headerShown: false,
+                      title: "Account",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="menu"
+                    options={{
+                      title: "Menu",
                     }}
                   />
                   <Stack.Screen

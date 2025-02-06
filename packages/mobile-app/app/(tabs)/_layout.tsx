@@ -8,7 +8,7 @@ export default function Layout() {
         name="index"
         options={{
           headerShown: false,
-          title: "Home",
+          title: "Account",
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons
               name={focused ? "wallet" : "wallet-outline"}
