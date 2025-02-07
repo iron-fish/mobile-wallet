@@ -25,10 +25,6 @@ const ACCOUNT_SETTINGS_ROUTES = {
     title: "Account Name",
     href: "account-settings/account-name",
   },
-  address: {
-    title: "Address",
-    href: "address",
-  },
   exportAccount: {
     title: "Export Account",
     href: "account-settings/export-account",

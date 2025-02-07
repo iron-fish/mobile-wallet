@@ -10,8 +10,10 @@ import {
   Icon,
   IconProps,
   Spinner,
+  Modal,
 } from "@ui-kitten/components";
 import { StyleSheet } from "react-native";
+import { setStringAsync } from "expo-clipboard";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -48,10 +50,17 @@ export default function Balances() {
   const { account, accountName, isLoading } = useAccount();
   const scrollYOffset = useSharedValue(0);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [addressModalVisible, setAddressModalVisible] = useState(false);
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollYOffset.value = event.contentOffset.y;
   });
+
+  const copyAddressToClipboard = async () => {
+    if (account) {
+      await setStringAsync(account.publicAddress);
+    }
+  };
 
   const getTransactionsResult = facade.getTransactions.useQuery(
     { accountName },
@@ -96,7 +105,7 @@ export default function Balances() {
     },
   );
 
-  if (isLoading) {
+  if (isLoading || !account) {
     return (
       <SafeAreaView>
         <Layout style={[styles.container, styles.loadingContainer]}>
@@ -115,6 +124,30 @@ export default function Balances() {
 
   return (
     <SafeAreaView>
+      <Modal
+        visible={addressModalVisible}
+        backdropStyle={styles.backdrop}
+        onBackdropPress={() => setAddressModalVisible(false)}
+      >
+        <Card disabled style={styles.modalCard}>
+          <Text category="h6" style={styles.modalTitle}>
+            Your Iron Fish Address
+          </Text>
+          <Text selectable style={styles.address}>
+            {account.publicAddress}
+          </Text>
+          <Button onPress={copyAddressToClipboard} style={{ marginBottom: 8 }}>
+            Copy Address
+          </Button>
+          <Button
+            appearance="ghost"
+            onPress={() => setAddressModalVisible(false)}
+          >
+            Close
+          </Button>
+        </Card>
+      </Modal>
+
       <Animated.ScrollView
         scrollEventThrottle={16}
         onScroll={scrollHandler}
@@ -157,7 +190,7 @@ export default function Balances() {
                   appearance="ghost"
                   accessoryLeft={ReceiveIcon}
                   style={styles.actionButton}
-                  onPress={() => router.push("/address/")}
+                  onPress={() => setAddressModalVisible(true)}
                 >
                   Receive
                 </Button>
@@ -400,5 +433,21 @@ const styles = StyleSheet.create({
   },
   transactionCard: {
     marginVertical: 4,
+  },
+  backdrop: {
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalCard: {
+    margin: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  modalTitle: {
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  address: {
+    textAlign: "center",
+    marginBottom: 16,
   },
 });
