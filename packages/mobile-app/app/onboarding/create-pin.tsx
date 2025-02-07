@@ -90,6 +90,7 @@ export default function CreatePin() {
   const { next } = useLocalSearchParams();
   const facade = useFacade();
   const createAccount = facade.createAccount.useMutation();
+  const setAppSetting = facade.setAppSetting.useMutation();
   const isImportFlow = next === "import-account";
 
   const isPinValid = (pin: string) => {
@@ -124,6 +125,17 @@ export default function CreatePin() {
       if (pinValue !== confirmPinValue) {
         setError("PINs do not match");
         setConfirmPinValue(""); // Reset confirmation value on mismatch
+        return;
+      }
+
+      try {
+        // Save the PIN when it's confirmed
+        await setAppSetting.mutateAsync({
+          key: "pin",
+          value: pinValue,
+        });
+      } catch {
+        setError("Failed to save PIN. Please try again.");
         return;
       }
 
