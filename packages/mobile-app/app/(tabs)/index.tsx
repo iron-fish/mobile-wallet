@@ -449,5 +449,6 @@ const styles = StyleSheet.create({
   address: {
     textAlign: "center",
     marginBottom: 16,
+    fontSize: 30,
   },
 });
