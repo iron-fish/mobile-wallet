@@ -3,6 +3,10 @@ import { StyleSheet, View, Text, Button, TextInput } from "react-native";
 import { useFacade } from "../../data/facades";
 import { useState } from "react";
 import { IRON_ASSET_ID_HEX } from "../../data/constants";
+import { CurrencyUtils } from "@ironfish/sdk";
+import { useQueries } from "@tanstack/react-query";
+import { Asset } from "@/data/facades/chain/types";
+import { AccountBalance } from "@/data/facades/wallet/types";
 
 const isValidBigInt = (num: string) => {
   if (num.length === 0) return false;
@@ -22,9 +26,9 @@ export default function Send() {
   const [selectedRecipient, setSelectedRecipient] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [customFee, setCustomFee] = useState<string>("");
-  const [selectedFee, setSelectedFee] = useState<
-    "slow" | "average" | "fast" | "custom"
-  >("average");
+  const [selectedFee, setSelectedFee] = useState<"default" | "custom">(
+    "default",
+  );
 
   const getAccountResult = facade.getAccount.useQuery(
     {},
@@ -42,38 +46,44 @@ export default function Send() {
     },
   );
 
-  const estimatedFees = facade.getEstimatedFees.useQuery(
-    {
-      accountName: getAccountResult.data?.name ?? "",
-      outputs: [{ amount, assetId: selectedAssetId }],
-    },
-    {
-      enabled: () => {
-        return !!getAccountResult.data && isValidBigInt(amount);
-      },
-    },
-  );
+  const getCustomAssets = useQueries({
+    queries:
+      getAccountResult.data?.balances.custom.map((b: AccountBalance) => {
+        return {
+          refetchInterval: 1000,
+          queryFn: () => facade.getAsset.resolver({ assetId: b.assetId }),
+          queryKey: facade.getAsset.buildQueryKey({ assetId: b.assetId }),
+        };
+      }) ?? [],
+  });
+
+  const assetMap = new Map<string, Asset>();
+  for (const asset of getCustomAssets) {
+    if (asset.data) {
+      assetMap.set(asset.data.id, asset.data);
+    }
+  }
 
   const sendTransaction = facade.sendTransaction.useMutation();
 
   return (
     <View style={styles.container}>
       {isValidPublicAddress.data === false && <Text>Invalid recipient</Text>}
-      {estimatedFees.isError && (
-        <Text>Error: {estimatedFees.error.message}</Text>
-      )}
       <Text>Select asset</Text>
       <Button
-        title={`IRON (${getAccountResult.data?.balances.iron.available ?? 0}) ${selectedAssetId === IRON_ASSET_ID_HEX ? "(selected)" : ""}`}
+        title={`IRON (${CurrencyUtils.render(getAccountResult.data?.balances.iron.available ?? "0")}) ${selectedAssetId === IRON_ASSET_ID_HEX ? "(selected)" : ""}`}
         onPress={() => setSelectedAssetId(IRON_ASSET_ID_HEX)}
       />
-      {getAccountResult.data?.balances.custom.map((b) => (
-        <Button
-          key={b.assetId}
-          title={`${b.assetId} (${b.confirmed ?? 0}) ${selectedAssetId === b.assetId ? "(selected)" : ""}`}
-          onPress={() => setSelectedAssetId(b.assetId)}
-        />
-      ))}
+      {getAccountResult.data?.balances.custom.map((b) => {
+        const asset = assetMap.get(b.assetId);
+        return (
+          <Button
+            key={b.assetId}
+            title={`${asset?.name} (${CurrencyUtils.render(b.available, false, b.assetId, asset?.verification.status === "verified" ? asset.verification : undefined)}) ${selectedAssetId === b.assetId ? "(selected)" : ""}`}
+            onPress={() => setSelectedAssetId(b.assetId)}
+          />
+        );
+      })}
       <TextInput
         placeholder="Recipient"
         value={selectedRecipient}
@@ -82,16 +92,8 @@ export default function Send() {
       <TextInput placeholder="Amount" value={amount} onChangeText={setAmount} />
       <Text style={{ fontSize: 20 }}>Fees</Text>
       <Button
-        title={`Slow: ${estimatedFees.data?.slow ?? ""}${selectedFee === "slow" ? " (selected)" : ""}`}
-        onPress={() => setSelectedFee("slow")}
-      />
-      <Button
-        title={`Average: ${estimatedFees.data?.average ?? ""}${selectedFee === "average" ? " (selected)" : ""}`}
-        onPress={() => setSelectedFee("average")}
-      />
-      <Button
-        title={`Fast: ${estimatedFees.data?.fast ?? ""}${selectedFee === "fast" ? " (selected)" : ""}`}
-        onPress={() => setSelectedFee("fast")}
+        title={`Default${selectedFee === "default" ? " (selected)" : ""}`}
+        onPress={() => setSelectedFee("default")}
       />
       <TextInput
         placeholder="Custom fee"
@@ -107,7 +109,6 @@ export default function Send() {
         title="Send"
         disabled={
           isValidPublicAddress.data !== true ||
-          !estimatedFees.isSuccess ||
           (selectedFee === "custom" && !isValidBigInt(customFee))
         }
         onPress={() => {
@@ -121,7 +122,7 @@ export default function Send() {
                 assetId: selectedAssetId,
               },
             ],
-            fee: "1",
+            fee: selectedFee === "default" ? undefined : customFee,
           });
         }}
       />

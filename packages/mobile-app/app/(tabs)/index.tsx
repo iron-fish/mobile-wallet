@@ -24,6 +24,7 @@ import { Asset } from "../../data/facades/chain/types";
 import { useAccount } from "../../providers/AccountProvider";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { CurrencyUtils } from "@ironfish/sdk";
 
 const MenuIcon = (props: IconProps) => <Icon {...props} name="menu-outline" />;
 const SettingsIcon = (props: IconProps) => (
@@ -177,7 +178,7 @@ export default function Balances() {
             </Layout>
             <Layout style={styles.headerBalance}>
               <Text category="h1" style={styles.balanceAmount}>
-                {account?.balances.iron.confirmed ?? "0.00"}
+                {CurrencyUtils.render(account?.balances.iron.confirmed ?? "0")}
               </Text>
               <Text category="s1" appearance="hint">
                 {getIronAsset.data?.verification.status === "verified"
@@ -258,7 +259,9 @@ export default function Balances() {
                         ? getIronAsset.data.verification.symbol
                         : (getIronAsset.data?.name ?? "IRON")
                     }
-                    amount={account.balances.iron.confirmed}
+                    amount={CurrencyUtils.render(
+                      account.balances.iron.confirmed,
+                    )}
                     verified={
                       getIronAsset.data?.verification.status === "verified"
                     }
@@ -275,7 +278,14 @@ export default function Balances() {
                             ? asset.verification.symbol
                             : (asset?.name ?? balance.assetId)
                         }
-                        amount={balance.confirmed}
+                        amount={CurrencyUtils.render(
+                          balance.confirmed,
+                          false,
+                          balance.assetId,
+                          asset?.verification.status === "verified"
+                            ? asset.verification
+                            : undefined,
+                        )}
                         verified={asset?.verification.status === "verified"}
                       />
                     );
