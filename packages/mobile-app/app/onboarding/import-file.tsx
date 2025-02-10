@@ -2,6 +2,9 @@ import { StyleSheet, View } from "react-native";
 import { Button, Input, Layout, Text, Icon } from "@ui-kitten/components";
 import { useState } from "react";
 import * as DocumentPicker from "expo-document-picker";
+import { useRouter } from "expo-router";
+import { useFacade } from "@/data/facades";
+import * as FileSystem from "expo-file-system";
 
 import { Files } from "@/svgs/Files";
 
@@ -50,9 +53,16 @@ const styles = StyleSheet.create({
 });
 
 export default function ImportFile() {
+  const router = useRouter();
+  const facade = useFacade();
+  const importAccount = facade.importAccount.useMutation();
+
   const [fileName, setFileName] = useState<string | null>(null);
+  const [fileContent, setFileContent] = useState<string | null>(null);
   const [accountName, setAccountName] = useState("");
   const [nameError, setNameError] = useState("");
+  const [fileError, setFileError] = useState("");
+  const [debugContent, setDebugContent] = useState<string>("");
 
   const pickDocument = async () => {
     try {
@@ -62,15 +72,55 @@ export default function ImportFile() {
 
       if (!result.canceled) {
         setFileName(result.assets[0].name);
-        console.log("Document picked:", result.assets[0]);
+        const content = await FileSystem.readAsStringAsync(
+          result.assets[0].uri,
+        );
+        setFileContent(content);
+        setDebugContent(content.slice(0, 100) + "..."); // Show first 100 chars
+        setFileError("");
       }
     } catch (err) {
       console.log("DocumentPicker Error:", err);
+      setFileError("Error reading file. Please try again.");
     }
   };
 
   const handleRemoveFile = () => {
     setFileName(null);
+    setFileContent(null);
+    setFileError("");
+  };
+
+  const handleContinue = async () => {
+    let hasError = false;
+
+    if (accountName.length < 3) {
+      setNameError("Account name must be at least 3 characters");
+      hasError = true;
+    }
+
+    if (!fileContent) {
+      setFileError("Please select a valid file");
+      hasError = true;
+    }
+
+    if (hasError) return;
+
+    try {
+      await importAccount.mutateAsync({
+        account: fileContent,
+        name: accountName,
+      });
+
+      // Navigate to main app after successful import
+      router.push("/(tabs)/");
+    } catch (error) {
+      console.error("Import error:", error);
+      // Handle other errors
+      setFileError(
+        "Failed to import account. Please check your file and try again.",
+      );
+    }
   };
 
   return (
@@ -91,33 +141,39 @@ export default function ImportFile() {
         </View>
 
         {fileName ? (
-          <View style={styles.fileRow}>
-            <Text style={styles.fileName}>{fileName}</Text>
-            <Button
-              appearance="ghost"
-              status="basic"
-              accessoryLeft={(props) => (
-                <Icon {...props} name="trash-outline" />
-              )}
-              onPress={handleRemoveFile}
-              style={styles.trashButton}
-            />
+          <View>
+            <View style={styles.fileRow}>
+              <Text style={styles.fileName}>{fileName}</Text>
+              <Button
+                appearance="ghost"
+                status="basic"
+                accessoryLeft={(props) => (
+                  <Icon {...props} name="trash-outline" />
+                )}
+                onPress={handleRemoveFile}
+                style={styles.trashButton}
+              />
+            </View>
+            {fileError ? (
+              <Text style={styles.errorText}>{fileError}</Text>
+            ) : null}
           </View>
         ) : (
           <View style={styles.uploadContainer}>
             <Files />
             <Text>Upload your JSON or Bech32 file</Text>
             <Button onPress={pickDocument}>Select File</Button>
+            {fileError ? (
+              <Text style={styles.errorText}>{fileError}</Text>
+            ) : null}
           </View>
         )}
 
         <Button
-          onPress={() => {
-            /* TODO: Handle import */
-          }}
-          disabled={!accountName || !fileName}
+          onPress={handleContinue}
+          disabled={!accountName || !fileContent || importAccount.isPending}
         >
-          Continue
+          {importAccount.isPending ? "Importing..." : "Continue"}
         </Button>
       </View>
     </Layout>
