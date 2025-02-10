@@ -3,6 +3,7 @@ import { Button, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { LinkButton } from "../../components/LinkButton";
 import { useFacade } from "../../data/facades";
+import { CurrencyUtils } from "@ironfish/sdk";
 
 export default function AccountSelect() {
   const router = useRouter();
@@ -31,7 +32,9 @@ export default function AccountSelect() {
             title={account.name}
           />
           {account.active && <Text>Active</Text>}
-          <Text>{`${account.balances.iron.confirmed} $IRON`}</Text>
+          <Text>
+            {`${CurrencyUtils.render(account.balances.iron.confirmed)} $IRON`}
+          </Text>
         </View>
       ))}
       <LinkButton title="Add Account" href="/add-account/" />
