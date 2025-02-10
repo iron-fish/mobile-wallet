@@ -206,6 +206,7 @@ export default function Balances() {
                   appearance="ghost"
                   accessoryLeft={BridgeIcon}
                   style={styles.actionButton}
+                  onPress={() => router.push("/menu/debug/browser")}
                 >
                   Bridge
                 </Button>

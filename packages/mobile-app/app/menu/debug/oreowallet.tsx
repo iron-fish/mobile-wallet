@@ -8,7 +8,6 @@ import {
   decodeAccount,
   RawTransactionSerde,
 } from "@ironfish/sdk";
-import { wallet } from "../../../data/wallet/wallet";
 
 export default function MenuDebugOreowallet() {
   const facade = useFacade();
@@ -105,31 +104,7 @@ export default function MenuDebugOreowallet() {
                   Buffer.from(result.transaction, "hex"),
                 );
 
-                const txnResult = await wallet.sendTransactionWithSpends(
-                  Network.MAINNET,
-                  account.data.name,
-                  txn.version,
-                  txn.fee.toString(),
-                  txn.outputs.map(({ note }) => ({
-                    amount: note.value().toString(),
-                    assetId: note.assetId().toString("hex"),
-                    publicAddress: note.owner(),
-                    memoHex: note.memo().toString("hex"),
-                  })),
-                  txn.spends.map(({ note, witness }) => ({
-                    note: note.serialize().toString("hex"),
-                    witnessTreeSize: witness.treeSize().toString(),
-                    witnessRootHash: witness
-                      .serializeRootHash()
-                      .toString("hex"),
-                    witnessAuthPath: witness.authPath().map((authPath) => ({
-                      hashOfSibling: authPath.hashOfSibling().toString("hex"),
-                      side: authPath.side(),
-                    })),
-                  })),
-                );
-
-                console.log(JSON.stringify(txnResult));
+                console.log(JSON.stringify(txn));
               }}
               title="Create Transaction"
             />

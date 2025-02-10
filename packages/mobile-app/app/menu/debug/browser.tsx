@@ -1,5 +1,4 @@
 import { WebView } from "react-native-webview";
-import Constants from "expo-constants";
 import {
   Button,
   Modal,
@@ -13,6 +12,8 @@ import { Network } from "../../../data/constants";
 import { useRef, useState } from "react";
 import * as Uint8ArrayUtils from "../../../utils/uint8Array";
 import { useFacade } from "../../../data/facades";
+import { Output } from "@/data/facades/wallet/types";
+import SendTransactionModal from "@/components/browser/SendTransactionModal";
 
 type Message = {
   id: number;
@@ -20,11 +21,39 @@ type Message = {
   data: Record<string, unknown> | null;
 };
 
+const BRIDGE_URLS: Record<Network, string> = {
+  [Network.MAINNET]: "https://bridge.ironfish.network/",
+  [Network.TESTNET]: "https://testnet.bridge.ironfish.network/",
+};
+
+export type Mint = {
+  value: string;
+  assetId?: string;
+  name?: string;
+  metadata?: string;
+};
+
+export type Burn = {
+  value: string;
+  assetId: string;
+};
+
+type GeneralTransactionData = {
+  from: string;
+  fee?: string;
+  outputs?: Output[];
+  mints?: Mint[];
+  burns?: Burn[];
+};
+
 class MessageHandler {
   activeAccount: { name: string; address: string } | null = null;
-  activeAccountName = null;
   connectRequest: {
     resolve: (address: string | null) => void;
+    reject: () => void;
+  } | null = null;
+  sendTransactionRequest: {
+    resolve: (transaction: string) => void;
     reject: () => void;
   } | null = null;
 
@@ -38,9 +67,20 @@ class MessageHandler {
     }
   }
 
+  async rejectSendTransactionRequest() {
+    this.sendTransactionRequest?.reject();
+    this.sendTransactionRequest = null;
+  }
+
+  async resolveSendTransactionRequest(transaction: string) {
+    this.sendTransactionRequest?.resolve(transaction);
+    this.sendTransactionRequest = null;
+  }
+
   async handleMessage(
     data: string,
     showAccountModal: () => void,
+    showSendTransactionModal: (data: GeneralTransactionData) => void,
     postMessage?: (data: string) => void,
   ) {
     console.log(data);
@@ -106,6 +146,40 @@ class MessageHandler {
           },
         }),
       );
+    } else if (message.type === "generalTransaction") {
+      if (!message.data) {
+        console.error("No data");
+        return;
+      }
+      const data = message.data as GeneralTransactionData;
+      if (data.from !== this.activeAccount?.address) {
+        console.error("From address does not match active account");
+        return;
+      }
+      if (data.mints && data.mints.length > 0) {
+        console.error("Mints are not supported");
+        return;
+      }
+      if (data.burns && data.burns.length > 0) {
+        console.error("Burns are not supported");
+        return;
+      }
+
+      showSendTransactionModal({
+        ...data,
+        // Replace the public address with the name of the account
+        from: this.activeAccount.name,
+      });
+      const transaction = await new Promise<string>((resolve, reject) => {
+        this.sendTransactionRequest = { resolve, reject };
+      });
+      postMessage?.(
+        JSON.stringify({
+          id: message.id,
+          type: "generalTransaction",
+          data: { transaction },
+        }),
+      );
     } else {
       console.error(`Invalid message type: ${message.type}`);
     }
@@ -117,9 +191,11 @@ export default function MenuDebugBrowser() {
   const messageHandler = useRef(new MessageHandler());
   const facade = useFacade();
 
-  const [modalVisible, setModalVisible] = useState(false);
+  const [accountModalVisible, setAccountModalVisible] = useState(false);
+  const [sendTransactionData, setSendTransactionData] =
+    useState<GeneralTransactionData | null>(null);
   const accounts = facade.getAccounts.useQuery(undefined, {
-    enabled: modalVisible,
+    enabled: accountModalVisible,
   });
 
   const js = `
@@ -140,6 +216,10 @@ export default function MenuDebugBrowser() {
                 window.rpccalls[message.id].resolve(message.data.address);
             } else if (message.type === "getBalances") {
                 window.rpccalls[message.id].resolve(message.data.balances);
+            } else if (message.type === "generalTransaction") {
+                window.rpccalls[message.id].resolve(message.data.transaction);
+            } else if (message.type === "error") {
+                window.rpccalls[message.id].reject(message.data.error);
             }
         });
 
@@ -187,11 +267,27 @@ export default function MenuDebugBrowser() {
                 console.log(result);
                 return result;
             }
+            async generalTransaction(e) {
+              if (!this.#address) {
+                throw new Error("Connect first");
+              }
+              const id = window.rpccounter++;
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                  id,
+                  type: "generalTransaction",
+                  data: e,
+              }));
+              const result = await new Promise((resolve, reject) => {
+                  window.rpccalls[id] = { resolve, reject };
+              });
+              console.log(result);
+              return result;
+            }
         }
 
         window.ironfish = new Proxy(new IronFishBridge(), {
             get: (obj, property, receiver) => {
-                if (!property in obj) {
+                if (!(property in obj)) {
                     const message = \`ERROR: Please implement $\{property\} in IronFishBridge\`;
                     console.error(message);
                     return;
@@ -212,16 +308,16 @@ export default function MenuDebugBrowser() {
     <View style={styles.container}>
       <Modal
         animationType="slide"
-        visible={modalVisible}
+        visible={accountModalVisible}
         onRequestClose={() => {
-          setModalVisible(false);
+          messageHandler.current.updateActiveAccount(null);
+          setAccountModalVisible(false);
         }}
       >
         <SafeAreaView>
           <View style={{ paddingTop: 40, paddingHorizontal: 4 }}>
             <Text style={{ fontSize: 20, textAlign: "center" }}>
-              This website would like to connect to your wallet. Choose an
-              account to connect, or click Cancel.
+              This website would like to connect to your wallet.
             </Text>
             <Text style={{ textAlign: "center" }}>
               Choose an account to connect, or click Cancel.
@@ -234,7 +330,7 @@ export default function MenuDebugBrowser() {
                     name: a.name,
                     address: a.publicAddress,
                   });
-                  setModalVisible(false);
+                  setAccountModalVisible(false);
                 }}
                 title={`${a.name} (${a.balances.iron.confirmed} $IRON)`}
               />
@@ -242,22 +338,36 @@ export default function MenuDebugBrowser() {
             <Button
               onPress={() => {
                 messageHandler.current.updateActiveAccount(null);
-                setModalVisible(false);
+                setAccountModalVisible(false);
               }}
               title="Cancel"
             />
           </View>
         </SafeAreaView>
       </Modal>
+      <SendTransactionModal
+        sendTransactionData={sendTransactionData}
+        cancel={() => {
+          messageHandler.current.rejectSendTransactionRequest();
+          setSendTransactionData(null);
+        }}
+        success={(hash) => {
+          messageHandler.current.resolveSendTransactionRequest(hash);
+          setSendTransactionData(null);
+        }}
+      />
       <WebView
-        source={{ uri: "https://testnet.bridge.ironfish.network" }}
+        source={{ uri: BRIDGE_URLS[Network.MAINNET] }}
         ref={(r) => (webref.current = r)}
         injectedJavaScriptBeforeContentLoaded={js}
         onMessage={(event) => {
           messageHandler.current.handleMessage(
             event.nativeEvent.data,
             () => {
-              setModalVisible(true);
+              setAccountModalVisible(true);
+            },
+            (data) => {
+              setSendTransactionData(data);
             },
             webref.current?.postMessage,
           );
@@ -271,6 +381,5 @@ export default function MenuDebugBrowser() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: Constants.statusBarHeight,
   },
 });

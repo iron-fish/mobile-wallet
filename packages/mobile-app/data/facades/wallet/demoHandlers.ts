@@ -319,7 +319,7 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
       fee: string;
       expiration?: number;
     }) => {
-      return;
+      return "txnhash";
     },
   ),
   setAccountSettings: f.handler.mutation(
