@@ -9,9 +9,10 @@ import {
 } from "@ui-kitten/components";
 import { StyleSheet } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
 import { useFacade } from "../../data/facades";
 import { CurrencyUtils } from "@ironfish/sdk";
+import { SettingsKey } from "@/data/settings/db";
+import { useEffect, useState, useCallback } from "react";
 
 const ForwardIcon = (props: any): IconElement => (
   <Icon {...props} name="arrow-ios-forward" />
@@ -82,7 +83,28 @@ export default function AccountSettings() {
   }
 
   const facade = useFacade();
+
+  // I tried using isPending and variables on the mutation, but it was causing toggle
+  // re-renders that made the toggle animation jittery.
+  const appSettings = facade.getAppSettings.useQuery();
   const [hideBalances, setHideBalances] = useState(false);
+
+  useEffect(() => {
+    setHideBalances(appSettings.data?.hideBalances === "true");
+  }, [appSettings.data?.hideBalances]);
+
+  const { mutate: setAppSetting } = facade.setAppSetting.useMutation();
+
+  const onToggleHideBalances = useCallback(
+    (checked: boolean) => {
+      setHideBalances(checked);
+      setAppSetting({
+        key: SettingsKey.HideBalances,
+        value: checked ? "true" : "false",
+      });
+    },
+    [setAppSetting],
+  );
 
   const getAccountResult = facade.getAccount.useQuery(
     { name: accountName },
@@ -123,8 +145,7 @@ export default function AccountSettings() {
                 accessoryRight={() => (
                   <Toggle
                     checked={hideBalances}
-                    onChange={setHideBalances}
-                    style={styles.toggle}
+                    onChange={onToggleHideBalances}
                   />
                 )}
               />,
