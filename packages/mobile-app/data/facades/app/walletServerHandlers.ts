@@ -16,6 +16,7 @@ export const appHandlers = f.facade<AppHandlers>({
     return {
       pin: undefined,
       network: Network.TESTNET,
+      hideBalances: "false",
     };
   }),
   getExplorerUrl: f.handler.query(

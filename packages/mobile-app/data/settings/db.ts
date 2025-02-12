@@ -16,11 +16,13 @@ interface Database {
 export enum SettingsKey {
   PIN = "pin",
   Network = "network",
+  HideBalances = "hideBalances",
 }
 
 const defaults: AppSettingsType = {
   [SettingsKey.PIN]: undefined,
   [SettingsKey.Network]: Network.MAINNET,
+  [SettingsKey.HideBalances]: "false",
 };
 
 export type AppSettingsType = z.infer<typeof schema>;
@@ -28,6 +30,7 @@ export type AppSettingsType = z.infer<typeof schema>;
 const schema = z.object({
   [SettingsKey.PIN]: z.string().optional(),
   [SettingsKey.Network]: z.enum([Network.MAINNET, Network.TESTNET]),
+  [SettingsKey.HideBalances]: z.enum(["true", "false"]),
 });
 
 const partialSchema = schema.partial();
