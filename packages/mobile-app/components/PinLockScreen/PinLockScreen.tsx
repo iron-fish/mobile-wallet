@@ -8,7 +8,7 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import { PinInputComponent } from "../PinInputComponent";
-import { Button } from "@ui-kitten/components";
+import { Button, Modal, Card, Text } from "@ui-kitten/components";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const LOCK_TIMEOUT = 60 * 1000 * 5; // 5 minutes of inactivity
@@ -16,11 +16,14 @@ const LOCK_TIMEOUT = 60 * 1000 * 5; // 5 minutes of inactivity
 export function PinLockScreen({ children }: { children?: React.ReactNode }) {
   const facade = useFacade();
   const appSettings = facade.getAppSettings.useQuery();
+  const setAppSetting = facade.setAppSetting.useMutation();
+  const removeAllAccounts = facade.removeAllAccounts.useMutation();
   const pin = appSettings.data?.pin;
 
   const [isLocked, setIsLocked] = useState(true);
   const [enteredPin, setEnteredPin] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showForgotPinModal, setShowForgotPinModal] = useState(false);
   const lastActiveTimestamp = useRef(Date.now());
   const lockTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -73,6 +76,28 @@ export function PinLockScreen({ children }: { children?: React.ReactNode }) {
     };
   }, [isLocked, resetLockTimeout]);
 
+  const handleForgotPin = async () => {
+    try {
+      // Remove the PIN
+      await setAppSetting.mutateAsync({
+        key: "pin",
+        value: "",
+      });
+
+      // Remove all accounts
+      await removeAllAccounts.mutateAsync(undefined);
+
+      // Unlock the screen
+      setIsLocked(false);
+      setEnteredPin("");
+      setError(null);
+      setShowForgotPinModal(false);
+    } catch (err) {
+      console.error("Error resetting app:", err);
+      setError("Failed to reset app. Please try again.");
+    }
+  };
+
   return (
     <TouchableWithoutFeedback onPress={resetLockTimeout}>
       <View style={styles.container}>
@@ -91,26 +116,72 @@ export function PinLockScreen({ children }: { children?: React.ReactNode }) {
                   error={error}
                   setError={setError}
                 />
-                <Button
-                  onPress={() => {
-                    if (enteredPin === pin) {
-                      setIsLocked(false);
-                      setEnteredPin("");
-                      setError(null);
-                      resetLockTimeout();
-                    } else {
-                      setError("Incorrect PIN");
-                      setEnteredPin("");
-                    }
-                  }}
-                  disabled={enteredPin.length !== pin.length}
-                >
-                  Unlock
-                </Button>
+                <View style={styles.buttonContainer}>
+                  <Button
+                    onPress={() => {
+                      if (enteredPin === pin) {
+                        setIsLocked(false);
+                        setEnteredPin("");
+                        setError(null);
+                        resetLockTimeout();
+                      } else {
+                        setError("Incorrect PIN");
+                        setEnteredPin("");
+                      }
+                    }}
+                    disabled={enteredPin.length !== pin.length}
+                  >
+                    Unlock
+                  </Button>
+                  <Button
+                    appearance="ghost"
+                    status="basic"
+                    onPress={() => setShowForgotPinModal(true)}
+                  >
+                    Forgot PIN?
+                  </Button>
+                </View>
               </View>
             </SafeAreaView>
           </View>
         )}
+
+        {/* Forgot PIN Modal */}
+        <Modal
+          visible={showForgotPinModal}
+          backdropStyle={styles.backdrop}
+          onBackdropPress={() => setShowForgotPinModal(false)}
+        >
+          <Card disabled style={styles.modalCard}>
+            <Text category="h6" style={styles.modalTitle}>
+              Reset App
+            </Text>
+            <Text style={styles.modalText}>
+              Resetting your PIN will delete all accounts from this device. You
+              will need to import your accounts again.
+            </Text>
+            <Text style={styles.modalText}>
+              Are you sure you want to continue?
+            </Text>
+            <View style={styles.modalButtons}>
+              <Button
+                status="basic"
+                appearance="ghost"
+                onPress={() => setShowForgotPinModal(false)}
+                style={styles.modalButton}
+              >
+                Cancel
+              </Button>
+              <Button
+                status="danger"
+                onPress={handleForgotPin}
+                style={styles.modalButton}
+              >
+                Reset App
+              </Button>
+            </View>
+          </Card>
+        </Modal>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -132,5 +203,32 @@ const styles = StyleSheet.create({
     padding: 32,
     gap: 32,
     justifyContent: "center",
+  },
+  buttonContainer: {
+    gap: 16,
+  },
+  backdrop: {
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalCard: {
+    margin: 16,
+    minWidth: 300,
+  },
+  modalTitle: {
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  modalText: {
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 16,
+  },
+  modalButton: {
+    flex: 1,
+    marginHorizontal: 8,
   },
 });

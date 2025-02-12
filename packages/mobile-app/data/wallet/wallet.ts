@@ -351,6 +351,12 @@ export class Wallet {
     await this.state.db.removeAccount(name);
   }
 
+  async removeAllAccounts() {
+    assertStarted(this.state);
+
+    await this.state.db.removeAllAccounts();
+  }
+
   private async withTransactionStatus(
     txn: DBTransaction,
     accountHead: number,

@@ -82,8 +82,8 @@ export default function Layout() {
         <QueryClientProvider client={queryClient}>
           <FacadeProvider>
             <DatabaseLoader>
-              <AccountProvider>
-                <PinLockScreen>
+              <PinLockScreen>
+                <AccountProvider>
                   <Stack>
                     <Stack.Screen
                       name="onboarding"
@@ -123,8 +123,8 @@ export default function Layout() {
                       );
                     })}
                   </Stack>
-                </PinLockScreen>
-              </AccountProvider>
+                </AccountProvider>
+              </PinLockScreen>
             </DatabaseLoader>
           </FacadeProvider>
         </QueryClientProvider>

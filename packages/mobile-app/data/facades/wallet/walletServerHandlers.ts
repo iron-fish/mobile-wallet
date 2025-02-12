@@ -354,6 +354,9 @@ export const walletHandlers = f.facade<WalletHandlers>({
   removeAccount: f.handler.mutation(async ({ name }: { name: string }) => {
     await wallet.removeAccount(name);
   }),
+  removeAllAccounts: f.handler.mutation(async () => {
+    await wallet.removeAllAccounts();
+  }),
   renameAccount: f.handler.mutation(
     async ({ name, newName }: { name: string; newName: string }) => {
       await wallet.renameAccount(name, newName);
