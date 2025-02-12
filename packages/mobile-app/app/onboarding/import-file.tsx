@@ -62,7 +62,6 @@ export default function ImportFile() {
   const [accountName, setAccountName] = useState("");
   const [nameError, setNameError] = useState("");
   const [fileError, setFileError] = useState("");
-  const [debugContent, setDebugContent] = useState<string>("");
 
   const pickDocument = async () => {
     try {
@@ -76,7 +75,6 @@ export default function ImportFile() {
           result.assets[0].uri,
         );
         setFileContent(content);
-        setDebugContent(content.slice(0, 100) + "..."); // Show first 100 chars
         setFileError("");
       }
     } catch (err) {
