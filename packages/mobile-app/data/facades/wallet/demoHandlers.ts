@@ -300,6 +300,9 @@ export const walletDemoHandlers = f.facade<WalletHandlers>({
       const accountIndex = ACCOUNTS.findIndex((a) => a.name === name);
       ACCOUNTS.splice(accountIndex, 1);
     }),
+  removeAllAccounts: f.handler.mutation(async () => {
+    ACCOUNTS.length = 0;
+  }),
   renameAccount: f.handler.mutation(
     async ({ name, newName }: { name: string; newName: string }) => {
       const account = ACCOUNTS.find((a) => a.name === name);

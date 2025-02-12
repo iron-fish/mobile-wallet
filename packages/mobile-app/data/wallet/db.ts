@@ -634,6 +634,33 @@ export class WalletDb {
     return result;
   }
 
+  async removeAllAccounts() {
+    const accounts = await this.db.selectFrom("accounts").selectAll().execute();
+
+    await this.db.transaction().execute(async (db) => {
+      await db.deleteFrom("balances").execute();
+      await db.deleteFrom("accountNetworkHeads").execute();
+      await db.deleteFrom("accountTransactions").execute();
+      await db.deleteFrom("transactions").execute();
+      await db.deleteFrom("activeAccount").execute();
+      await db.deleteFrom("accounts").execute();
+    });
+
+    // Clean up spending keys from secure storage
+    for (const account of accounts) {
+      try {
+        await SecureStore.deleteItemAsync(account.publicAddress, {
+          keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+          requireAuthentication: false,
+        });
+      } catch {
+        console.log(
+          `Failed to delete spending key for account ${account.name}`,
+        );
+      }
+    }
+  }
+
   async setActiveAccount(name: string) {
     const result = await this.db
       .updateTable("activeAccount")

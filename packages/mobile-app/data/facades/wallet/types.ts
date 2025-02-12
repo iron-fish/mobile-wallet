@@ -147,6 +147,7 @@ export type WalletHandlers = {
   pauseSyncing: Mutation<() => void>;
   renameAccount: Mutation<(args: { name: string; newName: string }) => void>;
   removeAccount: Mutation<(args: { name: string }) => void>;
+  removeAllAccounts: Mutation<() => void>;
   resumeSyncing: Mutation<() => void>;
   sendTransaction: Mutation<
     (args: {

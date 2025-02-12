@@ -372,6 +372,9 @@ export const walletHandlers = f.facade<WalletHandlers>({
   removeAccount: f.handler.mutation(async ({ name }: { name: string }) => {
     await oreoWallet.removeAccount(name);
   }),
+  removeAllAccounts: f.handler.mutation(async () => {
+    await oreoWallet.removeAllAccounts();
+  }),
   renameAccount: f.handler.mutation(
     async ({ name, newName }: { name: string; newName: string }) => {
       await oreoWallet.renameAccount(name, newName);
