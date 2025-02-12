@@ -25,6 +25,18 @@ export default function OnboardingLayout() {
           title: "Create Your PIN",
         }}
       />
+      <Stack.Screen
+        name="import-account"
+        options={{
+          title: "Import Account",
+        }}
+      />
+      <Stack.Screen
+        name="import-file"
+        options={{
+          title: "Import File",
+        }}
+      />
     </Stack>
   );
 }

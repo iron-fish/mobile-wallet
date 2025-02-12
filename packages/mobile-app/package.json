@@ -43,6 +43,7 @@
     "react-native-svg": "9.13.6",
     "react-native-webview": "13.13.2",
     "zod": "^3.22.4",
+    "expo-document-picker": "~13.0.3",
     "expo-clipboard": "~7.0.1"
   },
   "devDependencies": {
