@@ -8,7 +8,7 @@ import {
   decodeAccount,
   encodeAccount,
 } from "@ironfish/sdk";
-import { IRON_ASSET_ID_HEX, Network } from "../constants";
+import { CONFIRMATIONS, IRON_ASSET_ID_HEX, Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
 import { AssetLoader } from "./assetLoader";
 import { Output } from "../facades/wallet/types";
@@ -30,9 +30,6 @@ function assertStarted(state: WalletState): asserts state is StartedState {
     throw new Error("Wallet is not started");
   }
 }
-
-// TODO: Make confirmations configurable
-const CONFIRMATIONS = 2;
 
 // Used when calculating a transaction's expiration sequence by adding it
 // to the latest block sequence returned from the API.

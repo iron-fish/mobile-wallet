@@ -1,4 +1,4 @@
-import { Network } from "../constants";
+import { CONFIRMATIONS, Network } from "../constants";
 import * as Crypto from "expo-crypto";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
 
@@ -294,7 +294,7 @@ class OreowalletServer {
   async getBalances(
     network: Network,
     account: AccountInfo,
-    confirmations: number = 2,
+    confirmations: number = CONFIRMATIONS,
   ): Promise<GetBalancesResponse> {
     const url = OREOWALLET_SERVER_URLS[network] + `getBalances`;
 
