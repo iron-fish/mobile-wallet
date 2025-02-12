@@ -73,18 +73,6 @@ export function PinLockScreen({ children }: { children?: React.ReactNode }) {
     };
   }, [isLocked, resetLockTimeout]);
 
-  const handlePinSubmit = () => {
-    if (enteredPin === pin) {
-      setIsLocked(false);
-      setEnteredPin("");
-      setError(null);
-      resetLockTimeout();
-    } else {
-      setError("Incorrect PIN");
-      setEnteredPin("");
-    }
-  };
-
   return (
     <TouchableWithoutFeedback onPress={resetLockTimeout}>
       <View style={styles.container}>
@@ -104,7 +92,17 @@ export function PinLockScreen({ children }: { children?: React.ReactNode }) {
                   setError={setError}
                 />
                 <Button
-                  onPress={handlePinSubmit}
+                  onPress={() => {
+                    if (enteredPin === pin) {
+                      setIsLocked(false);
+                      setEnteredPin("");
+                      setError(null);
+                      resetLockTimeout();
+                    } else {
+                      setError("Incorrect PIN");
+                      setEnteredPin("");
+                    }
+                  }}
                   disabled={enteredPin.length !== pin.length}
                 >
                   Unlock
