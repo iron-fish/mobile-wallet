@@ -21,6 +21,7 @@ import { ApplicationProvider, IconRegistry } from "@ui-kitten/components";
 import { EvaIconsPack } from "@ui-kitten/eva-icons";
 import { menuItems } from "./menu";
 import { accountSettingsRoutes } from "./account-settings";
+import { PinLockScreen } from "@/components/PinLockScreen/PinLockScreen";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -82,45 +83,47 @@ export default function Layout() {
           <FacadeProvider>
             <DatabaseLoader>
               <AccountProvider>
-                <Stack>
-                  <Stack.Screen
-                    name="onboarding"
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(tabs)"
-                    options={{
-                      headerShown: false,
-                      title: "Account",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="menu/index"
-                    options={{
-                      title: "Menu",
-                    }}
-                  />
-                  {menuItems.map((item) => {
-                    return (
-                      <Stack.Screen
-                        key={item.title}
-                        name={item.path}
-                        options={{ title: item.title }}
-                      />
-                    );
-                  })}
-                  {accountSettingsRoutes.map((item) => {
-                    return (
-                      <Stack.Screen
-                        key={item.title}
-                        name={item.path}
-                        options={{ title: item.title }}
-                      />
-                    );
-                  })}
-                </Stack>
+                <PinLockScreen>
+                  <Stack>
+                    <Stack.Screen
+                      name="onboarding"
+                      options={{
+                        headerShown: false,
+                      }}
+                    />
+                    <Stack.Screen
+                      name="(tabs)"
+                      options={{
+                        headerShown: false,
+                        title: "Account",
+                      }}
+                    />
+                    <Stack.Screen
+                      name="menu/index"
+                      options={{
+                        title: "Menu",
+                      }}
+                    />
+                    {menuItems.map((item) => {
+                      return (
+                        <Stack.Screen
+                          key={item.title}
+                          name={item.path}
+                          options={{ title: item.title }}
+                        />
+                      );
+                    })}
+                    {accountSettingsRoutes.map((item) => {
+                      return (
+                        <Stack.Screen
+                          key={item.title}
+                          name={item.path}
+                          options={{ title: item.title }}
+                        />
+                      );
+                    })}
+                  </Stack>
+                </PinLockScreen>
               </AccountProvider>
             </DatabaseLoader>
           </FacadeProvider>
