@@ -11,6 +11,7 @@ import { StyleSheet } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { useFacade } from "../../data/facades";
+import { CurrencyUtils } from "@ironfish/sdk";
 
 const ForwardIcon = (props: any): IconElement => (
   <Icon {...props} name="arrow-ios-forward" />
@@ -24,10 +25,6 @@ const ACCOUNT_SETTINGS_ROUTES = {
   accountName: {
     title: "Account Name",
     href: "account-settings/account-name",
-  },
-  address: {
-    title: "Address",
-    href: "address",
   },
   exportAccount: {
     title: "Export Account",
@@ -96,8 +93,9 @@ export default function AccountSettings() {
 
   const menuItems = getMenuItems({
     currentAccountName: getAccountResult.data?.name ?? "Unknown",
-    currentAccountBalance:
+    currentAccountBalance: CurrencyUtils.render(
       getAccountResult.data?.balances.iron.confirmed ?? "0",
+    ),
   });
 
   const handleSelect = (index: number) => {

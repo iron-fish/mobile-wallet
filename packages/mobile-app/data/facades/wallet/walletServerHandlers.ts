@@ -369,12 +369,31 @@ export const walletHandlers = f.facade<WalletHandlers>({
       fee: string;
       expiration?: number;
     }) => {
-      await wallet.sendTransaction(
+      const mappedOutputs = args.outputs.map((o) => {
+        const memo =
+          o.memoHex ??
+          (o.memo ? Buffer.from(o.memo, "utf-8").toString("hex") : "");
+
+        return {
+          amount: o.amount,
+          assetId: o.assetId ?? IRON_ASSET_ID_HEX,
+          publicAddress: o.publicAddress,
+          memoHex: memo,
+        };
+      });
+
+      const hash = await wallet.sendTransaction(
         Network.TESTNET,
         args.accountName,
-        args.outputs,
+        mappedOutputs,
         args.fee,
       );
+
+      if (!hash) {
+        throw new Error("Failed to send transaction");
+      }
+
+      return Uint8ArrayUtils.toHex(hash);
     },
   ),
   setAccountSettings: f.handler.mutation(

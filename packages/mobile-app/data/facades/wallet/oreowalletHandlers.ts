@@ -194,12 +194,12 @@ export const walletHandlers = f.facade<WalletHandlers>({
     async (args: {
       accountName: string;
       outputs: { amount: string; assetId: string }[];
-    }) => {
-      return await oreoWallet.estimateFees(
-        Network.MAINNET,
-        args.accountName,
-        args.outputs,
-      );
+    }): Promise<{
+      slow: string;
+      average: string;
+      fast: string;
+    }> => {
+      throw new Error("Oreowallet does not implement estimated fees");
     },
   ),
   getTransaction: f.handler.query(
@@ -289,7 +289,10 @@ export const walletHandlers = f.facade<WalletHandlers>({
             : null,
         hash: txn.hash,
         submittedSequence: 0,
-        assetBalanceDeltas: [],
+        assetBalanceDeltas: txn.assetBalanceDeltas.map((abd) => ({
+          assetId: abd.assetId,
+          delta: abd.delta,
+        })),
         status: txn.status as TransactionStatus,
         notes: [],
         burns: [],
@@ -384,12 +387,25 @@ export const walletHandlers = f.facade<WalletHandlers>({
       fee: string;
       expiration?: number;
     }) => {
-      await oreoWallet.sendTransaction(
+      const rawTxn = await oreoWallet.createTransaction(
         Network.MAINNET,
         args.accountName,
         args.outputs,
         args.fee,
       );
+
+      const hash = await oreoWallet.postTransaction(
+        Network.MAINNET,
+        args.accountName,
+        rawTxn,
+        args.expiration,
+      );
+
+      if (!hash) {
+        throw new Error("Failed to send transaction");
+      }
+
+      return hash;
     },
   ),
   setAccountSettings: f.handler.mutation(

@@ -3,16 +3,15 @@ import { WalletDb } from "./db";
 import {
   AccountFormat,
   LanguageKey,
+  RawTransaction,
   RawTransactionSerde,
   decodeAccount,
   encodeAccount,
 } from "@ironfish/sdk";
-import { Network } from "../constants";
+import { IRON_ASSET_ID_HEX, Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
 import { AssetLoader } from "./assetLoader";
-import { Blockchain } from "../blockchain";
 import { Output } from "../facades/wallet/types";
-import { getFee } from "@ironfish/sdk/build/src/memPool";
 import { OreowalletServerApi } from "../oreowalletServerApi/oreowalletServerApi";
 import { IronFishApi } from "../api/api";
 
@@ -367,14 +366,64 @@ export class Wallet {
     return this.state.assetLoader.getAsset(network, assetId);
   }
 
-  async estimateFees(
+  /**
+   * Checks that the raw transaction contains the same fee, outputs, etc. as specified
+   * when calling createTransaction.
+   */
+  private validateParamsMatchRawTransaction(
+    rawTransaction: RawTransaction,
+    outputs: Output[],
+    fee?: string,
+  ) {
+    // Validate fee
+    if (fee !== undefined && fee !== rawTransaction.fee.toString()) {
+      throw new Error("Fee does not match");
+    }
+
+    // Validate outputs
+    const map = new Map<string, number>();
+    for (const output of outputs) {
+      let memo =
+        output.memoHex ??
+        (output.memo ? Buffer.from(output.memo, "utf-8").toString("hex") : "");
+
+      memo = memo.padEnd(64, "0");
+
+      const key = `${output.publicAddress}:${output.amount}:${output.assetId ?? IRON_ASSET_ID_HEX}:${memo}`;
+      console.log(`Output key: ${key}`);
+
+      map.set(key, (map.get(key) ?? 0) + 1);
+    }
+
+    for (const output of rawTransaction.outputs) {
+      const key = `${output.note.owner()}:${output.note.value()}:${output.note.assetId().toString("hex")}:${output.note.memo().toString("hex")}`;
+      console.log(`rawTxn output key: ${key}`);
+
+      const count = map.get(key) ?? 0;
+
+      if (count === 0) {
+        // Assumes change notes are not included, else we would ignore them here
+        throw new Error("Unexpected output in raw transaction");
+      } else if (count === 1) {
+        map.delete(key);
+      } else {
+        map.set(key, count - 1);
+      }
+    }
+
+    if (map.size !== 0) {
+      throw new Error("Output missing from raw transaction");
+    }
+  }
+
+  async createTransaction(
     network: Network,
     accountName: string,
-    outputs: { assetId: string; amount: string }[],
-  ) {
+    outputs: Output[],
+    fee?: string,
+  ): Promise<RawTransaction> {
     assertStarted(this.state);
 
-    // Make sure the account exists
     const account = await this.state.db.getAccount(accountName);
     if (account == null) {
       throw new Error(`No account found with name ${accountName}`);
@@ -388,44 +437,28 @@ export class Wallet {
       name: account.name,
     });
 
-    // Attempt to fund the transaction
-    const createTransactionResponse =
-      await OreowalletServerApi.createTransaction(
-        network,
-        {
-          publicAddress: account.publicAddress,
-          viewKey: decodedAccount.viewKey,
-        },
-        {
-          outputs: outputs.map((output) => ({
-            publicAddress: account.publicAddress,
-            amount: output.amount,
-          })),
-          fee: "1",
-        },
-      );
-
-    const rawTxn = RawTransactionSerde.deserialize(
-      Buffer.from(createTransactionResponse.transaction, "hex"),
+    const createTransactionResult = await OreowalletServerApi.createTransaction(
+      network,
+      { publicAddress: account.publicAddress, viewKey: decodedAccount.viewKey },
+      {
+        outputs,
+        fee,
+      },
     );
 
-    const size = rawTxn.postedSize("");
+    const rawTransaction = RawTransactionSerde.deserialize(
+      Buffer.from(createTransactionResult.transaction, "hex"),
+    );
 
-    const feeRates = await Blockchain.getFeeRates(Network.TESTNET);
+    this.validateParamsMatchRawTransaction(rawTransaction, outputs, fee);
 
-    return {
-      slow: getFee(BigInt(feeRates.slow), size).toString(),
-      average: getFee(BigInt(feeRates.average), size).toString(),
-      fast: getFee(BigInt(feeRates.fast), size).toString(),
-    };
+    return rawTransaction;
   }
 
-  async sendTransaction(
+  async postTransaction(
     network: Network,
     accountName: string,
-    outputs: Output[],
-    fee: string,
-    // TODO: Implement transaction expiration
+    rawTransaction: RawTransaction,
     expiration?: number,
   ) {
     assertStarted(this.state);
@@ -448,28 +481,15 @@ export class Wallet {
     console.log(`Account fetched in: ${performance.now() - lastTime}ms`);
     lastTime = performance.now();
 
-    const createTransactionResult = await OreowalletServerApi.createTransaction(
-      network,
-      { publicAddress: account.publicAddress, viewKey: decodedAccount.viewKey },
-      {
-        outputs,
-        fee,
-      },
-    );
-
-    const rawTransaction = RawTransactionSerde.deserialize(
-      Buffer.from(createTransactionResult.transaction, "hex"),
-    );
-
     // Call createNote for each output you want to create
     const notes = await Promise.all(
       rawTransaction.outputs.map((output) =>
         IronfishNativeModule.createNote({
-          assetId: output.note.assetId(),
+          assetId: new Uint8Array(output.note.assetId()),
           owner: Uint8ArrayUtils.fromHex(output.note.owner()),
           sender: Uint8ArrayUtils.fromHex(output.note.sender()),
           value: output.note.value().toString(),
-          memo: output.note.memo(),
+          memo: new Uint8Array(output.note.memo()),
         }),
       ),
     );
@@ -486,7 +506,7 @@ export class Wallet {
     }));
 
     console.log(
-      `Notes and spends prepared in ${performance.now() - lastTime}ms`,
+      `${notes.length} notes and ${spendComponents.length} spends prepared in ${performance.now() - lastTime}ms`,
     );
     lastTime = performance.now();
 
@@ -505,12 +525,14 @@ export class Wallet {
     console.log(`Latest block fetched in ${performance.now() - lastTime}ms`);
     lastTime = performance.now();
 
+    // expiration can be 0 for no expiration
     const expirationSequence =
+      expiration ??
       Number(latestBlock.currentBlockIdentifier.index) + EXPIRATION_DELTA;
-    // TODO: Implement proper transaction fees
+
     const postedTransaction = await IronfishNativeModule.createTransaction(
       rawTransaction.version,
-      fee,
+      rawTransaction.fee.toString(),
       expirationSequence,
       spendComponents,
       notes.map((note) => Uint8ArrayUtils.toHex(note)),
@@ -534,6 +556,8 @@ export class Wallet {
     console.log(
       `Transaction ${broadcastResult.hash} broadcast in ${performance.now() - lastTime}ms`,
     );
+
+    return broadcastResult.hash;
   }
 }
 

@@ -3,23 +3,7 @@ import { useRouter, useSegments } from "expo-router";
 import { useFacade } from "../data/facades";
 import { ActivityIndicator, SafeAreaView, Text } from "react-native";
 import { StyleSheet } from "react-native";
-
-interface Balance {
-  assetId: string;
-  confirmed: string;
-  available: string;
-}
-
-interface Account {
-  name: string;
-  balances: {
-    iron: Balance;
-    custom: Balance[];
-  };
-  head?: {
-    sequence: number;
-  };
-}
+import { Account } from "../data/facades/wallet/types";
 
 interface AccountContextType {
   isLoading: boolean;

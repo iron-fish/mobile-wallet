@@ -59,9 +59,10 @@ export type Transaction = {
 
 export type Output = {
   amount: string;
-  memoHex: string;
+  memo?: string;
+  memoHex?: string;
   publicAddress: string;
-  assetId: string;
+  assetId?: string;
 };
 
 export type Note = {
@@ -153,7 +154,7 @@ export type WalletHandlers = {
       outputs: Output[];
       fee: string;
       expiration?: number;
-    }) => void
+    }) => string
   >;
   setAccountSettings: Mutation<
     (args: { name: string; settings: Partial<AccountSettings> }) => void
