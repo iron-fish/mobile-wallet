@@ -218,7 +218,7 @@ export default function CreatePin() {
           </View>
         ) : (
           <PinInputComponent
-            pinLength={MAX_PIN_LENGTH}
+            pinLength={step === "pin" ? MAX_PIN_LENGTH : pinValue.length}
             onPinChange={(value) => handlePinChange(value, step === "confirm")}
             error={error}
             setError={setError}

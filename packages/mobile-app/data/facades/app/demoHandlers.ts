@@ -39,7 +39,7 @@ export const appDemoHandlers = f.facade<AppHandlers>({
     },
   ),
   setAppSetting: f.handler.mutation(
-    async (args: { key: keyof AppSettings; value: string | undefined }) => {
+    async (_args: { key: keyof AppSettings; value: string | undefined }) => {
       return;
     },
   ),
