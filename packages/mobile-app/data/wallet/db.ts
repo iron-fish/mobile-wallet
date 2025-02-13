@@ -139,6 +139,8 @@ interface Database {
   assets: AssetsTable;
 }
 
+export type DBAccount = Selectable<AccountsTable>;
+
 export type DBTransaction = Selectable<TransactionsTable> &
   Selectable<AccountTransactionsTable>;
 
@@ -176,6 +178,9 @@ export class WalletDb {
       dialect: new ExpoDialect({
         database: "wallet.db",
         autoAffinityConversion: true,
+        onError: (error) => {
+          console.error(error);
+        },
       }),
       log: ["error"],
     });
@@ -467,36 +472,54 @@ export class WalletDb {
     return new WalletDb(db);
   }
 
-  async createAccount(account: AccountImport) {
+  /**
+   * Creates a new account in the database and sets it to the active account.
+   * Returns the existing account if one already exists with the same public address.
+   */
+  async createAccount(account: AccountImport): Promise<DBAccount> {
     const viewOnlyAccount = encodeAccount(
       { ...account, spendingKey: null },
       AccountFormat.Base64Json,
     );
 
-    const accountValues = {
-      name: account.name,
-      publicAddress: account.publicAddress,
-      viewOnlyAccount: viewOnlyAccount,
-      viewOnly: account.spendingKey === null,
-    };
-
     const result = await this.db.transaction().execute(async (db) => {
-      const result = await db
+      const insertResult = await db
         .insertInto("accounts")
-        .values(accountValues)
-        .executeTakeFirstOrThrow();
+        .values({
+          name: account.name,
+          publicAddress: account.publicAddress,
+          viewOnlyAccount: viewOnlyAccount,
+          viewOnly: account.spendingKey === null,
+        })
+        .onConflict((oc) => oc.column("publicAddress").doNothing())
+        .executeTakeFirst();
 
-      if (result.insertId === undefined) {
-        throw new Error("Failed to insert account");
+      // TODO: We're returning the existing account to make it easy to switch networks
+      // using the oreowallet server -- we can just re-import all accounts. But this
+      // doesn't consider:
+      //   * If the new account has same public address but different name
+      //   * If the new account has same public address but adds/removes spending key
+      if (!insertResult.numInsertedOrUpdatedRows) {
+        return await db
+          .selectFrom("accounts")
+          .selectAll()
+          .where("accounts.publicAddress", "=", account.publicAddress)
+          .executeTakeFirstOrThrow();
       }
 
-      // Assumes you always want to change active accounts when adding a new one
+      // Only set as active account if this was a new insert
       await db
         .updateTable("activeAccount")
-        .set("accountId", Number(result.insertId))
+        .set("accountId", Number(insertResult.insertId))
         .execute();
 
-      return result;
+      return {
+        id: Number(insertResult.insertId),
+        name: account.name,
+        publicAddress: account.publicAddress,
+        viewOnlyAccount: viewOnlyAccount,
+        viewOnly: account.spendingKey === null,
+      };
     });
 
     if (account.spendingKey) {
@@ -510,10 +533,7 @@ export class WalletDb {
       );
     }
 
-    return {
-      id: Number(result.insertId),
-      ...accountValues,
-    };
+    return result;
   }
 
   async getAccountById(id: number) {

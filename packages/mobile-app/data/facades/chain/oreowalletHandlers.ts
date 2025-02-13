@@ -2,13 +2,17 @@ import { f } from "data-facade";
 import { Asset, ChainHandlers } from "./types";
 
 import { isValidPublicAddress } from "ironfish-native-module";
-import { Network } from "../../constants";
 import { oreoWallet } from "../../wallet/oreowalletWallet";
+import { SettingsManager } from "@/data/settings/manager";
+import { SettingsKey } from "@/data/settings/db";
 
 export const chainHandlers = f.facade<ChainHandlers>({
   getAsset: f.handler.query(
     async ({ assetId }: { assetId: string }): Promise<Asset | null> => {
-      const asset = await oreoWallet.getAsset(Network.MAINNET, assetId);
+      const network = await SettingsManager.db().getOrDefault(
+        SettingsKey.Network,
+      );
+      const asset = await oreoWallet.getAsset(network, assetId);
 
       if (!asset) {
         return null;
@@ -35,10 +39,6 @@ export const chainHandlers = f.facade<ChainHandlers>({
       };
     },
   ),
-  getNetworkInfo: f.handler.query(async () => {
-    // TODO: Implement network switching
-    return { networkId: 0 };
-  }),
   isValidPublicAddress: f.handler.query(({ address }: { address: string }) => {
     return isValidPublicAddress(address);
   }),

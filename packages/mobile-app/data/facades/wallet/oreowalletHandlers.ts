@@ -9,8 +9,10 @@ import {
   WalletStatus,
 } from "./types";
 import { oreoWallet } from "../../wallet/oreowalletWallet";
-import { IRON_ASSET_ID_HEX, Network } from "../../constants";
+import { IRON_ASSET_ID_HEX } from "../../constants";
 import * as Uint8ArrayUtils from "../../../utils/uint8Array";
+import { SettingsManager } from "@/data/settings/manager";
+import { SettingsKey } from "@/data/settings/db";
 
 import {
   AccountFormat,
@@ -24,7 +26,10 @@ import { OreowalletServerApi } from "../../oreowalletServerApi/oreowalletServerA
 export const walletHandlers = f.facade<WalletHandlers>({
   createAccount: f.handler.mutation(
     async ({ name }: { name: string }): Promise<Account> => {
-      const account = await oreoWallet.createAccount(Network.MAINNET, name);
+      const network = await SettingsManager.db().getOrDefault(
+        SettingsKey.Network,
+      );
+      const account = await oreoWallet.createAccount(network, name);
 
       return {
         name: account.name,
@@ -76,15 +81,13 @@ export const walletHandlers = f.facade<WalletHandlers>({
   ),
   getAccount: f.handler.query(
     async ({ name }: { name?: string }): Promise<Account | null> => {
+      const network = await SettingsManager.db().getOrDefault(
+        SettingsKey.Network,
+      );
       const account =
         name === undefined
-          ? await oreoWallet.getActiveAccountWithHeadAndBalances(
-              Network.MAINNET,
-            )
-          : await oreoWallet.getAccountWithHeadAndBalances(
-              Network.MAINNET,
-              name,
-            );
+          ? await oreoWallet.getActiveAccountWithHeadAndBalances(network)
+          : await oreoWallet.getAccountWithHeadAndBalances(network, name);
 
       if (!account) {
         return null;
@@ -137,9 +140,10 @@ export const walletHandlers = f.facade<WalletHandlers>({
     },
   ),
   getAccounts: f.handler.query(async () => {
-    const accounts = await oreoWallet.getAccountsWithHeadAndBalances(
-      Network.MAINNET,
+    const network = await SettingsManager.db().getOrDefault(
+      SettingsKey.Network,
     );
+    const accounts = await oreoWallet.getAccountsWithHeadAndBalances(network);
 
     return accounts.map((a): Account => {
       const balances = a.balances.map((b) => {
@@ -210,10 +214,13 @@ export const walletHandlers = f.facade<WalletHandlers>({
       accountName: string;
       hash: string;
     }): Promise<Transaction | null> => {
+      const network = await SettingsManager.db().getOrDefault(
+        SettingsKey.Network,
+      );
       const txnHash = Uint8ArrayUtils.fromHex(hash);
       const txn = await oreoWallet.getTransaction(
         accountName,
-        Network.MAINNET,
+        network,
         txnHash,
       );
 
@@ -271,10 +278,10 @@ export const walletHandlers = f.facade<WalletHandlers>({
         address?: string;
       };
     }): Promise<Transaction[]> => {
-      const txns = await oreoWallet.getTransactions(
-        accountName,
-        Network.MAINNET,
+      const network = await SettingsManager.db().getOrDefault(
+        SettingsKey.Network,
       );
+      const txns = await oreoWallet.getTransactions(accountName, network);
 
       return txns.map((txn) => ({
         fee: txn.fee,
@@ -304,6 +311,9 @@ export const walletHandlers = f.facade<WalletHandlers>({
   ),
   getWalletStatus: f.handler.query(
     async ({ accountName }: { accountName: string }): Promise<WalletStatus> => {
+      const network = await SettingsManager.db().getOrDefault(
+        SettingsKey.Network,
+      );
       const exportedAcc = await oreoWallet.exportAccount(
         accountName,
         AccountFormat.Base64Json,
@@ -314,13 +324,10 @@ export const walletHandlers = f.facade<WalletHandlers>({
 
       const decodedAccount = decodeAccount(exportedAcc);
 
-      const response = await OreowalletServerApi.getLatestBlock(
-        Network.MAINNET,
-        {
-          publicAddress: decodedAccount.publicAddress,
-          viewKey: decodedAccount.viewKey,
-        },
-      );
+      const response = await OreowalletServerApi.getLatestBlock(network, {
+        publicAddress: decodedAccount.publicAddress,
+        viewKey: decodedAccount.viewKey,
+      });
       return {
         status: oreoWallet.scanState.type,
         latestKnownBlock: Number(response.currentBlockIdentifier.index),
@@ -335,8 +342,11 @@ export const walletHandlers = f.facade<WalletHandlers>({
       account: string;
       name?: string;
     }): Promise<Account> => {
+      const network = await SettingsManager.db().getOrDefault(
+        SettingsKey.Network,
+      );
       const importedAccount = await oreoWallet.importAccount(
-        Network.MAINNET,
+        network,
         account,
         name,
       );
@@ -390,15 +400,18 @@ export const walletHandlers = f.facade<WalletHandlers>({
       fee: string;
       expiration?: number;
     }) => {
+      const network = await SettingsManager.db().getOrDefault(
+        SettingsKey.Network,
+      );
       const rawTxn = await oreoWallet.createTransaction(
-        Network.MAINNET,
+        network,
         args.accountName,
         args.outputs,
         args.fee,
       );
 
       const hash = await oreoWallet.postTransaction(
-        Network.MAINNET,
+        network,
         args.accountName,
         rawTxn,
         args.expiration,

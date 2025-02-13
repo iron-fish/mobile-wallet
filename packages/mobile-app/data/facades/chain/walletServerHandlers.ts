@@ -35,10 +35,6 @@ export const chainHandlers = f.facade<ChainHandlers>({
       };
     },
   ),
-  getNetworkInfo: f.handler.query(async () => {
-    // TODO: Implement network switching
-    return { networkId: 0 };
-  }),
   isValidPublicAddress: f.handler.query(({ address }: { address: string }) => {
     return isValidPublicAddress(address);
   }),
