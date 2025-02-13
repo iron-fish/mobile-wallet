@@ -190,7 +190,6 @@ class OreowalletServer {
       const result = JSON.parse(responseText) as OreowalletServerResponse<T>;
 
       if (result.error) {
-        console.log(result);
         console.error(result.error);
       }
 
