@@ -23,6 +23,7 @@ import {
   Spinner,
 } from "@ui-kitten/components";
 import SendConfirmed from "../../svgs/SendConfirmed";
+import Rubics from "../../svgs/Rubics";
 import { useRouter, Stack } from "expo-router";
 
 const isValidBigInt = (num: string) => {
@@ -45,6 +46,9 @@ const CheckIcon = (props: IconProps) => (
   <Icon {...props} name="checkmark-outline" />
 );
 
+// First add a new type for the transaction state
+type TransactionState = "sending" | "sent" | "idle";
+
 export default function Send() {
   const facade = useFacade();
   const router = useRouter();
@@ -57,10 +61,10 @@ export default function Send() {
   const [selectedFee, setSelectedFee] = useState<"default" | "custom">(
     "default",
   );
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const [sentTxHash, setSentTxHash] = useState<string>("");
   const [memo, setMemo] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [transactionState, setTransactionState] =
+    useState<TransactionState>("idle");
 
   const getAccountResult = facade.getAccount.useQuery(
     {},
@@ -238,17 +242,14 @@ export default function Send() {
       <Button
         style={styles.sendButton}
         disabled={
-          isLoading ||
+          transactionState !== "idle" ||
           isValidPublicAddress.data !== true ||
           !isValidBigInt(amount) ||
           (selectedFee === "custom" && !isValidBigInt(customFee))
         }
-        accessoryLeft={
-          isLoading ? (props) => <Spinner {...props} /> : undefined
-        }
         onPress={async () => {
           try {
-            setIsLoading(true);
+            setTransactionState("sending");
 
             const outputs = [
               {
@@ -259,7 +260,7 @@ export default function Send() {
               },
             ];
 
-            const fee = selectedFee === "custom" ? customFee : "1"; // Default fee value
+            const fee = selectedFee === "custom" ? customFee : "1";
 
             const hash = await sendTransactionMutation.mutateAsync({
               accountName: getAccountResult.data?.name ?? "",
@@ -268,25 +269,23 @@ export default function Send() {
             });
 
             setSentTxHash(hash);
-            setShowConfirmation(true);
+            setTransactionState("sent");
           } catch (error) {
-            // You may want to add proper error handling here
             console.error("Failed to send transaction:", error);
-          } finally {
-            setIsLoading(false);
+            setTransactionState("idle");
           }
         }}
       >
-        {isLoading ? "SENDING..." : "SEND TRANSACTION"}
+        SEND TRANSACTION
       </Button>
 
-      <Modal visible={showConfirmation} style={styles.modal}>
+      <Modal visible={transactionState !== "idle"} style={styles.modal}>
         <Layout style={styles.modalContainer}>
           <View style={styles.svgContainer}>
-            <SendConfirmed />
+            {transactionState === "sending" ? <Rubics /> : <SendConfirmed />}
           </View>
           <Text category="h1" style={styles.sentText}>
-            Sent!
+            {transactionState === "sending" ? "Sending..." : "Sent!"}
           </Text>
           <Text category="s1" style={styles.amountText}>
             {amount}{" "}
@@ -304,25 +303,29 @@ export default function Send() {
             </Text>
           )}
           <View style={styles.buttonContainer}>
-            <Button
-              appearance="filled"
-              style={styles.confirmButton}
-              onPress={() => {
-                console.log("will navigate to", sentTxHash);
-              }}
-            >
-              View Transaction
-            </Button>
-            <Button
-              appearance="outline"
-              style={styles.confirmButton}
-              onPress={() => {
-                setShowConfirmation(false);
-                router.back();
-              }}
-            >
-              Close
-            </Button>
+            {transactionState === "sent" && (
+              <>
+                <Button
+                  appearance="filled"
+                  style={styles.confirmButton}
+                  onPress={() => {
+                    console.log("will navigate to", sentTxHash);
+                  }}
+                >
+                  View Transaction
+                </Button>
+                <Button
+                  appearance="outline"
+                  style={styles.confirmButton}
+                  onPress={() => {
+                    setTransactionState("idle");
+                    router.back();
+                  }}
+                >
+                  Close
+                </Button>
+              </>
+            )}
           </View>
         </Layout>
       </Modal>
@@ -389,8 +392,10 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   svgContainer: {
-    width: "70%", // Make SVG slightly larger
+    width: "70%",
     aspectRatio: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   buttonContainer: {
     width: "100%",
