@@ -18,10 +18,6 @@ const MENU_ROUTES = {
     title: "Security",
     href: "menu/security",
   },
-  notifications: {
-    title: "Notifications",
-    href: "menu/notifications",
-  },
   network: {
     title: "Network",
     href: "menu/network",
