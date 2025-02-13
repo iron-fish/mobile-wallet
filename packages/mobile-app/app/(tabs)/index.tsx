@@ -25,6 +25,7 @@ import { useAccount } from "../../providers/AccountProvider";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CurrencyUtils } from "@ironfish/sdk";
+import { CONFIRMATIONS } from "@/data/constants";
 
 const MenuIcon = (props: IconProps) => <Icon {...props} name="menu-outline" />;
 const SettingsIcon = (props: IconProps) => (
@@ -116,7 +117,11 @@ export default function Balances() {
     );
   }
 
-  const isSyncing = getWalletStatusResult.data?.status === "SCANNING";
+  const isSyncing =
+    account?.head?.sequence !== undefined &&
+    getWalletStatusResult.data?.latestKnownBlock !== undefined &&
+    account.head.sequence <
+      Math.max(getWalletStatusResult.data.latestKnownBlock - CONFIRMATIONS, 1);
   const syncProgress = isSyncing
     ? ((account?.head?.sequence ?? 0) /
         (getWalletStatusResult.data?.latestKnownBlock ?? 1)) *

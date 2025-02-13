@@ -11,7 +11,7 @@ import {
   encodeAccount,
 } from "@ironfish/sdk";
 import { ChainProcessor } from "../chainProcessor";
-import { Network } from "../constants";
+import { CONFIRMATIONS, Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
 import { LightBlock, LightTransaction } from "../walletServerApi/lightstreamer";
 import { WriteQueue } from "./writeQueue";
@@ -36,9 +36,6 @@ function assertStarted(state: WalletState): asserts state is StartedState {
     throw new Error("Wallet is not started");
   }
 }
-
-// TODO: Make confirmations configurable
-const CONFIRMATIONS = 2;
 
 // Used when calculating a transaction's expiration sequence by adding it
 // to the latest block sequence returned from the API.
