@@ -25,7 +25,6 @@ export type Asset = {
 
 export type ChainHandlers = {
   getAsset: Query<(args: { assetId: string }) => Asset | null>;
-  getNetworkInfo: Query<() => { networkId: number }>;
   isValidPublicAddress: Query<(args: { address: string }) => boolean>;
   requestFaucetTokens: Mutation<
     (args: { address: string; email: string }) => boolean

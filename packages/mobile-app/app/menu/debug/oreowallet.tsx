@@ -73,6 +73,18 @@ export default function MenuDebugOreowallet() {
               onPress={async () => {
                 if (!account.data) return;
 
+                const result = await OreowalletServerApi.removeAccount(
+                  Network.MAINNET,
+                  await getAccountInfo(account.data.name),
+                );
+                console.log(JSON.stringify(result));
+              }}
+              title="Remove Account"
+            />
+            <Button
+              onPress={async () => {
+                if (!account.data) return;
+
                 const result = await OreowalletServerApi.getTransactions(
                   Network.MAINNET,
                   await getAccountInfo(account.data.name),
