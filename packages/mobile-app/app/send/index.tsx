@@ -4,7 +4,7 @@ import { useFacade } from "../../data/facades";
 import { useState, useMemo } from "react";
 import { IRON_ASSET_ID_HEX } from "../../data/constants";
 import { CurrencyUtils } from "@ironfish/sdk";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useMutation } from "@tanstack/react-query";
 import { Asset } from "@/data/facades/chain/types";
 import { AccountBalance } from "@/data/facades/wallet/types";
 import {
@@ -20,6 +20,7 @@ import {
   IndexPath,
   IconProps,
   Modal,
+  Spinner,
 } from "@ui-kitten/components";
 import SendConfirmed from "../../svgs/SendConfirmed";
 import { useRouter, Stack } from "expo-router";
@@ -58,6 +59,8 @@ export default function Send() {
   );
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [sentTxHash, setSentTxHash] = useState<string>("");
+  const [memo, setMemo] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const getAccountResult = facade.getAccount.useQuery(
     {},
@@ -139,6 +142,9 @@ export default function Send() {
         ? (assetMap.get(selectedAssetId)?.verification.decimals ?? 0)
         : 0;
 
+  // Add the mutation
+  const sendTransactionMutation = facade.sendTransaction.useMutation();
+
   return (
     <Layout style={styles.container} level="1">
       <Stack.Screen options={{ headerTitle: "Send Transaction" }} />
@@ -193,6 +199,15 @@ export default function Send() {
         caption={`Maximum ${decimals} decimal places`}
       />
 
+      <Input
+        label="Memo (Optional)"
+        placeholder="Enter a memo for this transaction"
+        value={memo}
+        onChangeText={setMemo}
+        style={styles.input}
+        maxLength={100}
+      />
+
       <Text category="s1" style={styles.sectionTitle}>
         Transaction Fee
       </Text>
@@ -223,15 +238,46 @@ export default function Send() {
       <Button
         style={styles.sendButton}
         disabled={
+          isLoading ||
           isValidPublicAddress.data !== true ||
+          !isValidBigInt(amount) ||
           (selectedFee === "custom" && !isValidBigInt(customFee))
         }
-        onPress={() => {
-          setShowConfirmation(true);
-          setSentTxHash("mock_transaction_hash");
+        accessoryLeft={
+          isLoading ? (props) => <Spinner {...props} /> : undefined
+        }
+        onPress={async () => {
+          try {
+            setIsLoading(true);
+
+            const outputs = [
+              {
+                publicAddress: selectedRecipient,
+                amount: amount,
+                memo: memo,
+                assetId: selectedAssetId,
+              },
+            ];
+
+            const fee = selectedFee === "custom" ? customFee : "1"; // Default fee value
+
+            const hash = await sendTransactionMutation.mutateAsync({
+              accountName: getAccountResult.data?.name ?? "",
+              outputs,
+              fee,
+            });
+
+            setSentTxHash(hash);
+            setShowConfirmation(true);
+          } catch (error) {
+            // You may want to add proper error handling here
+            console.error("Failed to send transaction:", error);
+          } finally {
+            setIsLoading(false);
+          }
         }}
       >
-        SEND TRANSACTION
+        {isLoading ? "SENDING..." : "SEND TRANSACTION"}
       </Button>
 
       <Modal visible={showConfirmation} style={styles.modal}>
@@ -252,6 +298,11 @@ export default function Send() {
           <Text category="s1" style={styles.addressText}>
             {selectedRecipient}
           </Text>
+          {memo && (
+            <Text category="s1" style={styles.memoText}>
+              Memo: {memo}
+            </Text>
+          )}
           <View style={styles.buttonContainer}>
             <Button
               appearance="filled"
@@ -347,5 +398,11 @@ const styles = StyleSheet.create({
   confirmButton: {
     marginBottom: 16,
     width: "100%",
+  },
+  memoText: {
+    color: "gray",
+    textAlign: "center",
+    marginBottom: 16,
+    fontStyle: "italic",
   },
 });
