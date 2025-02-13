@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useFacade } from "../../data/facades";
 import { useState, useMemo } from "react";
 import { IRON_ASSET_ID_HEX } from "../../data/constants";
@@ -12,7 +12,6 @@ import {
   Text,
   Button,
   Input,
-  Card,
   Radio,
   RadioGroup,
   Select,
@@ -20,7 +19,10 @@ import {
   Icon,
   IndexPath,
   IconProps,
+  Modal,
 } from "@ui-kitten/components";
+import SendConfirmed from "../../svgs/SendConfirmed";
+import { useRouter, Stack } from "expo-router";
 
 const isValidBigInt = (num: string) => {
   if (num.length === 0) return false;
@@ -44,6 +46,7 @@ const CheckIcon = (props: IconProps) => (
 
 export default function Send() {
   const facade = useFacade();
+  const router = useRouter();
 
   const [selectedAssetId, setSelectedAssetId] =
     useState<string>(IRON_ASSET_ID_HEX);
@@ -53,6 +56,8 @@ export default function Send() {
   const [selectedFee, setSelectedFee] = useState<"default" | "custom">(
     "default",
   );
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [sentTxHash, setSentTxHash] = useState<string>("");
 
   const getAccountResult = facade.getAccount.useQuery(
     {},
@@ -90,8 +95,6 @@ export default function Send() {
     }
     return map;
   }, [getCustomAssets]);
-
-  const sendTransaction = facade.sendTransaction.useMutation();
 
   // Create asset options for the select component
   const assetOptions = useMemo(() => {
@@ -138,118 +141,141 @@ export default function Send() {
 
   return (
     <Layout style={styles.container} level="1">
-      <Card style={styles.card}>
-        <Text category="h5" style={styles.title}>
-          Send Transaction
-        </Text>
+      <Stack.Screen options={{ headerTitle: "Send Transaction" }} />
 
-        <Select
-          label="Select Asset"
-          style={styles.select}
-          selectedIndex={selectedIndex}
-          onSelect={(index: IndexPath | IndexPath[]) => {
-            if (index instanceof IndexPath) {
-              const selected = assetOptions[index.row];
-              setSelectedAssetId(selected.id);
-            }
-          }}
-          value={assetOptions[selectedIndex.row]?.title}
-        >
-          {assetOptions.map((option, index) => (
-            <SelectItem
-              key={option.id}
-              title={option.title}
-              accessoryRight={
-                index === selectedIndex.row ? CheckIcon : undefined
-              }
-              style={
-                index === selectedIndex.row ? styles.selectedItem : undefined
-              }
-            />
-          ))}
-        </Select>
-
-        <Input
-          label="Recipient Address"
-          placeholder="Enter recipient address"
-          value={selectedRecipient}
-          onChangeText={setSelectedRecipient}
-          status={isValidPublicAddress.data === false ? "danger" : "basic"}
-          caption={
-            isValidPublicAddress.data === false
-              ? "Invalid recipient address"
-              : ""
+      <Select
+        label="Select Asset"
+        style={styles.select}
+        selectedIndex={selectedIndex}
+        onSelect={(index: IndexPath | IndexPath[]) => {
+          if (index instanceof IndexPath) {
+            const selected = assetOptions[index.row];
+            setSelectedAssetId(selected.id);
           }
-          style={styles.input}
-        />
-
-        <Input
-          label="Amount"
-          placeholder="Enter amount"
-          value={amount}
-          onChangeText={(value) => {
-            if (isValidAmount(value, decimals)) {
-              setAmount(value);
+        }}
+        value={assetOptions[selectedIndex.row]?.title}
+      >
+        {assetOptions.map((option, index) => (
+          <SelectItem
+            key={option.id}
+            title={option.title}
+            accessoryRight={index === selectedIndex.row ? CheckIcon : undefined}
+            style={
+              index === selectedIndex.row ? styles.selectedItem : undefined
             }
-          }}
+          />
+        ))}
+      </Select>
+
+      <Input
+        label="Recipient Address"
+        placeholder="Enter recipient address"
+        value={selectedRecipient}
+        onChangeText={setSelectedRecipient}
+        status={isValidPublicAddress.data === false ? "danger" : "basic"}
+        caption={
+          isValidPublicAddress.data === false ? "Invalid recipient address" : ""
+        }
+        style={styles.input}
+      />
+
+      <Input
+        label="Amount"
+        placeholder="Enter amount"
+        value={amount}
+        onChangeText={(value) => {
+          if (isValidAmount(value, decimals)) {
+            setAmount(value);
+          }
+        }}
+        style={styles.input}
+        keyboardType="numeric"
+        caption={`Maximum ${decimals} decimal places`}
+      />
+
+      <Text category="s1" style={styles.sectionTitle}>
+        Transaction Fee
+      </Text>
+      <RadioGroup
+        selectedIndex={selectedFee === "default" ? 0 : 1}
+        onChange={(index) => setSelectedFee(index === 0 ? "default" : "custom")}
+      >
+        <Radio>Default Fee</Radio>
+        <Radio>Custom Fee</Radio>
+      </RadioGroup>
+
+      {selectedFee === "custom" && (
+        <Input
+          label="Custom Fee Amount"
+          placeholder="Enter custom fee"
+          value={customFee}
+          onChangeText={setCustomFee}
+          status={
+            !isValidBigInt(customFee) && customFee.length > 0
+              ? "danger"
+              : "basic"
+          }
           style={styles.input}
           keyboardType="numeric"
-          caption={`Maximum ${decimals} decimal places`}
         />
+      )}
 
-        <Text category="s1" style={styles.sectionTitle}>
-          Transaction Fee
-        </Text>
-        <RadioGroup
-          selectedIndex={selectedFee === "default" ? 0 : 1}
-          onChange={(index) =>
-            setSelectedFee(index === 0 ? "default" : "custom")
-          }
-        >
-          <Radio>Default Fee</Radio>
-          <Radio>Custom Fee</Radio>
-        </RadioGroup>
+      <Button
+        style={styles.sendButton}
+        disabled={
+          isValidPublicAddress.data !== true ||
+          (selectedFee === "custom" && !isValidBigInt(customFee))
+        }
+        onPress={() => {
+          setShowConfirmation(true);
+          setSentTxHash("mock_transaction_hash");
+        }}
+      >
+        SEND TRANSACTION
+      </Button>
 
-        {selectedFee === "custom" && (
-          <Input
-            label="Custom Fee Amount"
-            placeholder="Enter custom fee"
-            value={customFee}
-            onChangeText={setCustomFee}
-            status={
-              !isValidBigInt(customFee) && customFee.length > 0
-                ? "danger"
-                : "basic"
-            }
-            style={styles.input}
-            keyboardType="numeric"
-          />
-        )}
+      <Modal visible={showConfirmation} style={styles.modal}>
+        <Layout style={styles.modalContainer}>
+          <View style={styles.svgContainer}>
+            <SendConfirmed />
+          </View>
+          <Text category="h1" style={styles.sentText}>
+            Sent!
+          </Text>
+          <Text category="s1" style={styles.amountText}>
+            {amount}{" "}
+            {selectedAssetId === IRON_ASSET_ID_HEX
+              ? "$IRON"
+              : (assetMap.get(selectedAssetId)?.name ?? "Unknown")}{" "}
+            to:
+          </Text>
+          <Text category="s1" style={styles.addressText}>
+            {selectedRecipient}
+          </Text>
+          <View style={styles.buttonContainer}>
+            <Button
+              appearance="filled"
+              style={styles.confirmButton}
+              onPress={() => {
+                console.log("will navigate to", sentTxHash);
+              }}
+            >
+              View Transaction
+            </Button>
+            <Button
+              appearance="outline"
+              style={styles.confirmButton}
+              onPress={() => {
+                setShowConfirmation(false);
+                router.back();
+              }}
+            >
+              Close
+            </Button>
+          </View>
+        </Layout>
+      </Modal>
 
-        <Button
-          style={styles.sendButton}
-          disabled={
-            isValidPublicAddress.data !== true ||
-            (selectedFee === "custom" && !isValidBigInt(customFee))
-          }
-          onPress={() => {
-            sendTransaction.mutate({
-              accountName: getAccountResult.data?.name ?? "",
-              outputs: [
-                {
-                  amount,
-                  memoHex: "",
-                  publicAddress: selectedRecipient,
-                  assetId: selectedAssetId,
-                },
-              ],
-              fee: selectedFee === "default" ? undefined : customFee,
-            });
-          }}
-        >
-          SEND TRANSACTION
-        </Button>
-      </Card>
       <StatusBar style="auto" />
     </Layout>
   );
@@ -258,11 +284,7 @@ export default function Send() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-  },
-  card: {
-    flex: 1,
-    margin: 2,
+    padding: 32,
   },
   title: {
     textAlign: "center",
@@ -286,5 +308,44 @@ const styles = StyleSheet.create({
   },
   selectedItem: {
     backgroundColor: "rgba(143, 155, 179, 0.08)", // Eva's light gray with low opacity
+  },
+  modal: {
+    width: "100%",
+    height: "100%",
+    margin: 0, // Remove default margin
+  },
+  modalContainer: {
+    flex: 1,
+    width: "100%",
+    padding: 32,
+    alignItems: "center",
+    justifyContent: "center", // Center content vertically
+  },
+  sentText: {
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  amountText: {
+    marginBottom: 8,
+  },
+  addressText: {
+    color: "gray",
+    textAlign: "center",
+    marginBottom: 32,
+  },
+  viewTxButton: {
+    marginBottom: 16,
+    width: "100%",
+  },
+  svgContainer: {
+    width: "70%", // Make SVG slightly larger
+    aspectRatio: 1,
+  },
+  buttonContainer: {
+    width: "100%",
+  },
+  confirmButton: {
+    marginBottom: 16,
+    width: "100%",
   },
 });
