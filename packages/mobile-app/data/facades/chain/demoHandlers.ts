@@ -19,9 +19,6 @@ export const chainDemoHandlers = f.facade<ChainHandlers>({
       };
     },
   ),
-  getNetworkInfo: f.handler.query(async () => {
-    return { networkId: 0 };
-  }),
   isValidPublicAddress: f.handler.query(
     async ({ address }: { address: string }) => {
       return isValidPublicAddress(address);
