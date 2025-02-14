@@ -2,15 +2,6 @@ import { Asset } from "@/data/facades/chain/types";
 import { IRON_ASSET_ID_HEX } from "../data/constants";
 import { CurrencyUtils } from "@ironfish/sdk";
 
-type AmountValidationResult = [bigint, null] | [null, Error];
-
-interface AssetWithVerification extends Asset {
-  verification: {
-    status: "verified" | "unverified" | "unknown";
-    decimals?: number;
-  };
-}
-
 export const isValidBigInt = (num: string) => {
   if (num.length === 0) return false;
   try {
@@ -22,7 +13,7 @@ export const isValidBigInt = (num: string) => {
 };
 
 export const getAssetDecimals = (
-  asset: AssetWithVerification | undefined,
+  asset: Asset | undefined,
 ): number | undefined => {
   if (!asset) return undefined;
   try {
@@ -37,8 +28,8 @@ export const getAssetDecimals = (
 export const convertAmountToMinor = (
   amount: string,
   assetId: string,
-  assetMap: Map<string, AssetWithVerification>,
-): AmountValidationResult => {
+  assetMap: Map<string, Asset>,
+) => {
   const asset =
     assetId === IRON_ASSET_ID_HEX ? undefined : assetMap.get(assetId);
   return CurrencyUtils.tryMajorToMinor(amount, assetId, {
@@ -49,7 +40,7 @@ export const convertAmountToMinor = (
 export const isValidAmount = (
   value: string,
   assetId: string,
-  assetMap: Map<string, AssetWithVerification>,
+  assetMap: Map<string, Asset>,
 ) => {
   if (value.length === 0) return true;
 
@@ -68,7 +59,7 @@ export const isValidAmount = (
 export const enforceDecimals = (
   value: string,
   assetId: string,
-  assetMap: Map<string, AssetWithVerification>,
+  assetMap: Map<string, Asset>,
 ): string => {
   if (value.length === 0) return value;
 
