@@ -4,7 +4,7 @@ import { useFacade } from "../../data/facades";
 import { useState, useMemo } from "react";
 import { IRON_ASSET_ID_HEX } from "../../data/constants";
 import { CurrencyUtils } from "@ironfish/sdk";
-import { useQueries, useMutation } from "@tanstack/react-query";
+import { useQueries } from "@tanstack/react-query";
 import { Asset } from "@/data/facades/chain/types";
 import { AccountBalance } from "@/data/facades/wallet/types";
 import {
@@ -20,7 +20,6 @@ import {
   IndexPath,
   IconProps,
   Modal,
-  Spinner,
 } from "@ui-kitten/components";
 import SendConfirmed from "../../svgs/SendConfirmed";
 import Rubics from "../../svgs/Rubics";
@@ -36,10 +35,60 @@ const isValidBigInt = (num: string) => {
   }
 };
 
-const isValidAmount = (value: string, decimals: number) => {
+const convertAmountToMinor = (
+  amount: string,
+  assetId: string,
+  assetMap: Map<string, Asset>,
+): [bigint, null] | [null, Error] => {
+  const asset =
+    assetId === IRON_ASSET_ID_HEX ? undefined : assetMap.get(assetId);
+  return CurrencyUtils.tryMajorToMinor(amount, assetId, {
+    decimals: getAssetDecimals(asset),
+  });
+};
+
+const isValidAmount = (
+  value: string,
+  assetId: string,
+  assetMap: Map<string, Asset>,
+) => {
   if (value.length === 0) return true;
+
+  const asset =
+    assetId === IRON_ASSET_ID_HEX ? undefined : assetMap.get(assetId);
+
+  // For unverified assets, don't allow any decimals
+  if (asset && asset.verification.status !== "verified") {
+    return !value.includes(".");
+  }
+
+  const decimals = getAssetDecimals(asset) ?? 8; // $IRON has 8 decimals by default
   const parts = value.split(".");
   return parts.length <= 2 && (parts[1]?.length ?? 0) <= decimals;
+};
+
+const enforceDecimals = (
+  value: string,
+  assetId: string,
+  assetMap: Map<string, Asset>,
+): string => {
+  if (value.length === 0) return value;
+
+  const asset =
+    assetId === IRON_ASSET_ID_HEX ? undefined : assetMap.get(assetId);
+
+  // For unverified assets, remove any decimal points
+  if (asset && asset.verification.status !== "verified") {
+    return value.replace(/\./g, "");
+  }
+
+  const decimals = getAssetDecimals(asset) ?? 8;
+  const parts = value.split(".");
+  if (parts.length === 2 && parts[1].length > decimals) {
+    return `${parts[0]}.${parts[1].slice(0, decimals)}`;
+  }
+
+  return value;
 };
 
 const CheckIcon = (props: IconProps) => (
@@ -48,6 +97,18 @@ const CheckIcon = (props: IconProps) => (
 
 // First add a new type for the transaction state
 type TransactionState = "sending" | "sent" | "idle";
+
+// Add this helper at the top with other utility functions
+const getAssetDecimals = (asset: Asset | undefined): number | undefined => {
+  if (!asset) return undefined;
+  try {
+    return asset.verification.status === "verified"
+      ? asset.verification.decimals
+      : JSON.parse(asset.metadata).decimals;
+  } catch {
+    return undefined;
+  }
+};
 
 export default function Send() {
   const facade = useFacade();
@@ -139,15 +200,27 @@ export default function Send() {
     );
   }, [selectedAssetId, assetOptions]);
 
-  const decimals =
-    selectedAssetId === IRON_ASSET_ID_HEX
-      ? 8
-      : assetMap.get(selectedAssetId)?.verification.status === "verified"
-        ? (assetMap.get(selectedAssetId)?.verification.decimals ?? 0)
-        : 0;
-
   // Add the mutation
   const sendTransactionMutation = facade.sendTransaction.useMutation();
+
+  // Add amount validation
+  const amountError = useMemo(() => {
+    if (!amount) return undefined;
+
+    if (!isValidAmount(amount, selectedAssetId, assetMap)) {
+      const asset =
+        selectedAssetId === IRON_ASSET_ID_HEX
+          ? undefined
+          : assetMap.get(selectedAssetId);
+      const decimals = getAssetDecimals(asset) ?? 8;
+      return `Maximum ${decimals} decimal places allowed`;
+    }
+
+    const [amountInMinorUnits] =
+      convertAmountToMinor(amount, selectedAssetId, assetMap) ?? [];
+
+    return undefined;
+  }, [amount, selectedAssetId, assetMap]);
 
   return (
     <Layout style={styles.container} level="1">
@@ -194,13 +267,22 @@ export default function Send() {
         placeholder="Enter amount"
         value={amount}
         onChangeText={(value) => {
-          if (isValidAmount(value, decimals)) {
-            setAmount(value);
-          }
+          const sanitized = enforceDecimals(value, selectedAssetId, assetMap);
+          setAmount(sanitized);
         }}
         style={styles.input}
-        keyboardType="numeric"
-        caption={`Maximum ${decimals} decimal places`}
+        status={amountError ? "danger" : "basic"}
+        caption={
+          amountError ||
+          (assetMap.get(selectedAssetId)?.verification.status === "unverified"
+            ? "No decimals allowed"
+            : `Up to ${
+                selectedAssetId === IRON_ASSET_ID_HEX
+                  ? "8"
+                  : (getAssetDecimals(assetMap.get(selectedAssetId)) ?? "0")
+              } decimal places`)
+        }
+        keyboardType="decimal-pad"
       />
 
       <Input
@@ -244,17 +326,25 @@ export default function Send() {
         disabled={
           transactionState !== "idle" ||
           isValidPublicAddress.data !== true ||
-          !isValidBigInt(amount) ||
+          !amount ||
+          !!amountError ||
           (selectedFee === "custom" && !isValidBigInt(customFee))
         }
         onPress={async () => {
           try {
             setTransactionState("sending");
 
+            const [amountInMinorUnits] =
+              convertAmountToMinor(amount, selectedAssetId, assetMap) ?? [];
+
+            if (!amountInMinorUnits) {
+              throw new Error("Invalid amount");
+            }
+
             const outputs = [
               {
                 publicAddress: selectedRecipient,
-                amount: amount,
+                amount: amountInMinorUnits.toString(),
                 memo: memo,
                 assetId: selectedAssetId,
               },
