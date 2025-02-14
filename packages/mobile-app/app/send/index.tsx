@@ -24,72 +24,13 @@ import {
 import SendConfirmed from "../../svgs/SendConfirmed";
 import Rubics from "../../svgs/Rubics";
 import { useRouter, Stack } from "expo-router";
-
-const isValidBigInt = (num: string) => {
-  if (num.length === 0) return false;
-  try {
-    const bi = BigInt(num);
-    return bi > 0;
-  } catch {
-    return false;
-  }
-};
-
-const convertAmountToMinor = (
-  amount: string,
-  assetId: string,
-  assetMap: Map<string, Asset>,
-): [bigint, null] | [null, Error] => {
-  const asset =
-    assetId === IRON_ASSET_ID_HEX ? undefined : assetMap.get(assetId);
-  return CurrencyUtils.tryMajorToMinor(amount, assetId, {
-    decimals: getAssetDecimals(asset),
-  });
-};
-
-const isValidAmount = (
-  value: string,
-  assetId: string,
-  assetMap: Map<string, Asset>,
-) => {
-  if (value.length === 0) return true;
-
-  const asset =
-    assetId === IRON_ASSET_ID_HEX ? undefined : assetMap.get(assetId);
-
-  // For unverified assets, don't allow any decimals
-  if (asset && asset.verification.status !== "verified") {
-    return !value.includes(".");
-  }
-
-  const decimals = getAssetDecimals(asset) ?? 8; // $IRON has 8 decimals by default
-  const parts = value.split(".");
-  return parts.length <= 2 && (parts[1]?.length ?? 0) <= decimals;
-};
-
-const enforceDecimals = (
-  value: string,
-  assetId: string,
-  assetMap: Map<string, Asset>,
-): string => {
-  if (value.length === 0) return value;
-
-  const asset =
-    assetId === IRON_ASSET_ID_HEX ? undefined : assetMap.get(assetId);
-
-  // For unverified assets, remove any decimal points
-  if (asset && asset.verification.status !== "verified") {
-    return value.replace(/\./g, "");
-  }
-
-  const decimals = getAssetDecimals(asset) ?? 8;
-  const parts = value.split(".");
-  if (parts.length === 2 && parts[1].length > decimals) {
-    return `${parts[0]}.${parts[1].slice(0, decimals)}`;
-  }
-
-  return value;
-};
+import {
+  isValidBigInt,
+  convertAmountToMinor,
+  isValidAmount,
+  enforceDecimals,
+  getAssetDecimals,
+} from "../../utils/send.utils";
 
 const CheckIcon = (props: IconProps) => (
   <Icon {...props} name="checkmark-outline" />
@@ -97,18 +38,6 @@ const CheckIcon = (props: IconProps) => (
 
 // First add a new type for the transaction state
 type TransactionState = "sending" | "sent" | "idle";
-
-// Add this helper at the top with other utility functions
-const getAssetDecimals = (asset: Asset | undefined): number | undefined => {
-  if (!asset) return undefined;
-  try {
-    return asset.verification.status === "verified"
-      ? asset.verification.decimals
-      : JSON.parse(asset.metadata).decimals;
-  } catch {
-    return undefined;
-  }
-};
 
 export default function Send() {
   const facade = useFacade();
@@ -153,6 +82,9 @@ export default function Send() {
         };
       }) ?? [],
   });
+
+  // Add the mutation
+  const sendTransactionMutation = facade.sendTransaction.useMutation();
 
   const assetMap = useMemo(() => {
     const map = new Map<string, Asset>();
@@ -200,9 +132,6 @@ export default function Send() {
     );
   }, [selectedAssetId, assetOptions]);
 
-  // Add the mutation
-  const sendTransactionMutation = facade.sendTransaction.useMutation();
-
   // Add amount validation
   const amountError = useMemo(() => {
     if (!amount) return undefined;
@@ -215,9 +144,6 @@ export default function Send() {
       const decimals = getAssetDecimals(asset) ?? 8;
       return `Maximum ${decimals} decimal places allowed`;
     }
-
-    const [amountInMinorUnits] =
-      convertAmountToMinor(amount, selectedAssetId, assetMap) ?? [];
 
     return undefined;
   }, [amount, selectedAssetId, assetMap]);
