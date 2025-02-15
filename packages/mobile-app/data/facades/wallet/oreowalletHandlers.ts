@@ -31,6 +31,8 @@ export const walletHandlers = f.facade<WalletHandlers>({
       );
       const account = await oreoWallet.createAccount(network, name);
 
+      console.log("accountzzz", account);
+
       return {
         name: account.name,
         viewOnly: account.viewOnly,
@@ -88,6 +90,8 @@ export const walletHandlers = f.facade<WalletHandlers>({
         name === undefined
           ? await oreoWallet.getActiveAccountWithHeadAndBalances(network)
           : await oreoWallet.getAccountWithHeadAndBalances(network, name);
+
+      console.log({ name });
 
       if (!account) {
         return null;
