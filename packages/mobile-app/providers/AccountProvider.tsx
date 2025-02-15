@@ -25,8 +25,6 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     },
   );
 
-  console.log(getAccountResult.data);
-
   useEffect(() => {
     if (getAccountResult.isLoading) return;
 

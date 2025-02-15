@@ -482,8 +482,6 @@ export class WalletDb {
       AccountFormat.Base64Json,
     );
 
-    console.log("account", account);
-
     const result = await this.db.transaction().execute(async (db) => {
       const insertResult = await db
         .insertInto("accounts")
@@ -502,15 +500,12 @@ export class WalletDb {
       //   * If the new account has same public address but different name
       //   * If the new account has same public address but adds/removes spending key
       if (!insertResult.numInsertedOrUpdatedRows) {
-        console.log("returning existing account");
         return await db
           .selectFrom("accounts")
           .selectAll()
           .where("accounts.publicAddress", "=", account.publicAddress)
           .executeTakeFirstOrThrow();
       }
-
-      console.log("returning new account");
 
       // Only set as active account if this was a new insert
       await db
@@ -753,8 +748,6 @@ export class WalletDb {
           ),
         ])
         .executeTakeFirst();
-
-      console.log("active", account);
 
       if (!account) return;
 
