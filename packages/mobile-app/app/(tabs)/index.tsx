@@ -346,11 +346,6 @@ function AssetRow({
             {amount}
           </Text>
         </Layout>
-        <Icon
-          style={styles.chevron}
-          fill="#8F9BB3"
-          name="chevron-right-outline"
-        />
       </Layout>
     </Card>
   );
