@@ -3,16 +3,7 @@ import { StyleSheet } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useFacade } from "@/data/facades";
 import { CurrencyUtils } from "@ironfish/sdk";
-import {
-  Layout,
-  Text,
-  Button,
-  Card,
-  Icon,
-  IconProps,
-} from "@ui-kitten/components";
-
-const PlusIcon = (props: IconProps) => <Icon {...props} name="plus-outline" />;
+import { Layout, Text, Button, Card } from "@ui-kitten/components";
 
 export default function AccountSelect() {
   const router = useRouter();
@@ -63,8 +54,9 @@ export default function AccountSelect() {
           ))}
           <Button
             style={styles.addButton}
-            accessoryLeft={PlusIcon}
-            onPress={() => router.push("/add-account/")}
+            onPress={() =>
+              router.push("/(drawer)/account/account-settings/add-account")
+            }
           >
             Add Account
           </Button>
