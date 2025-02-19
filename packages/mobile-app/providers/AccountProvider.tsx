@@ -46,7 +46,6 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     } else if (hasAccount && isOnboarding) {
       // Redirect to the main app if we already have an account
       router.replace("/(drawer)/account");
-      console.log("Redirecting to /(drawer)/account");
     }
   }, [getAccountResult.data, getAccountResult.isLoading, segments, router]);
 
