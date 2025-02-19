@@ -1,23 +1,27 @@
-import { StatusBar } from "expo-status-bar";
-import { Button, StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
+import { StyleSheet, Linking } from "react-native";
+import { Layout, Text, Button, Icon, IconProps } from "@ui-kitten/components";
+
+const DiscordIcon = (props: IconProps) => (
+  <Icon {...props} name="message-square-outline" />
+);
+
+const openDiscord = () => {
+  Linking.openURL("https://discord.ironfish.network/");
+};
 
 export default function MenuAbout() {
-  const router = useRouter();
-
   return (
-    <View style={styles.container}>
-      <Button title="Back" onPress={() => router.dismissAll()} />
-      <Text>Version 0.0.1</Text>
+    <Layout style={styles.container}>
+      <Text category="h6" style={styles.version}>
+        Version 0.0.1
+      </Text>
 
-      <Text>What's new</Text>
-      <Text>Join our Discord</Text>
-      <Text>Check out our GitHub</Text>
       <Text>
         The Iron Fish mobile app is designed with privacy at its core, providing
         a secure platform for individuals who prioritize confidentiality in
         their crypto transactions.
       </Text>
+
       <Text>
         The Iron Fish wallet stands out for its commitment to privacy, utilizing
         advanced encryption to keep transactions protected and anonymous. This
@@ -25,16 +29,27 @@ export default function MenuAbout() {
         the app operates with transparency and adheres to its privacy-focused
         claims.
       </Text>
-      <StatusBar style="auto" />
-    </View>
+
+      <Button
+        appearance="ghost"
+        status="primary"
+        accessoryLeft={DiscordIcon}
+        onPress={openDiscord}
+      >
+        Join our Discord
+      </Button>
+    </Layout>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
+    padding: 32,
+    gap: 16,
+  },
+  version: {
+    textAlign: "center",
+    marginBottom: 8,
   },
 });
