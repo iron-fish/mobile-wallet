@@ -10,6 +10,7 @@ import {
 import { PinInputComponent } from "../PinInputComponent";
 import { Button, Modal, Card, Text } from "@ui-kitten/components";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSegments } from "expo-router";
 
 const LOCK_TIMEOUT = 60 * 1000 * 5; // 5 minutes of inactivity
 
@@ -19,6 +20,8 @@ export function PinLockScreen({ children }: { children?: React.ReactNode }) {
   const setAppSetting = facade.setAppSetting.useMutation();
   const removeAllAccounts = facade.removeAllAccounts.useMutation();
   const pin = appSettings.data?.pin;
+  const segments = useSegments();
+  const inOnboarding = segments[0] === "onboarding";
 
   const [isLocked, setIsLocked] = useState(true);
   const [enteredPin, setEnteredPin] = useState("");
@@ -26,6 +29,12 @@ export function PinLockScreen({ children }: { children?: React.ReactNode }) {
   const [showForgotPinModal, setShowForgotPinModal] = useState(false);
   const lastActiveTimestamp = useRef(Date.now());
   const lockTimeoutRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    if (pin === "" || inOnboarding) {
+      setIsLocked(false);
+    }
+  }, [pin, inOnboarding]);
 
   const resetLockTimeout = useCallback(() => {
     if (lockTimeoutRef.current) {
@@ -47,7 +56,7 @@ export function PinLockScreen({ children }: { children?: React.ReactNode }) {
         if (nextAppState === "active") {
           // When app comes to foreground, check if we should lock
           const timeSinceLastActive = Date.now() - lastActiveTimestamp.current;
-          if (timeSinceLastActive >= LOCK_TIMEOUT) {
+          if (timeSinceLastActive >= LOCK_TIMEOUT && !inOnboarding) {
             setIsLocked(true);
           }
           resetLockTimeout();
@@ -64,7 +73,7 @@ export function PinLockScreen({ children }: { children?: React.ReactNode }) {
     return () => {
       subscription.remove();
     };
-  }, [isLocked, resetLockTimeout]);
+  }, [isLocked, resetLockTimeout, inOnboarding]);
 
   // Initial setup of the lock timer
   useEffect(() => {
@@ -106,6 +115,7 @@ export function PinLockScreen({ children }: { children?: React.ReactNode }) {
         {/* Lock screen overlay */}
         {!!pin &&
           isLocked &&
+          !inOnboarding &&
           process.env.EXPO_PUBLIC_DISABLE_PIN_LOCK !== "true" && (
             <View style={styles.lockOverlay}>
               <SafeAreaView style={styles.lockContent}>

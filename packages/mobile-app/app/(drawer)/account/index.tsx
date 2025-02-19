@@ -336,11 +336,6 @@ function AssetRow({
             {amount}
           </Text>
         </Layout>
-        <Icon
-          style={styles.chevron}
-          fill="#8F9BB3"
-          name="chevron-right-outline"
-        />
       </Layout>
     </Card>
   );
@@ -408,10 +403,6 @@ const styles = StyleSheet.create({
   assetInfo: {
     gap: 4,
     flex: 1,
-  },
-  chevron: {
-    width: 24,
-    height: 24,
   },
   syncCard: {
     margin: 16,
