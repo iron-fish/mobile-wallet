@@ -1,7 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View } from "react-native";
+import React, { useState, useMemo } from "react";
 import { useFacade } from "../../data/facades";
-import { useState, useMemo } from "react";
 import { IRON_ASSET_ID_HEX } from "../../data/constants";
 import { CurrencyUtils } from "@ironfish/sdk";
 import { useQueries } from "@tanstack/react-query";
@@ -325,7 +325,7 @@ export default function Send() {
                   appearance="filled"
                   style={styles.confirmButton}
                   onPress={() => {
-                    console.log("will navigate to", sentTxHash);
+                    router.push(`/transaction/${sentTxHash}`);
                   }}
                 >
                   View Transaction

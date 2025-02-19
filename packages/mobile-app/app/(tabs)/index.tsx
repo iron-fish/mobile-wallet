@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   Layout,
   Text,
@@ -301,7 +301,13 @@ export default function Balances() {
               {selectedIndex === 1 && (
                 <>
                   {getTransactionsResult.data?.map((transaction) => (
-                    <Card key={transaction.hash} style={styles.transactionCard}>
+                    <Card
+                      key={transaction.hash}
+                      style={styles.transactionCard}
+                      onPress={() =>
+                        router.push(`/transaction/${transaction.hash}`)
+                      }
+                    >
                       <Text category="s1">{transaction.type.toString()}</Text>
                       <Text category="p2" appearance="hint">
                         Block: {transaction.block?.sequence ?? "Pending"}
@@ -444,6 +450,7 @@ const styles = StyleSheet.create({
   },
   transactionCard: {
     marginVertical: 4,
+    cursor: "pointer",
   },
   backdrop: {
     backgroundColor: "rgba(0, 0, 0, 0.5)",
