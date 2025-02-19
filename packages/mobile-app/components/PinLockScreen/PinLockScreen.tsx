@@ -113,47 +113,50 @@ export function PinLockScreen({ children }: { children?: React.ReactNode }) {
         {children}
 
         {/* Lock screen overlay */}
-        {!!pin && isLocked && !inOnboarding && (
-          <View style={styles.lockOverlay}>
-            <SafeAreaView style={styles.lockContent}>
-              <View style={styles.pinContainer}>
-                <PinInputComponent
-                  pinLength={pin.length}
-                  onPinChange={setEnteredPin}
-                  promptText="Enter your PIN"
-                  value={enteredPin}
-                  error={error}
-                  setError={setError}
-                />
-                <View style={styles.buttonContainer}>
-                  <Button
-                    onPress={() => {
-                      if (enteredPin === pin) {
-                        setIsLocked(false);
-                        setEnteredPin("");
-                        setError(null);
-                        resetLockTimeout();
-                      } else {
-                        setError("Incorrect PIN");
-                        setEnteredPin("");
-                      }
-                    }}
-                    disabled={enteredPin.length !== pin.length}
-                  >
-                    Unlock
-                  </Button>
-                  <Button
-                    appearance="ghost"
-                    status="basic"
-                    onPress={() => setShowForgotPinModal(true)}
-                  >
-                    Forgot PIN?
-                  </Button>
+        {!!pin &&
+          isLocked &&
+          !inOnboarding &&
+          process.env.EXPO_PUBLIC_DISABLE_PIN_LOCK !== "true" && (
+            <View style={styles.lockOverlay}>
+              <SafeAreaView style={styles.lockContent}>
+                <View style={styles.pinContainer}>
+                  <PinInputComponent
+                    pinLength={pin.length}
+                    onPinChange={setEnteredPin}
+                    promptText="Enter your PIN"
+                    value={enteredPin}
+                    error={error}
+                    setError={setError}
+                  />
+                  <View style={styles.buttonContainer}>
+                    <Button
+                      onPress={() => {
+                        if (enteredPin === pin) {
+                          setIsLocked(false);
+                          setEnteredPin("");
+                          setError(null);
+                          resetLockTimeout();
+                        } else {
+                          setError("Incorrect PIN");
+                          setEnteredPin("");
+                        }
+                      }}
+                      disabled={enteredPin.length !== pin.length}
+                    >
+                      Unlock
+                    </Button>
+                    <Button
+                      appearance="ghost"
+                      status="basic"
+                      onPress={() => setShowForgotPinModal(true)}
+                    >
+                      Forgot PIN?
+                    </Button>
+                  </View>
                 </View>
-              </View>
-            </SafeAreaView>
-          </View>
-        )}
+              </SafeAreaView>
+            </View>
+          )}
 
         {/* Forgot PIN Modal */}
         <Modal

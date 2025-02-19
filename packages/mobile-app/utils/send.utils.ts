@@ -1,5 +1,5 @@
 import { Asset } from "@/data/facades/chain/types";
-import { IRON_ASSET_ID_HEX } from "../data/constants";
+import { IRON_ASSET_ID_HEX } from "@/data/constants";
 import { CurrencyUtils } from "@ironfish/sdk";
 
 export const isValidBigInt = (num: string) => {

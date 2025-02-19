@@ -1,9 +1,9 @@
 import { StatusBar } from "expo-status-bar";
 import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
-import { IRON_ASSET_ID_HEX, Network } from "../../../data/constants";
-import { wallet } from "../../../data/wallet/wallet";
-import { Blockchain } from "../../../data/blockchain";
-import * as Uint8ArrayUtils from "../../../utils/uint8Array";
+import { IRON_ASSET_ID_HEX, Network } from "@/data/constants";
+import { wallet } from "@/data/wallet/wallet";
+import { Blockchain } from "@/data/blockchain";
+import * as Uint8ArrayUtils from "@/utils/uint8Array";
 import { useState } from "react";
 
 export default function MenuDebugUnspentNotes() {

@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, ReactNode } from "react";
 import { useRouter, useSegments } from "expo-router";
-import { useFacade } from "../data/facades";
+import { useFacade } from "@/data/facades";
 import { ActivityIndicator, SafeAreaView, Text } from "react-native";
 import { StyleSheet } from "react-native";
-import { Account } from "../data/facades/wallet/types";
+import { Account } from "@/data/facades/wallet/types";
 
 interface AccountContextType {
   isLoading: boolean;
@@ -28,23 +28,24 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (getAccountResult.isLoading) return;
 
-    const inAuthGroup = segments[0] === "onboarding";
+    const isOnboarding = segments[0] === "onboarding";
+
     const hasAccount = getAccountResult.data !== null;
     console.log(
       "AccountProvider - segments:",
       segments,
       "hasAccount:",
       hasAccount,
-      "inAuthGroup:",
-      inAuthGroup,
+      "isOnboarding:",
+      isOnboarding,
     );
 
-    if (!hasAccount && !inAuthGroup) {
+    if (!hasAccount && !isOnboarding) {
       // Redirect to the onboarding flow if there's no account
-      router.replace("/onboarding/");
-    } else if (hasAccount && inAuthGroup) {
+      router.replace("/onboarding");
+    } else if (hasAccount && isOnboarding) {
       // Redirect to the main app if we already have an account
-      router.replace("/(tabs)/");
+      router.replace("/(drawer)/account");
     }
   }, [getAccountResult.data, getAccountResult.isLoading, segments, router]);
 

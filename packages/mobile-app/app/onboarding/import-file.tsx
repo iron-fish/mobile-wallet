@@ -109,9 +109,7 @@ export default function ImportFile() {
         account: fileContent,
         name: accountName,
       });
-
-      // Navigate to main app after successful import
-      router.push("/(tabs)/");
+      router.replace("/(drawer)/account");
     } catch (error) {
       console.error("Import error:", error);
       // Handle other errors

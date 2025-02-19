@@ -11,7 +11,7 @@ import { useHeaderHeight } from "@react-navigation/elements";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { PinInputComponent } from "@/components/PinInputComponent";
 import { useState } from "react";
-import { useFacade } from "../../data/facades";
+import { useFacade } from "@/data/facades";
 
 const MIN_PIN_LENGTH = 4;
 const MAX_PIN_LENGTH = 8;
@@ -157,7 +157,7 @@ export default function CreatePin() {
 
       try {
         await createAccount.mutateAsync({ name: accountName });
-        router.push("/(tabs)/");
+        router.replace("/(drawer)/account");
       } catch (error12) {
         console.error(error12);
         setNameError("Failed to create account. Please try again.");
