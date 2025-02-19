@@ -32,13 +32,22 @@ const MENU_ROUTES = {
   },
 } as const;
 
-const menuItems = Object.values(MENU_ROUTES).map((item) => {
-  return {
-    title: item.title,
-    href: item.href,
-    path: item.href.concat("/index"),
-  };
-});
+const menuItems = Object.entries(MENU_ROUTES)
+  .map(([key, item]) => {
+    if (
+      key === "debug" &&
+      process.env.EXPO_PUBLIC_ENABLE_DEBUG_MENU !== "true"
+    ) {
+      return null;
+    }
+
+    return {
+      title: item.title,
+      href: item.href,
+      path: item.href.concat("/index"),
+    };
+  })
+  .filter((item) => item !== null);
 
 export default function MenuScreen() {
   const router = useRouter();
