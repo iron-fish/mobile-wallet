@@ -12,25 +12,21 @@ import {
   Spinner,
   Modal,
 } from "@ui-kitten/components";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { setStringAsync } from "expo-clipboard";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
 } from "react-native-reanimated";
-import { useFacade } from "../../data/facades";
 import { useQueries } from "@tanstack/react-query";
-import { Asset } from "../../data/facades/chain/types";
-import { useAccount } from "../../providers/AccountProvider";
+import { Asset } from "@/data/facades/chain/types";
+import { useFacade } from "@/data/facades";
+import { useAccount } from "@/providers/AccountProvider";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CurrencyUtils } from "@ironfish/sdk";
 import { CONFIRMATIONS } from "@/data/constants";
 
-const MenuIcon = (props: IconProps) => <Icon {...props} name="menu-outline" />;
-const SettingsIcon = (props: IconProps) => (
-  <Icon {...props} name="settings-outline" />
-);
 const ReceiveIcon = (props: IconProps) => (
   <Icon {...props} name="download-outline" />
 );
@@ -129,7 +125,12 @@ export default function Balances() {
     : 100;
 
   return (
-    <SafeAreaView>
+    <View
+      style={{
+        backgroundColor: "#fff",
+        flex: 1,
+      }}
+    >
       <Modal
         visible={addressModalVisible}
         backdropStyle={styles.backdrop}
@@ -158,29 +159,18 @@ export default function Balances() {
         scrollEventThrottle={16}
         onScroll={scrollHandler}
         contentContainerStyle={{ flexGrow: 1 }}
+        style={{
+          flex: 1,
+        }}
       >
         <Layout style={styles.container}>
           {/* Header Section */}
-          <Animated.View style={{ transform: [{ translateY: scrollYOffset }] }}>
-            <Layout style={styles.headerTop}>
-              <Button
-                appearance="ghost"
-                accessoryLeft={MenuIcon}
-                style={styles.iconButton}
-                onPress={() => router.push("/menu/")}
-              />
-              <Text category="h5" style={styles.headerTitle}>
-                {accountName || "Account 1"}
-              </Text>
-              <Button
-                appearance="ghost"
-                accessoryLeft={SettingsIcon}
-                style={styles.iconButton}
-                onPress={() =>
-                  router.push(`/account-settings/?accountName=${accountName}`)
-                }
-              />
-            </Layout>
+          <Animated.View
+            style={{
+              transform: [{ translateY: scrollYOffset }],
+              paddingTop: 40,
+            }}
+          >
             <Layout style={styles.headerBalance}>
               <Text category="h1" style={styles.balanceAmount}>
                 {CurrencyUtils.render(account?.balances.iron.confirmed ?? "0")}
@@ -204,7 +194,7 @@ export default function Balances() {
                   appearance="ghost"
                   accessoryLeft={SendIcon}
                   style={styles.actionButton}
-                  onPress={() => router.push("/send/")}
+                  onPress={() => router.push("/(drawer)/account/send")}
                 >
                   Send
                 </Button>
@@ -212,7 +202,7 @@ export default function Balances() {
                   appearance="ghost"
                   accessoryLeft={BridgeIcon}
                   style={styles.actionButton}
-                  onPress={() => router.push("/menu/debug/browser")}
+                  onPress={() => router.push("/(drawer)/account/bridge")}
                 >
                   Bridge
                 </Button>
@@ -321,7 +311,7 @@ export default function Balances() {
         </Layout>
       </Animated.ScrollView>
       <StatusBar style="auto" />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -359,6 +349,7 @@ function AssetRow({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
   },
   loadingContainer: {
     justifyContent: "center",
@@ -366,7 +357,6 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    backgroundColor: "#fff",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingTop: 16,
@@ -375,19 +365,10 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 24,
     gap: 16,
-  },
-  headerTop: {
-    flexDirection: "row",
-    padding: 16,
-    paddingVertical: 24,
-    alignItems: "center",
+    flex: 1,
   },
   iconButton: {
     padding: 0,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: "center",
   },
   headerBalance: {
     alignItems: "center",

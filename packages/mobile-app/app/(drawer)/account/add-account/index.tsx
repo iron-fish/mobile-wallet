@@ -1,7 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import { Button, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { LinkButton } from "../../components/LinkButton";
+import { LinkButton } from "@/components/LinkButton";
 
 export default function AddAccount() {
   const router = useRouter();

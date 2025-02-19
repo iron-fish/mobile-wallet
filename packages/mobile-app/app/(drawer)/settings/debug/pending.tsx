@@ -1,8 +1,8 @@
 import { StatusBar } from "expo-status-bar";
 import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Network } from "../../../data/constants";
-import { wallet } from "../../../data/wallet/wallet";
-import * as Uint8ArrayUtils from "../../../utils/uint8Array";
+import { Network } from "@/data/constants";
+import { wallet } from "@/data/wallet/wallet";
+import * as Uint8ArrayUtils from "@/utils/uint8Array";
 import { useState } from "react";
 
 export default function MenuDebugPending() {

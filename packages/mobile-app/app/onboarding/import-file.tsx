@@ -111,7 +111,7 @@ export default function ImportFile() {
       });
 
       // Navigate to main app after successful import
-      router.push("/(tabs)/");
+      router.push("/main/");
     } catch (error) {
       console.error("Import error:", error);
       // Handle other errors

@@ -2,7 +2,7 @@ import { StyleSheet, View } from "react-native";
 import { Button, Input, Layout, Text } from "@ui-kitten/components";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { useFacade } from "../../data/facades";
+import { useFacade } from "@/data/facades";
 
 const styles = StyleSheet.create({
   container: {
@@ -67,7 +67,7 @@ export default function ImportMnemonic() {
         account: phrase,
         name: accountName,
       });
-      router.push("/(tabs)/");
+      router.push("/main/");
     } catch (error) {
       console.error("Import account error:", error);
       setPhraseError(

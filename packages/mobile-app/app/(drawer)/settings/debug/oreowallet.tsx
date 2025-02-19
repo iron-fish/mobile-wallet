@@ -1,8 +1,8 @@
 import { StatusBar } from "expo-status-bar";
 import { Button, StyleSheet, Text, View } from "react-native";
-import { IRON_ASSET_ID_HEX, Network } from "../../../data/constants";
-import { OreowalletServerApi } from "../../../data/oreowalletServerApi/oreowalletServerApi";
-import { useFacade } from "../../../data/facades";
+import { IRON_ASSET_ID_HEX, Network } from "@/data/constants";
+import { OreowalletServerApi } from "@/data/oreowalletServerApi/oreowalletServerApi";
+import { useFacade } from "@/data/facades";
 import {
   AccountFormat,
   decodeAccount,

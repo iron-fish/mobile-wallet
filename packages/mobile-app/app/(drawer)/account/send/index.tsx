@@ -1,8 +1,8 @@
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View } from "react-native";
-import { useFacade } from "../../data/facades";
+import { useFacade } from "@/data/facades";
 import { useState, useMemo } from "react";
-import { IRON_ASSET_ID_HEX } from "../../data/constants";
+import { IRON_ASSET_ID_HEX } from "@/data/constants";
 import { CurrencyUtils } from "@ironfish/sdk";
 import { useQueries } from "@tanstack/react-query";
 import { Asset } from "@/data/facades/chain/types";
@@ -21,8 +21,8 @@ import {
   IconProps,
   Modal,
 } from "@ui-kitten/components";
-import SendConfirmed from "../../svgs/SendConfirmed";
-import Rubics from "../../svgs/Rubics";
+import SendConfirmed from "@/svgs/SendConfirmed";
+import Rubics from "@/svgs/Rubics";
 import { useRouter, Stack } from "expo-router";
 import {
   isValidBigInt,
@@ -30,7 +30,7 @@ import {
   isValidAmount,
   enforceDecimals,
   getAssetDecimals,
-} from "../../utils/send.utils";
+} from "@/utils/send.utils";
 
 const CheckIcon = (props: IconProps) => (
   <Icon {...props} name="checkmark-outline" />

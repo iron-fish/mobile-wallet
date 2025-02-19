@@ -8,11 +8,14 @@ import {
   Toggle,
 } from "@ui-kitten/components";
 import { StyleSheet } from "react-native";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useFacade } from "../../data/facades";
+import { Stack, useRouter } from "expo-router";
+import { useFacade } from "@/data/facades";
 import { CurrencyUtils } from "@ironfish/sdk";
 import { SettingsKey } from "@/data/settings/db";
 import { useEffect, useState, useCallback } from "react";
+import { useAccount } from "@/providers/AccountProvider";
+import { SafeAreaView } from "react-native";
+import { Spinner } from "@ui-kitten/components";
 
 const ForwardIcon = (props: any): IconElement => (
   <Icon {...props} name="arrow-ios-forward" />
@@ -41,15 +44,6 @@ const ACCOUNT_SETTINGS_ROUTES = {
   },
 } as const;
 
-export const accountSettingsRoutes = Object.values(ACCOUNT_SETTINGS_ROUTES).map(
-  (item) => {
-    return {
-      title: item.title,
-      href: item.href,
-      path: item.href.concat("/index"),
-    };
-  },
-);
 function getMenuItems({
   currentAccountName,
   currentAccountBalance,
@@ -74,14 +68,8 @@ function getMenuItems({
   });
 }
 
-export default function AccountSettings() {
-  const { accountName } = useLocalSearchParams<{ accountName: string }>();
+function AccountSettingsContent({ accountName }: { accountName: string }) {
   const router = useRouter();
-
-  if (accountName === undefined) {
-    throw new Error("accountName is required");
-  }
-
   const facade = useFacade();
 
   // I tried using isPending and variables on the mutation, but it was causing toggle
@@ -155,6 +143,26 @@ export default function AccountSettings() {
       </Layout>
     </>
   );
+}
+
+export default function AccountSettings() {
+  const { accountName, isLoading } = useAccount();
+
+  if (isLoading) {
+    return (
+      <SafeAreaView>
+        <Layout style={styles.container} level="1">
+          <Spinner />
+        </Layout>
+      </SafeAreaView>
+    );
+  }
+
+  if (accountName === undefined) {
+    throw new Error("accountName is required");
+  }
+
+  return <AccountSettingsContent accountName={accountName} />;
 }
 
 const styles = StyleSheet.create({
