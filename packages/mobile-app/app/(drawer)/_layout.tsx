@@ -13,10 +13,10 @@ export default function Layout() {
           }}
         />
         <Drawer.Screen
-          name="settings"
+          name="app-settings"
           options={{
             headerShown: false,
-            drawerLabel: "Settings",
+            drawerLabel: "App Settings",
           }}
         />
       </Drawer>

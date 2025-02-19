@@ -16,19 +16,19 @@ const ForwardIcon = (props: any): IconElement => (
 const MENU_ROUTES = {
   security: {
     title: "Security",
-    href: "/(drawer)/settings/security",
+    href: "/(drawer)/app-settings/security",
   },
   network: {
     title: "Network",
-    href: "/(drawer)/settings/network",
+    href: "/(drawer)/app-settings/network",
   },
   debug: {
     title: "Debug",
-    href: "/(drawer)/settings/debug",
+    href: "/(drawer)/app-settings/debug",
   },
   about: {
     title: "About the app",
-    href: "/(drawer)/settings/about",
+    href: "/(drawer)/app-settings/about",
   },
 } as const;
 

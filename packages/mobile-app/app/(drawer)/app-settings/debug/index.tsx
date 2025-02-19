@@ -33,7 +33,7 @@ export default function MenuDebug() {
           appearance="ghost"
           accessoryLeft={TransactionIcon}
           style={styles.button}
-          onPress={() => router.push("/(drawer)/settings/debug/pending")}
+          onPress={() => router.push("/(drawer)/app-settings/debug/pending")}
         >
           Pending Transactions
         </Button>
@@ -42,7 +42,7 @@ export default function MenuDebug() {
           appearance="ghost"
           accessoryLeft={NotesIcon}
           style={styles.button}
-          onPress={() => router.push("/(drawer)/settings/debug/unspent")}
+          onPress={() => router.push("/(drawer)/app-settings/debug/unspent")}
         >
           Unspent Notes
         </Button>
@@ -51,7 +51,7 @@ export default function MenuDebug() {
           appearance="ghost"
           accessoryLeft={OreoIcon}
           style={styles.button}
-          onPress={() => router.push("/(drawer)/settings/debug/oreowallet")}
+          onPress={() => router.push("/(drawer)/app-settings/debug/oreowallet")}
         >
           Oreowallet
         </Button>

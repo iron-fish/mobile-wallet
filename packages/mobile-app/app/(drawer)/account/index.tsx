@@ -354,7 +354,6 @@ function AssetRow({
         <Layout style={styles.assetBadge}>
           <Image source={image} style={styles.assetBadge} />
         </Layout>
-        <Layout style={styles.assetBadge} />
         <Layout style={styles.assetInfo}>
           <Text category="s1">
             {name} {verified ? "(Verified)" : ""}
