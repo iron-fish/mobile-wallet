@@ -4,7 +4,7 @@ export default function OnboardingLayout() {
   return (
     <Stack
       screenOptions={{
-        headerBackVisible: false,
+        headerBackTitle: "Back",
       }}
     >
       <Stack.Screen
@@ -35,6 +35,12 @@ export default function OnboardingLayout() {
         name="import-file"
         options={{
           title: "Import File",
+        }}
+      />
+      <Stack.Screen
+        name="import-mnemonic"
+        options={{
+          title: "Import Mnemonic",
         }}
       />
     </Stack>
