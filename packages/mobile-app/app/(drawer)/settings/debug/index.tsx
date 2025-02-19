@@ -19,9 +19,6 @@ const NotesIcon = (props: IconProps) => <Icon {...props} name="file-outline" />;
 const OreoIcon = (props: IconProps) => (
   <Icon {...props} name="archive-outline" />
 );
-const BrowserIcon = (props: IconProps) => (
-  <Icon {...props} name="globe-outline" />
-);
 const DeleteIcon = (props: IconProps) => (
   <Icon {...props} name="trash-2-outline" />
 );

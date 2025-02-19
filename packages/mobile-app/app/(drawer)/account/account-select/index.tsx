@@ -11,7 +11,6 @@ import {
   Icon,
   IconProps,
 } from "@ui-kitten/components";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const PlusIcon = (props: IconProps) => <Icon {...props} name="plus-outline" />;
 
