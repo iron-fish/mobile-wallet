@@ -41,7 +41,9 @@ export default function Layout() {
           headerTitle: (props) => (
             <TouchableWithoutFeedback
               onPress={() => {
-                router.push("/(drawer)/account/account-select");
+                router.push(
+                  "/(drawer)/account/account-settings/account-select",
+                );
               }}
             >
               <View
