@@ -24,23 +24,23 @@ const ForwardIcon = (props: any): IconElement => (
 const ACCOUNT_SETTINGS_ROUTES = {
   accountSelect: {
     title: "Account Select",
-    href: "account-select",
+    href: "/(drawer)/account/account-settings/account-select",
   },
   accountName: {
     title: "Account Name",
-    href: "account-settings/account-name",
+    href: "/(drawer)/account/account-settings/account-name",
   },
   exportAccount: {
     title: "Export Account",
-    href: "account-settings/export-account",
+    href: "/(drawer)/account/account-settings/export-account",
   },
   removeAccount: {
     title: "Remove Account",
-    href: "account-settings/remove-account",
+    href: "/(drawer)/account/account-settings/remove-account",
   },
   addAccount: {
     title: "Add Account",
-    href: "add-account",
+    href: "/(drawer)/account/account-settings/add-account",
   },
 } as const;
 
@@ -114,7 +114,7 @@ function AccountSettingsContent({ accountName }: { accountName: string }) {
 
   return (
     <>
-      <Stack.Screen options={{ title: accountName }} />
+      <Stack.Screen options={{ title: "Account Settings" }} />
       <Layout style={styles.container} level="1">
         <Menu style={styles.menu}>
           {menuItems

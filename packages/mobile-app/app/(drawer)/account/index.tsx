@@ -22,7 +22,7 @@ import { useQueries } from "@tanstack/react-query";
 import { Asset } from "@/data/facades/chain/types";
 import { useFacade } from "@/data/facades";
 import { useAccount } from "@/providers/AccountProvider";
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CurrencyUtils } from "@ironfish/sdk";
 import { CONFIRMATIONS } from "@/data/constants";
@@ -125,193 +125,204 @@ export default function Balances() {
     : 100;
 
   return (
-    <View
-      style={{
-        backgroundColor: "#fff",
-        flex: 1,
-      }}
-    >
-      <Modal
-        visible={addressModalVisible}
-        backdropStyle={styles.backdrop}
-        onBackdropPress={() => setAddressModalVisible(false)}
-      >
-        <Card disabled style={styles.modalCard}>
-          <Text category="h6" style={styles.modalTitle}>
-            Your Iron Fish Address
-          </Text>
-          <Text selectable style={styles.address}>
-            {account.publicAddress}
-          </Text>
-          <Button onPress={copyAddressToClipboard} style={{ marginBottom: 8 }}>
-            Copy Address
-          </Button>
-          <Button
-            appearance="ghost"
-            onPress={() => setAddressModalVisible(false)}
-          >
-            Close
-          </Button>
-        </Card>
-      </Modal>
-
-      <Animated.ScrollView
-        scrollEventThrottle={16}
-        onScroll={scrollHandler}
-        contentContainerStyle={{ flexGrow: 1 }}
+    <>
+      <Stack.Screen options={{ title: accountName }} />
+      <View
         style={{
+          backgroundColor: "#fff",
           flex: 1,
         }}
       >
-        <Layout style={styles.container}>
-          {/* Header Section */}
-          <Animated.View
-            style={{
-              transform: [{ translateY: scrollYOffset }],
-              paddingTop: 40,
-            }}
-          >
-            <Layout style={styles.headerBalance}>
-              <Text category="h1" style={styles.balanceAmount}>
-                {CurrencyUtils.render(account?.balances.iron.confirmed ?? "0")}
-              </Text>
-              <Text category="s1" appearance="hint">
-                {getIronAsset.data?.verification.status === "verified"
-                  ? getIronAsset.data.verification.symbol
-                  : (getIronAsset.data?.name ?? "IRON")}
-              </Text>
+        <Modal
+          visible={addressModalVisible}
+          backdropStyle={styles.backdrop}
+          onBackdropPress={() => setAddressModalVisible(false)}
+        >
+          <Card disabled style={styles.modalCard}>
+            <Text category="h6" style={styles.modalTitle}>
+              Your Iron Fish Address
+            </Text>
+            <Text selectable style={styles.address}>
+              {account.publicAddress}
+            </Text>
+            <Button
+              onPress={copyAddressToClipboard}
+              style={{ marginBottom: 8 }}
+            >
+              Copy Address
+            </Button>
+            <Button
+              appearance="ghost"
+              onPress={() => setAddressModalVisible(false)}
+            >
+              Close
+            </Button>
+          </Card>
+        </Modal>
 
-              <Layout style={styles.actionButtons}>
-                <Button
-                  appearance="ghost"
-                  accessoryLeft={ReceiveIcon}
-                  style={styles.actionButton}
-                  onPress={() => setAddressModalVisible(true)}
-                >
-                  Receive
-                </Button>
-                <Button
-                  appearance="ghost"
-                  accessoryLeft={SendIcon}
-                  style={styles.actionButton}
-                  onPress={() => router.push("/(drawer)/account/send")}
-                >
-                  Send
-                </Button>
-                <Button
-                  appearance="ghost"
-                  accessoryLeft={BridgeIcon}
-                  style={styles.actionButton}
-                  onPress={() => router.push("/(drawer)/account/bridge")}
-                >
-                  Bridge
-                </Button>
+        <Animated.ScrollView
+          scrollEventThrottle={16}
+          onScroll={scrollHandler}
+          contentContainerStyle={{ flexGrow: 1 }}
+          style={{
+            flex: 1,
+          }}
+        >
+          <Layout style={styles.container}>
+            {/* Header Section */}
+            <Animated.View
+              style={{
+                transform: [{ translateY: scrollYOffset }],
+                paddingTop: 40,
+              }}
+            >
+              <Layout style={styles.headerBalance}>
+                <Text category="h1" style={styles.balanceAmount}>
+                  {CurrencyUtils.render(
+                    account?.balances.iron.confirmed ?? "0",
+                  )}
+                </Text>
+                <Text category="s1" appearance="hint">
+                  {getIronAsset.data?.verification.status === "verified"
+                    ? getIronAsset.data.verification.symbol
+                    : (getIronAsset.data?.name ?? "IRON")}
+                </Text>
+
+                <Layout style={styles.actionButtons}>
+                  <Button
+                    appearance="ghost"
+                    accessoryLeft={ReceiveIcon}
+                    style={styles.actionButton}
+                    onPress={() => setAddressModalVisible(true)}
+                  >
+                    Receive
+                  </Button>
+                  <Button
+                    appearance="ghost"
+                    accessoryLeft={SendIcon}
+                    style={styles.actionButton}
+                    onPress={() => router.push("/(drawer)/account/send")}
+                  >
+                    Send
+                  </Button>
+                  <Button
+                    appearance="ghost"
+                    accessoryLeft={BridgeIcon}
+                    style={styles.actionButton}
+                    onPress={() => router.push("/(drawer)/account/bridge")}
+                  >
+                    Bridge
+                  </Button>
+                </Layout>
+              </Layout>
+            </Animated.View>
+
+            <Layout style={styles.contentContainer}>
+              {/* Syncing Status */}
+              {isSyncing && (
+                <Card style={styles.syncCard}>
+                  <Text appearance="hint" style={styles.syncText}>
+                    The blockchain is currently syncing with your accounts. Your
+                    balance may be inaccurate and sending transactions will be
+                    disabled until the sync is done.
+                  </Text>
+                  <Layout style={styles.syncStats}>
+                    <Layout style={styles.syncRow}>
+                      <Text appearance="hint">Progress:</Text>
+                      <Text>{syncProgress.toFixed(1)}%</Text>
+                    </Layout>
+                    <Layout style={styles.syncRow}>
+                      <Text appearance="hint">Blocks Scanned:</Text>
+                      <Text>
+                        {account?.head?.sequence ?? 0}/
+                        {getWalletStatusResult.data?.latestKnownBlock ?? 0}
+                      </Text>
+                    </Layout>
+                  </Layout>
+                </Card>
+              )}
+
+              {/* Tabs Section */}
+              <TabBar
+                selectedIndex={selectedIndex}
+                onSelect={(index) => setSelectedIndex(index)}
+              >
+                <Tab title="Assets" />
+                <Tab title="Transactions" />
+              </TabBar>
+
+              <Layout style={styles.tabContent}>
+                {selectedIndex === 0 && account && (
+                  <>
+                    {/* Iron Asset */}
+                    <AssetRow
+                      name={
+                        getIronAsset.data?.verification.status === "verified"
+                          ? getIronAsset.data.verification.symbol
+                          : (getIronAsset.data?.name ?? "IRON")
+                      }
+                      amount={CurrencyUtils.render(
+                        account.balances.iron.confirmed,
+                      )}
+                      verified={
+                        getIronAsset.data?.verification.status === "verified"
+                      }
+                    />
+
+                    {/* Custom Assets */}
+                    {account.balances.custom.map((balance) => {
+                      const asset = assetMap.get(balance.assetId);
+                      return (
+                        <AssetRow
+                          key={balance.assetId}
+                          name={
+                            asset?.verification.status === "verified"
+                              ? asset.verification.symbol
+                              : (asset?.name ?? balance.assetId)
+                          }
+                          amount={CurrencyUtils.render(
+                            balance.confirmed,
+                            false,
+                            balance.assetId,
+                            asset?.verification.status === "verified"
+                              ? asset.verification
+                              : undefined,
+                          )}
+                          verified={asset?.verification.status === "verified"}
+                        />
+                      );
+                    })}
+                  </>
+                )}
+
+                {selectedIndex === 1 && (
+                  <>
+                    {getTransactionsResult.data?.map((transaction) => (
+                      <Card
+                        key={transaction.hash}
+                        style={styles.transactionCard}
+                      >
+                        <Text category="s1">{transaction.type.toString()}</Text>
+                        <Text category="p2" appearance="hint">
+                          Block: {transaction.block?.sequence ?? "Pending"}
+                        </Text>
+                        <Text category="p2" appearance="hint">
+                          {new Date(transaction.timestamp).toLocaleString()}
+                        </Text>
+                        <Text category="p2" appearance="hint">
+                          Status: {transaction.status.toString()}
+                        </Text>
+                      </Card>
+                    ))}
+                  </>
+                )}
               </Layout>
             </Layout>
-          </Animated.View>
-
-          <Layout style={styles.contentContainer}>
-            {/* Syncing Status */}
-            {isSyncing && (
-              <Card style={styles.syncCard}>
-                <Text appearance="hint" style={styles.syncText}>
-                  The blockchain is currently syncing with your accounts. Your
-                  balance may be inaccurate and sending transactions will be
-                  disabled until the sync is done.
-                </Text>
-                <Layout style={styles.syncStats}>
-                  <Layout style={styles.syncRow}>
-                    <Text appearance="hint">Progress:</Text>
-                    <Text>{syncProgress.toFixed(1)}%</Text>
-                  </Layout>
-                  <Layout style={styles.syncRow}>
-                    <Text appearance="hint">Blocks Scanned:</Text>
-                    <Text>
-                      {account?.head?.sequence ?? 0}/
-                      {getWalletStatusResult.data?.latestKnownBlock ?? 0}
-                    </Text>
-                  </Layout>
-                </Layout>
-              </Card>
-            )}
-
-            {/* Tabs Section */}
-            <TabBar
-              selectedIndex={selectedIndex}
-              onSelect={(index) => setSelectedIndex(index)}
-            >
-              <Tab title="Assets" />
-              <Tab title="Transactions" />
-            </TabBar>
-
-            <Layout style={styles.tabContent}>
-              {selectedIndex === 0 && account && (
-                <>
-                  {/* Iron Asset */}
-                  <AssetRow
-                    name={
-                      getIronAsset.data?.verification.status === "verified"
-                        ? getIronAsset.data.verification.symbol
-                        : (getIronAsset.data?.name ?? "IRON")
-                    }
-                    amount={CurrencyUtils.render(
-                      account.balances.iron.confirmed,
-                    )}
-                    verified={
-                      getIronAsset.data?.verification.status === "verified"
-                    }
-                  />
-
-                  {/* Custom Assets */}
-                  {account.balances.custom.map((balance) => {
-                    const asset = assetMap.get(balance.assetId);
-                    return (
-                      <AssetRow
-                        key={balance.assetId}
-                        name={
-                          asset?.verification.status === "verified"
-                            ? asset.verification.symbol
-                            : (asset?.name ?? balance.assetId)
-                        }
-                        amount={CurrencyUtils.render(
-                          balance.confirmed,
-                          false,
-                          balance.assetId,
-                          asset?.verification.status === "verified"
-                            ? asset.verification
-                            : undefined,
-                        )}
-                        verified={asset?.verification.status === "verified"}
-                      />
-                    );
-                  })}
-                </>
-              )}
-
-              {selectedIndex === 1 && (
-                <>
-                  {getTransactionsResult.data?.map((transaction) => (
-                    <Card key={transaction.hash} style={styles.transactionCard}>
-                      <Text category="s1">{transaction.type.toString()}</Text>
-                      <Text category="p2" appearance="hint">
-                        Block: {transaction.block?.sequence ?? "Pending"}
-                      </Text>
-                      <Text category="p2" appearance="hint">
-                        {new Date(transaction.timestamp).toLocaleString()}
-                      </Text>
-                      <Text category="p2" appearance="hint">
-                        Status: {transaction.status.toString()}
-                      </Text>
-                    </Card>
-                  ))}
-                </>
-              )}
-            </Layout>
           </Layout>
-        </Layout>
-      </Animated.ScrollView>
-      <StatusBar style="auto" />
-    </View>
+        </Animated.ScrollView>
+        <StatusBar style="auto" />
+      </View>
+    </>
   );
 }
 

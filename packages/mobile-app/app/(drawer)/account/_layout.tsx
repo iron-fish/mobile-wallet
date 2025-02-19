@@ -37,7 +37,8 @@ export default function Layout() {
       <Stack.Screen
         name="index"
         options={{
-          headerTitle: () => (
+          title: "Loading...",
+          headerTitle: (props) => (
             <TouchableWithoutFeedback
               onPress={() => {
                 router.push("/(drawer)/account/account-select");
@@ -46,7 +47,7 @@ export default function Layout() {
               <View
                 style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
               >
-                <Text category="h6">Testing</Text>
+                <Text category="h6">{props.children}</Text>
                 <Icon
                   name="chevron-down-outline"
                   fill={theme["text-basic-color"]}

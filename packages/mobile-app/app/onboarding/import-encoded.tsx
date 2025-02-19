@@ -62,7 +62,7 @@ export default function ImportEncoded() {
         account: encodedKey,
         name: accountName,
       });
-      router.push("/main/");
+      router.replace("/(drawer)/account");
     } catch (error) {
       console.error("Import account error:", error);
       setEncodedError(

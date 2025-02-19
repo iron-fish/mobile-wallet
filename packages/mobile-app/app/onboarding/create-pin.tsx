@@ -157,7 +157,7 @@ export default function CreatePin() {
 
       try {
         await createAccount.mutateAsync({ name: accountName });
-        router.push("/main/");
+        router.replace("/(drawer)/account");
       } catch (error12) {
         console.error(error12);
         setNameError("Failed to create account. Please try again.");

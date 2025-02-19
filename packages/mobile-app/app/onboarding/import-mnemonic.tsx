@@ -67,7 +67,7 @@ export default function ImportMnemonic() {
         account: phrase,
         name: accountName,
       });
-      router.push("/main/");
+      router.replace("/(drawer)/account");
     } catch (error) {
       console.error("Import account error:", error);
       setPhraseError(
