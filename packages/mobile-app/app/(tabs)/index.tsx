@@ -13,6 +13,7 @@ import {
   Modal,
 } from "@ui-kitten/components";
 import { StyleSheet } from "react-native";
+import { Image } from "expo-image";
 import { setStringAsync } from "expo-clipboard";
 import Animated, {
   useAnimatedScrollHandler,
@@ -270,6 +271,11 @@ export default function Balances() {
                     verified={
                       getIronAsset.data?.verification.status === "verified"
                     }
+                    image={
+                      getIronAsset.data?.verification.status === "verified"
+                        ? getIronAsset.data.verification.logoURI
+                        : undefined
+                    }
                   />
 
                   {/* Custom Assets */}
@@ -292,6 +298,11 @@ export default function Balances() {
                             : undefined,
                         )}
                         verified={asset?.verification.status === "verified"}
+                        image={
+                          asset?.verification.status === "verified"
+                            ? asset.verification.logoURI
+                            : undefined
+                        }
                       />
                     );
                   })}
@@ -329,15 +340,19 @@ function AssetRow({
   name,
   amount,
   verified,
+  image,
 }: {
   name: string;
   amount: string;
   verified: boolean;
+  image?: string;
 }) {
   return (
     <Card style={styles.assetCard}>
       <Layout style={styles.assetCardContent}>
-        <Layout style={styles.assetBadge} />
+        <Layout style={styles.assetBadge}>
+          <Image source={image} style={styles.assetBadge} />
+        </Layout>
         <Layout style={styles.assetInfo}>
           <Text category="s1">
             {name} {verified ? "(Verified)" : ""}

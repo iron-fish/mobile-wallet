@@ -17,7 +17,7 @@ export interface SerializedVerifiedAssetMetadata {
   updated_at: string;
   symbol: string;
   decimals?: number;
-  logo_uri?: string;
+  logoURI?: string;
   website?: string;
 }
 
