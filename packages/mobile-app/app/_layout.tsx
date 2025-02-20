@@ -12,15 +12,13 @@ import {
 } from "@tanstack/react-query";
 
 import { useColorScheme, Text } from "react-native";
-import { FacadeProvider, useFacade } from "../data/facades";
+import { FacadeProvider, useFacade } from "@/data/facades";
 import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
-import { AccountProvider } from "../providers/AccountProvider";
+import { AccountProvider } from "@/providers/AccountProvider";
 import * as eva from "@eva-design/eva";
 import { ApplicationProvider, IconRegistry } from "@ui-kitten/components";
 import { EvaIconsPack } from "@ui-kitten/eva-icons";
-import { menuItems } from "./menu";
-import { accountSettingsRoutes } from "./account-settings";
 import { PinLockScreen } from "@/components/PinLockScreen/PinLockScreen";
 
 const queryClient = new QueryClient({
@@ -92,36 +90,11 @@ export default function Layout() {
                       }}
                     />
                     <Stack.Screen
-                      name="(tabs)"
+                      name="(drawer)"
                       options={{
                         headerShown: false,
-                        title: "Account",
                       }}
                     />
-                    <Stack.Screen
-                      name="menu/index"
-                      options={{
-                        title: "Menu",
-                      }}
-                    />
-                    {menuItems.map((item) => {
-                      return (
-                        <Stack.Screen
-                          key={item.title}
-                          name={item.path}
-                          options={{ title: item.title }}
-                        />
-                      );
-                    })}
-                    {accountSettingsRoutes.map((item) => {
-                      return (
-                        <Stack.Screen
-                          key={item.title}
-                          name={item.path}
-                          options={{ title: item.title }}
-                        />
-                      );
-                    })}
                   </Stack>
                 </AccountProvider>
               </PinLockScreen>

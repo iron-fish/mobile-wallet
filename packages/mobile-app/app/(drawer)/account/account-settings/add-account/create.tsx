@@ -2,7 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import { Button, StyleSheet, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { useFacade } from "../../data/facades";
+import { useFacade } from "@/data/facades";
 
 export default function CreateAccount() {
   const router = useRouter();

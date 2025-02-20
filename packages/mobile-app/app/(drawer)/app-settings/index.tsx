@@ -16,23 +16,23 @@ const ForwardIcon = (props: any): IconElement => (
 const MENU_ROUTES = {
   security: {
     title: "Security",
-    href: "menu/security",
+    href: "/(drawer)/app-settings/security",
   },
   network: {
     title: "Network",
-    href: "menu/network",
+    href: "/(drawer)/app-settings/network",
   },
   debug: {
     title: "Debug",
-    href: "menu/debug",
+    href: "/(drawer)/app-settings/debug",
   },
   about: {
     title: "About the app",
-    href: "menu/about",
+    href: "/(drawer)/app-settings/about",
   },
 } as const;
 
-export const menuItems = Object.values(MENU_ROUTES).map((item) => {
+const menuItems = Object.values(MENU_ROUTES).map((item) => {
   return {
     title: item.title,
     href: item.href,

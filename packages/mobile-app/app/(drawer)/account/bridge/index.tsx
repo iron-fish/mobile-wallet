@@ -7,13 +7,14 @@ import {
   Text,
   View,
 } from "react-native";
-import { oreoWallet } from "../../../data/wallet/oreowalletWallet";
-import { Network } from "../../../data/constants";
+import { oreoWallet } from "@/data/wallet/oreowalletWallet";
+import { Network } from "@/data/constants";
 import { useRef, useState } from "react";
-import * as Uint8ArrayUtils from "../../../utils/uint8Array";
-import { useFacade } from "../../../data/facades";
+import * as Uint8ArrayUtils from "@/utils/uint8Array";
+import { useFacade } from "@/data/facades";
 import { Output } from "@/data/facades/wallet/types";
 import SendTransactionModal from "@/components/browser/SendTransactionModal";
+import Stack from "expo-router/stack";
 
 type Message = {
   id: number;
@@ -305,76 +306,84 @@ export default function MenuDebugBrowser() {
     `;
 
   return (
-    <View style={styles.container}>
-      <Modal
-        animationType="slide"
-        visible={accountModalVisible}
-        onRequestClose={() => {
-          messageHandler.current.updateActiveAccount(null);
-          setAccountModalVisible(false);
+    <>
+      <Stack.Screen
+        options={{
+          headerTitle: "Bridge",
+          headerBackTitle: "Back",
         }}
-      >
-        <SafeAreaView>
-          <View style={{ paddingTop: 40, paddingHorizontal: 4 }}>
-            <Text style={{ fontSize: 20, textAlign: "center" }}>
-              This website would like to connect to your wallet.
-            </Text>
-            <Text style={{ textAlign: "center" }}>
-              Choose an account to connect, or click Cancel.
-            </Text>
-            {accounts.data?.map((a) => (
+      />
+      <View style={styles.container}>
+        <Modal
+          animationType="slide"
+          visible={accountModalVisible}
+          onRequestClose={() => {
+            messageHandler.current.updateActiveAccount(null);
+            setAccountModalVisible(false);
+          }}
+        >
+          <SafeAreaView>
+            <View style={{ paddingTop: 40, paddingHorizontal: 4 }}>
+              <Text style={{ fontSize: 20, textAlign: "center" }}>
+                This website would like to connect to your wallet.
+              </Text>
+              <Text style={{ textAlign: "center" }}>
+                Choose an account to connect, or click Cancel.
+              </Text>
+              {accounts.data?.map((a) => (
+                <Button
+                  key={a.name}
+                  onPress={() => {
+                    messageHandler.current.updateActiveAccount({
+                      name: a.name,
+                      address: a.publicAddress,
+                    });
+                    setAccountModalVisible(false);
+                  }}
+                  title={`${a.name} (${a.balances.iron.confirmed} $IRON)`}
+                />
+              ))}
               <Button
-                key={a.name}
                 onPress={() => {
-                  messageHandler.current.updateActiveAccount({
-                    name: a.name,
-                    address: a.publicAddress,
-                  });
+                  messageHandler.current.updateActiveAccount(null);
                   setAccountModalVisible(false);
                 }}
-                title={`${a.name} (${a.balances.iron.confirmed} $IRON)`}
+                title="Cancel"
               />
-            ))}
-            <Button
-              onPress={() => {
-                messageHandler.current.updateActiveAccount(null);
-                setAccountModalVisible(false);
-              }}
-              title="Cancel"
-            />
-          </View>
-        </SafeAreaView>
-      </Modal>
-      <SendTransactionModal
-        sendTransactionData={sendTransactionData}
-        cancel={() => {
-          messageHandler.current.rejectSendTransactionRequest();
-          setSendTransactionData(null);
-        }}
-        success={(hash) => {
-          messageHandler.current.resolveSendTransactionRequest(hash);
-          setSendTransactionData(null);
-        }}
-      />
-      <WebView
-        source={{ uri: BRIDGE_URLS[Network.MAINNET] }}
-        ref={(r) => (webref.current = r)}
-        injectedJavaScriptBeforeContentLoaded={js}
-        onMessage={(event) => {
-          messageHandler.current.handleMessage(
-            event.nativeEvent.data,
-            () => {
-              setAccountModalVisible(true);
-            },
-            (data) => {
-              setSendTransactionData(data);
-            },
-            webref.current?.postMessage,
-          );
-        }}
-        webviewDebuggingEnabled
-      />
-    </View>
+            </View>
+          </SafeAreaView>
+        </Modal>
+        <SendTransactionModal
+          sendTransactionData={sendTransactionData}
+          cancel={() => {
+            messageHandler.current.rejectSendTransactionRequest();
+            setSendTransactionData(null);
+          }}
+          success={(hash) => {
+            messageHandler.current.resolveSendTransactionRequest(hash);
+            setSendTransactionData(null);
+          }}
+        />
+        <WebView
+          source={{ uri: BRIDGE_URLS[Network.MAINNET] }}
+          ref={(r) => (webref.current = r)}
+          injectedJavaScriptBeforeContentLoaded={js}
+          onMessage={(event) => {
+            messageHandler.current.handleMessage(
+              event.nativeEvent.data,
+              () => {
+                setAccountModalVisible(true);
+              },
+              (data) => {
+                setSendTransactionData(data);
+              },
+              webref.current?.postMessage,
+            );
+          }}
+          webviewDebuggingEnabled
+        />
+      </View>
+    </>
   );
 }
 
