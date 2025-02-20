@@ -11,7 +11,7 @@ import {
   IconProps,
   Spinner,
 } from "@ui-kitten/components";
-import { useFacade } from "../../data/facades";
+import { useFacade } from "../../../../data/facades";
 import { CurrencyUtils } from "@ironfish/sdk";
 import { useQueries } from "@tanstack/react-query";
 import { setStringAsync } from "expo-clipboard";
