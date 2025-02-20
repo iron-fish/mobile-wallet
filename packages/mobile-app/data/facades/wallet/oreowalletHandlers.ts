@@ -16,7 +16,7 @@ import { SettingsKey } from "@/data/settings/db";
 
 import {
   AccountFormat,
-  decodeAccount,
+  decodeAccountImport,
   LanguageKey,
   LanguageUtils,
   TransactionStatus,
@@ -322,7 +322,7 @@ export const walletHandlers = f.facade<WalletHandlers>({
         },
       );
 
-      const decodedAccount = decodeAccount(exportedAcc);
+      const decodedAccount = decodeAccountImport(exportedAcc);
 
       const response = await OreowalletServerApi.getLatestBlock(network, {
         publicAddress: decodedAccount.publicAddress,

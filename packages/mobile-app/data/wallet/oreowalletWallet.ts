@@ -5,8 +5,8 @@ import {
   LanguageKey,
   RawTransaction,
   RawTransactionSerde,
-  decodeAccount,
-  encodeAccount,
+  decodeAccountImport,
+  encodeAccountImport,
 } from "@ironfish/sdk";
 import { CONFIRMATIONS, IRON_ASSET_ID_HEX, Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
@@ -96,7 +96,7 @@ export class Wallet {
 
     if (!account) return;
 
-    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+    const decodedAccount = decodeAccountImport(account.viewOnlyAccount, {
       name: account.name,
     });
 
@@ -128,7 +128,7 @@ export class Wallet {
       accounts.map(async (a) => {
         const balances = await this.getBalances(a.id, network);
 
-        const decodedAccount = decodeAccount(a.viewOnlyAccount, {
+        const decodedAccount = decodeAccountImport(a.viewOnlyAccount, {
           name: a.name,
         });
 
@@ -163,7 +163,7 @@ export class Wallet {
 
     if (!account) return;
 
-    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+    const decodedAccount = decodeAccountImport(account.viewOnlyAccount, {
       name: account.name,
     });
 
@@ -208,7 +208,7 @@ export class Wallet {
     const account = await this.state.db.getAccountById(accountId);
     if (!account) return [];
 
-    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+    const decodedAccount = decodeAccountImport(account.viewOnlyAccount, {
       name: account.name,
     });
 
@@ -236,7 +236,7 @@ export class Wallet {
       throw new Error(`No account found with name ${name}`);
     }
 
-    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+    const decodedAccount = decodeAccountImport(account.viewOnlyAccount, {
       name,
     });
 
@@ -246,7 +246,7 @@ export class Wallet {
       );
     }
 
-    return encodeAccount(decodedAccount, format, {
+    return encodeAccountImport(decodedAccount, format, {
       language: options?.language,
     });
   }
@@ -254,7 +254,7 @@ export class Wallet {
   async importAccount(network: Network, account: string, name?: string) {
     assertStarted(this.state);
 
-    const decodedAccount = decodeAccount(account, {
+    const decodedAccount = decodeAccountImport(account, {
       name,
     });
 
@@ -310,7 +310,7 @@ export class Wallet {
       throw new Error(`No account found with name ${accountName}`);
     }
 
-    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+    const decodedAccount = decodeAccountImport(account.viewOnlyAccount, {
       name: account.name,
     });
 
@@ -340,7 +340,7 @@ export class Wallet {
       throw new Error(`No account found with name ${accountName}`);
     }
 
-    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+    const decodedAccount = decodeAccountImport(account.viewOnlyAccount, {
       name: account.name,
     });
 
@@ -436,7 +436,7 @@ export class Wallet {
       throw new Error("Cannot send transactions from a view-only account");
     }
 
-    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+    const decodedAccount = decodeAccountImport(account.viewOnlyAccount, {
       name: account.name,
     });
 
@@ -477,7 +477,7 @@ export class Wallet {
       throw new Error("Cannot send transactions from a view-only account");
     }
 
-    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+    const decodedAccount = decodeAccountImport(account.viewOnlyAccount, {
       name: account.name,
     });
 

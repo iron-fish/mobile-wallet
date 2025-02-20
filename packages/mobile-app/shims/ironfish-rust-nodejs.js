@@ -14,6 +14,8 @@ class Asset {
 
 class Transaction {}
 
+class Multisig {}
+
 const mockIronfishRustNodejs = {
   $$typeof: undefined,
   KEY_LENGTH: 32,
@@ -46,7 +48,17 @@ const mockIronfishRustNodejs = {
       if (obj.hasOwnProperty(property)) {
         return obj[property];
       }
-      const message = `ERROR: Please implement ${property} in shims/ironfish-rust-nodejs/Asset`;
+      const message = `ERROR: Please implement ${property} in shims/ironfish-rust-nodejs/Transaction`;
+      console.error(message);
+      throw new Error(message);
+    },
+  }),
+  multisig: new Proxy(Multisig, {
+    get: (obj, property) => {
+      if (obj.hasOwnProperty(property)) {
+        return obj[property];
+      }
+      const message = `ERROR: Please implement ${property} in shims/ironfish-rust-nodejs/Multisig`;
       console.error(message);
       throw new Error(message);
     },
@@ -54,6 +66,8 @@ const mockIronfishRustNodejs = {
   spendingKeyToWords: IronfishNativeModule.spendingKeyToWords,
   wordsToSpendingKey: IronfishNativeModule.wordsToSpendingKey,
   generateKeyFromPrivateKey: IronfishNativeModule.generateKeyFromPrivateKey,
+  generatePublicAddressFromIncomingViewKey:
+    IronfishNativeModule.generatePublicAddressFromIncomingViewKey,
   isValidPublicAddress: IronfishNativeModule.isValidPublicAddress,
 };
 

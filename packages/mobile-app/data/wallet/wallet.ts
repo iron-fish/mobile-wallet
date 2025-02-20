@@ -7,8 +7,8 @@ import {
   RawTransaction,
   Transaction,
   TransactionStatus,
-  decodeAccount,
-  encodeAccount,
+  decodeAccountImport,
+  encodeAccountImport,
 } from "@ironfish/sdk";
 import { ChainProcessor } from "../chainProcessor";
 import { CONFIRMATIONS, Network } from "../constants";
@@ -311,7 +311,7 @@ export class Wallet {
       throw new Error(`No account found with name ${name}`);
     }
 
-    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+    const decodedAccount = decodeAccountImport(account.viewOnlyAccount, {
       name,
     });
 
@@ -321,7 +321,7 @@ export class Wallet {
       );
     }
 
-    return encodeAccount(decodedAccount, format, {
+    return encodeAccountImport(decodedAccount, format, {
       language: options?.language,
     });
   }
@@ -329,7 +329,7 @@ export class Wallet {
   async importAccount(account: string, name?: string) {
     assertStarted(this.state);
 
-    const decodedAccount = decodeAccount(account, {
+    const decodedAccount = decodeAccountImport(account, {
       name,
     });
 
@@ -636,7 +636,7 @@ export class Wallet {
     for (const dbAccount of dbAccounts) {
       accounts.push({
         ...dbAccount,
-        decodedAccount: decodeAccount(dbAccount.viewOnlyAccount, {
+        decodedAccount: decodeAccountImport(dbAccount.viewOnlyAccount, {
           name: dbAccount.name,
         }),
       });
@@ -990,7 +990,7 @@ export class Wallet {
       }),
     );
 
-    const size = rawTxn.postedSize("");
+    const size = rawTxn.postedSize();
 
     const feeRates = await Blockchain.getFeeRates(Network.TESTNET);
 
@@ -1098,7 +1098,7 @@ export class Wallet {
     console.log(Uint8ArrayUtils.toHex(result));
 
     const txn = new Transaction(Buffer.from(result));
-    const decodedAccount = decodeAccount(account.viewOnlyAccount, {
+    const decodedAccount = decodeAccountImport(account.viewOnlyAccount, {
       name: account.name,
     });
 

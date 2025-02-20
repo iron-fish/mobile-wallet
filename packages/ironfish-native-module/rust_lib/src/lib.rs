@@ -13,10 +13,9 @@ use tokio_rayon::rayon::iter::{
 use zune_inflate::DeflateDecoder;
 
 use crate::num::FromPrimitive;
-use ironfish::sapling_bls12::Scalar;
 use ironfish::{
-    assets::asset::ID_LENGTH, keys::Language, note::MEMO_SIZE, serializing::bytes_to_hex,
-    MerkleNoteHash, Note, PublicAddress, SaplingKey,
+    assets::asset::ID_LENGTH, keys::Language, note::MEMO_SIZE, sapling_bls12::Scalar,
+    serializing::bytes_to_hex, IncomingViewKey, MerkleNoteHash, Note, PublicAddress, SaplingKey,
 };
 
 uniffi::setup_scaffolding!();
@@ -153,6 +152,16 @@ fn generate_key_from_private_key(private_key: String) -> Result<Key, EnumError> 
             &sapling_key.sapling_proof_generation_key().nsk.to_bytes(),
         ),
     })
+}
+
+#[uniffi::export]
+fn generate_public_address_from_incoming_view_key(
+    incoming_view_key: String,
+) -> Result<String, EnumError> {
+    let ivk = IncomingViewKey::from_hex(&incoming_view_key)
+        .map_err(|e| EnumError::Error { msg: e.to_string() })?;
+    let address = PublicAddress::from_view_key(&ivk);
+    Ok(address.hex_public_address())
 }
 
 #[uniffi::export]
@@ -413,8 +422,6 @@ pub fn create_transaction(
 }
 
 #[uniffi::export]
-pub fn hash_transaction(
-    transaction: Vec<u8>,
-) -> Vec<u8> {
+pub fn hash_transaction(transaction: Vec<u8>) -> Vec<u8> {
     blake3::hash(&transaction).as_bytes().to_vec()
 }

@@ -110,6 +110,10 @@ class IronfishNativeModule : Module() {
       )
     }
 
+    Function("generatePublicAddressFromIncomingViewKey") { incomingViewKey: String ->
+      uniffi.rust_lib.generatePublicAddressFromIncomingViewKey(incomingViewKey)
+    }
+
     Function("isValidPublicAddress") { hexAddress: String ->
       uniffi.rust_lib.isValidPublicAddress(hexAddress)
     }

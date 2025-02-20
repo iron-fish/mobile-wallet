@@ -1,4 +1,4 @@
-import { decodeAccount } from "@ironfish/sdk";
+import { decodeAccountImport } from "@ironfish/sdk";
 import { Network } from "../constants";
 import { Wallet } from "../wallet/wallet";
 import { WriteQueue } from "../wallet/writeQueue";
@@ -38,7 +38,7 @@ export async function reverseScan(
   for (const dbAccount of dbAccounts) {
     accounts.push({
       ...dbAccount,
-      decodedAccount: decodeAccount(dbAccount.viewOnlyAccount, {
+      decodedAccount: decodeAccountImport(dbAccount.viewOnlyAccount, {
         name: dbAccount.name,
       }),
     });
