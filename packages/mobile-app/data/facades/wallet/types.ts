@@ -25,6 +25,7 @@ export type AccountBalance = {
 export enum TransactionType {
   SEND = "send",
   RECEIVE = "receive",
+  MINER = "miner",
 }
 
 export type AssetBalanceDelta = {

@@ -13,7 +13,6 @@ import {
   Modal,
 } from "@ui-kitten/components";
 import { StyleSheet, View } from "react-native";
-import { Image } from "expo-image";
 import { setStringAsync } from "expo-clipboard";
 import Animated, {
   useAnimatedScrollHandler,
@@ -27,6 +26,8 @@ import { router, Stack } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CurrencyUtils } from "@ironfish/sdk";
 import { CONFIRMATIONS } from "@/data/constants";
+import { AssetRow } from "@/components/account/AssetRow";
+import { TransactionRow } from "@/components/account/TransactionRow";
 
 const ReceiveIcon = (props: IconProps) => (
   <Icon {...props} name="download-outline" />
@@ -309,26 +310,10 @@ export default function Balances() {
                 {selectedIndex === 1 && (
                   <>
                     {getTransactionsResult.data?.map((transaction) => (
-                      <Card
+                      <TransactionRow
                         key={transaction.hash}
-                        style={styles.transactionCard}
-                        onPress={() =>
-                          router.push(
-                            `/(drawer)/account/transaction/${transaction.hash}`,
-                          )
-                        }
-                      >
-                        <Text category="s1">{transaction.type.toString()}</Text>
-                        <Text category="p2" appearance="hint">
-                          Block: {transaction.block?.sequence ?? "Pending"}
-                        </Text>
-                        <Text category="p2" appearance="hint">
-                          {new Date(transaction.timestamp).toLocaleString()}
-                        </Text>
-                        <Text category="p2" appearance="hint">
-                          Status: {transaction.status.toString()}
-                        </Text>
-                      </Card>
+                        transaction={transaction}
+                      />
                     ))}
                   </>
                 )}
@@ -339,36 +324,6 @@ export default function Balances() {
         <StatusBar style="auto" />
       </View>
     </>
-  );
-}
-
-function AssetRow({
-  name,
-  amount,
-  verified,
-  image,
-}: {
-  name: string;
-  amount: string;
-  verified: boolean;
-  image?: string;
-}) {
-  return (
-    <Card style={styles.assetCard}>
-      <Layout style={styles.assetCardContent}>
-        <Layout style={styles.assetBadge}>
-          <Image source={image} style={styles.assetBadge} />
-        </Layout>
-        <Layout style={styles.assetInfo}>
-          <Text category="s1">
-            {name} {verified ? "(Verified)" : ""}
-          </Text>
-          <Text category="p2" appearance="hint">
-            {amount}
-          </Text>
-        </Layout>
-      </Layout>
-    </Card>
   );
 }
 
@@ -412,29 +367,6 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: "column",
   },
-  assetBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#E1E1E1",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  assetCard: {
-    marginVertical: 4,
-  },
-  assetCardContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  assetInfo: {
-    gap: 4,
-    flex: 1,
-  },
   syncCard: {
     margin: 16,
     marginTop: 0,
@@ -449,9 +381,6 @@ const styles = StyleSheet.create({
   syncRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-  },
-  transactionCard: {
-    marginVertical: 4,
   },
   backdrop: {
     backgroundColor: "rgba(0, 0, 0, 0.5)",
