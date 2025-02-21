@@ -1,55 +1,78 @@
-import { StatusBar } from "expo-status-bar";
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
-import { useRouter } from "expo-router";
+import { StyleSheet } from "react-native";
+import { Stack, useRouter } from "expo-router";
 import { useFacade } from "@/data/facades";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Layout, Button, Input, Text } from "@ui-kitten/components";
 
 export default function AccountName() {
   const router = useRouter();
   const facade = useFacade();
+  const activeAccount = facade.getAccount.useQuery({});
+  const renameAccount = facade.renameAccount.useMutation({
+    onSuccess: () => {
+      router.dismissAll();
+    },
+  });
 
   const [newName, setNewName] = useState("");
 
-  const activeAccount = facade.getAccount.useQuery({});
-
-  const renameAccount = facade.renameAccount.useMutation();
+  useEffect(() => {
+    if (activeAccount.data?.name) {
+      setNewName(activeAccount.data.name);
+    }
+  }, [activeAccount.data?.name]);
 
   return (
-    <View style={styles.container}>
-      <Button title="Back" onPress={() => router.dismiss()} />
+    <Layout style={styles.container}>
+      <Layout style={styles.contentContainer}>
+        <Stack.Screen
+          options={{
+            headerTitle: "Account Name",
+          }}
+        />
 
-      <View>
-        <Text>Account Name</Text>
-        <Text>Current name: {activeAccount.data?.name}</Text>
-        <TextInput
-          placeholder="New Name"
+        <Text category="s1" appearance="hint" style={styles.explanationText}>
+          Change the name of your account. This name is only visible to you.
+        </Text>
+        <Input
+          style={styles.input}
+          label="Account Name"
+          placeholder="Enter account name"
           value={newName}
           onChangeText={setNewName}
         />
-      </View>
-      <Button
-        title="Save"
-        onPress={async () => {
-          if (!activeAccount.data) {
-            return;
-          }
-          await renameAccount.mutateAsync({
-            name: activeAccount.data?.name,
-            newName: newName,
-          });
-          router.dismissAll();
-        }}
-      />
-      <StatusBar style="auto" />
-    </View>
+        <Button
+          onPress={async () => {
+            if (!activeAccount.data) return;
+            renameAccount.mutate({
+              name: activeAccount.data?.name,
+              newName: newName,
+            });
+          }}
+          disabled={renameAccount.isPending}
+        >
+          {renameAccount.isPending ? "Saving..." : "Save"}
+        </Button>
+      </Layout>
+    </Layout>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
+  },
+  contentContainer: {
+    flex: 1,
+    padding: 16,
+    paddingTop: 32,
+  },
+  input: {
+    marginBottom: 16,
+  },
+  explanationText: {
+    textAlign: "center",
+    marginBottom: 24,
+    paddingHorizontal: 16,
   },
 });
