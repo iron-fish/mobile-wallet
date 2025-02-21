@@ -312,6 +312,11 @@ export default function Balances() {
                       <Card
                         key={transaction.hash}
                         style={styles.transactionCard}
+                        onPress={() =>
+                          router.push(
+                            `/(drawer)/account/transaction/${transaction.hash}`,
+                          )
+                        }
                       >
                         <Text category="s1">{transaction.type.toString()}</Text>
                         <Text category="p2" appearance="hint">
