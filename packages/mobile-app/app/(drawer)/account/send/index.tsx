@@ -325,7 +325,10 @@ export default function Send() {
                   appearance="filled"
                   style={styles.confirmButton}
                   onPress={() => {
-                    console.log("will navigate to", sentTxHash);
+                    setTransactionState("idle");
+                    router.replace(
+                      `/(drawer)/account/transaction/${sentTxHash}`,
+                    );
                   }}
                 >
                   View Transaction
