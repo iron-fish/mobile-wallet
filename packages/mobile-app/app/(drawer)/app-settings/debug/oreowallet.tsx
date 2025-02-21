@@ -5,7 +5,7 @@ import { OreowalletServerApi } from "@/data/oreowalletServerApi/oreowalletServer
 import { useFacade } from "@/data/facades";
 import {
   AccountFormat,
-  decodeAccount,
+  decodeAccountImport,
   RawTransactionSerde,
 } from "@ironfish/sdk";
 
@@ -22,7 +22,7 @@ export default function MenuDebugOreowallet() {
       viewOnly: true,
     });
 
-    const acc = decodeAccount(es);
+    const acc = decodeAccountImport(es);
 
     return { publicAddress: acc.publicAddress, viewKey: acc.viewKey };
   };
@@ -42,7 +42,7 @@ export default function MenuDebugOreowallet() {
                   format: AccountFormat.JSON,
                   viewOnly: true,
                 });
-                const decoded = decodeAccount(exported);
+                const decoded = decodeAccountImport(exported);
 
                 const result = await OreowalletServerApi.importAccount(
                   Network.MAINNET,

@@ -47,6 +47,23 @@ export function generateKeyFromPrivateKey(privateKey: string): Key {
   }
 }
 
+export function generatePublicAddressFromIncomingViewKey(
+  incomingViewKey: string,
+): Key {
+  const result =
+    IronfishNativeModule.generatePublicAddressFromIncomingViewKey(
+      incomingViewKey,
+    );
+
+  // Throwing exceptions from expo modules directly logs to the console, even
+  // if the warning is caught.
+  if (result) {
+    return result;
+  } else {
+    throw new Error("Failed to generate public address from incoming view key");
+  }
+}
+
 export function isValidPublicAddress(hexAddress: string): boolean {
   return IronfishNativeModule.isValidPublicAddress(hexAddress);
 }

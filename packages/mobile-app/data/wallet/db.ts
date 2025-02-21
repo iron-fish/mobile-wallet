@@ -1,9 +1,13 @@
-import { AccountImport } from "@ironfish/sdk/build/src/wallet/walletdb/accountValue";
 import { Kysely, Generated, Migrator, sql, Selectable } from "kysely";
 import { ExpoDialect, ExpoMigrationProvider, SQLiteType } from "kysely-expo";
 import * as SecureStore from "expo-secure-store";
 import * as FileSystem from "expo-file-system";
-import { AccountFormat, encodeAccount, Note } from "@ironfish/sdk";
+import {
+  AccountFormat,
+  encodeAccountImport,
+  Note,
+  AccountImport,
+} from "@ironfish/sdk";
 import { Network } from "../constants";
 import * as Uint8ArrayUtils from "../../utils/uint8Array";
 import { TransactionType } from "../facades/wallet/types";
@@ -477,7 +481,7 @@ export class WalletDb {
    * Returns the existing account if one already exists with the same public address.
    */
   async createAccount(account: AccountImport): Promise<DBAccount> {
-    const viewOnlyAccount = encodeAccount(
+    const viewOnlyAccount = encodeAccountImport(
       { ...account, spendingKey: null },
       AccountFormat.Base64Json,
     );

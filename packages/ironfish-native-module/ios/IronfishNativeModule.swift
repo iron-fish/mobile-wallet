@@ -111,6 +111,14 @@ public class IronfishNativeModule: Module {
       )
     }
 
+    Function("generatePublicAddressFromIncomingViewKey") { (incomingViewKey: String) throws -> String? in
+      guard let k = try? generatePublicAddressFromIncomingViewKey(incomingViewKey: incomingViewKey) else {
+        return nil
+      }
+
+      return k
+    }
+
     Function("isValidPublicAddress") { (hexAddress: String) -> Bool in
       return isValidPublicAddress(hexAddress: hexAddress)
     }
