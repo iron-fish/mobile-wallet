@@ -6,7 +6,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Linking,
 } from "react-native";
 import Hyperlink from "react-native-hyperlink";
 import { useHeaderHeight } from "@react-navigation/elements";

@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Button, CheckBox, Input, Layout, Text } from "@ui-kitten/components";
 import { Stack, useRouter } from "expo-router";
 import { useState } from "react";
