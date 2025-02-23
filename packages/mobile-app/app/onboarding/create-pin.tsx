@@ -6,12 +6,15 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Linking,
 } from "react-native";
+import Hyperlink from "react-native-hyperlink";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { PinInputComponent } from "@/components/PinInputComponent";
 import { useState } from "react";
 import { useFacade } from "@/data/facades";
+import { CheckBox } from "@ui-kitten/components";
 
 const MIN_PIN_LENGTH = 4;
 const MAX_PIN_LENGTH = 8;
@@ -83,6 +86,7 @@ export default function CreatePin() {
   const [pinValue, setPinValue] = useState("");
   const [confirmPinValue, setConfirmPinValue] = useState("");
   const [accountName, setAccountName] = useState("");
+  const [confirmChecked, setConfirmChecked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nameError, setNameError] = useState("");
   const headerHeight = useHeaderHeight();
@@ -168,7 +172,7 @@ export default function CreatePin() {
   const isStepValid = () => {
     if (step === "pin") return isPinValid(pinValue);
     if (step === "confirm") return isPinValid(confirmPinValue);
-    return accountName.length >= 3;
+    return accountName.length >= 3 && confirmChecked;
   };
 
   const getPromptText = () => {
@@ -227,15 +231,35 @@ export default function CreatePin() {
           />
         )}
 
-        <TouchableOpacity
-          style={[styles.button, !isStepValid() && styles.buttonDisabled]}
-          disabled={!isStepValid()}
-          onPress={handleContinue}
-        >
-          <Text style={styles.buttonText}>
-            {step === "name" ? "Create Account" : "Continue"}
-          </Text>
-        </TouchableOpacity>
+        <View style={{ width: "100%", gap: 16 }}>
+          {step === "name" && (
+            <CheckBox checked={confirmChecked} onChange={setConfirmChecked}>
+              <Hyperlink
+                linkDefault
+                linkStyle={{ color: "#2980b9" }}
+                linkText={(url) =>
+                  url === "https://oreowallet.com/agreement"
+                    ? "Oreowallet Terms of Service"
+                    : url
+                }
+              >
+                <Text>
+                  I agree to the https://oreowallet.com/agreement and agree to
+                  upload my view keys to the Oreowallet server.
+                </Text>
+              </Hyperlink>
+            </CheckBox>
+          )}
+          <TouchableOpacity
+            style={[styles.button, !isStepValid() && styles.buttonDisabled]}
+            disabled={!isStepValid()}
+            onPress={handleContinue}
+          >
+            <Text style={styles.buttonText}>
+              {step === "name" ? "Create Account" : "Continue"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
