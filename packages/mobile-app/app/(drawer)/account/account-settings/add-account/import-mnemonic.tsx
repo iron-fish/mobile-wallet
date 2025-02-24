@@ -2,9 +2,9 @@ import { Stack } from "expo-router";
 import { useRouter } from "expo-router";
 import { Layout } from "@ui-kitten/components";
 import { StyleSheet } from "react-native";
-import { EncodedImport } from "@/components/EncodedImport/EncodedImport";
+import { MnemonicImport } from "@/components/MnemonicImport/MnemonicImport";
 
-export default function ImportEncodedScreen() {
+export default function ImportMnemonicScreen() {
   const router = useRouter();
 
   return (
@@ -17,7 +17,7 @@ export default function ImportEncodedScreen() {
       />
 
       <Layout style={styles.container} level="1">
-        <EncodedImport
+        <MnemonicImport
           onSuccess={() => router.dismissAll()}
           showSuccessModal={true}
         />

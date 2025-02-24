@@ -7,13 +7,12 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import Hyperlink from "react-native-hyperlink";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { PinInputComponent } from "@/components/PinInputComponent";
 import { useState } from "react";
 import { useFacade } from "@/data/facades";
-import { CheckBox } from "@ui-kitten/components";
+import { TermsOfService } from "@/components/TermsOfService/TermsOfService";
 
 const MIN_PIN_LENGTH = 4;
 const MAX_PIN_LENGTH = 8;
@@ -77,6 +76,10 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  termsContainer: {
+    width: "100%",
+    marginBottom: 16,
   },
 });
 
@@ -218,6 +221,12 @@ export default function CreatePin() {
               placeholder="Enter account name"
               autoFocus
             />
+            <View style={styles.termsContainer}>
+              <TermsOfService
+                checked={confirmChecked}
+                onChange={setConfirmChecked}
+              />
+            </View>
           </View>
         ) : (
           <PinInputComponent
@@ -230,35 +239,15 @@ export default function CreatePin() {
           />
         )}
 
-        <View style={{ width: "100%", gap: 16 }}>
-          {step === "name" && (
-            <CheckBox checked={confirmChecked} onChange={setConfirmChecked}>
-              <Hyperlink
-                linkDefault
-                linkStyle={{ color: "#2980b9" }}
-                linkText={(url) =>
-                  url === "https://oreowallet.com/agreement"
-                    ? "Oreowallet Terms of Service"
-                    : url
-                }
-              >
-                <Text>
-                  I agree to the https://oreowallet.com/agreement and agree to
-                  upload my view keys to the Oreowallet server.
-                </Text>
-              </Hyperlink>
-            </CheckBox>
-          )}
-          <TouchableOpacity
-            style={[styles.button, !isStepValid() && styles.buttonDisabled]}
-            disabled={!isStepValid()}
-            onPress={handleContinue}
-          >
-            <Text style={styles.buttonText}>
-              {step === "name" ? "Create Account" : "Continue"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.button, !isStepValid() && styles.buttonDisabled]}
+          disabled={!isStepValid()}
+          onPress={handleContinue}
+        >
+          <Text style={styles.buttonText}>
+            {step === "name" ? "Create Account" : "Continue"}
+          </Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );

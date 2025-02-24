@@ -32,9 +32,14 @@ export default function AddAccount() {
           Import an existing account
         </Text>
 
-        <Button style={styles.button} appearance="outline" size="large">
-          Mnemonic Phrase
-        </Button>
+        <Link
+          href="/(drawer)/account/account-settings/add-account/import-mnemonic"
+          asChild
+        >
+          <Button style={styles.button} appearance="outline" size="large">
+            Mnemonic Phrase
+          </Button>
+        </Link>
 
         <Link
           href="/(drawer)/account/account-settings/add-account/import-encoded"
@@ -45,9 +50,14 @@ export default function AddAccount() {
           </Button>
         </Link>
 
-        <Button style={styles.button} appearance="outline" size="large">
-          Import from File
-        </Button>
+        <Link
+          href="/(drawer)/account/account-settings/add-account/import-file"
+          asChild
+        >
+          <Button style={styles.button} appearance="outline" size="large">
+            Import from File
+          </Button>
+        </Link>
       </Card>
 
       <StatusBar style="auto" />
