@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useFacade } from "@/data/facades";
 import { SettingsKey } from "@/data/settings/db";
 import { Network } from "@/data/constants";
