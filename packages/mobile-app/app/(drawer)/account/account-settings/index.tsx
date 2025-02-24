@@ -139,7 +139,6 @@ function AccountSettingsContent({ accountName }: { accountName: string }) {
               />,
             )}
         </Menu>
-        <StatusBar style="auto" />
       </Layout>
     </>
   );

@@ -58,7 +58,6 @@ export default function MenuDebugPending() {
           </View>
         ))}
       </ScrollView>
-      <StatusBar style="auto" />
     </View>
   );
 }

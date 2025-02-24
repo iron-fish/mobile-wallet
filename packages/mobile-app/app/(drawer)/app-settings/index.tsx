@@ -67,7 +67,6 @@ export default function MenuScreen() {
           />
         ))}
       </Menu>
-      <StatusBar style="auto" />
     </Layout>
   );
 }

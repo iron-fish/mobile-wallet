@@ -59,8 +59,6 @@ export default function AddAccount() {
           </Button>
         </Link>
       </Card>
-
-      <StatusBar style="auto" />
     </Layout>
   );
 }

@@ -148,7 +148,6 @@ export default function MenuDebugOreowallet() {
           </>
         )}
       </View>
-      <StatusBar style="auto" />
     </View>
   );
 }

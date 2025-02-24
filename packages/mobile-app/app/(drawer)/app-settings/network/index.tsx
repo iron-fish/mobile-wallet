@@ -126,7 +126,6 @@ export default function MenuNetwork() {
         </View>
       </View>
       <Button title="Change Network" onPress={() => setModalVisible(true)} />
-      <StatusBar style="auto" />
     </View>
   );
 }

@@ -69,7 +69,6 @@ export default function MenuDebug() {
           Remove Blocks
         </Button>
       </Layout>
-      <StatusBar style="auto" />
     </Layout>
   );
 }

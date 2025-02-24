@@ -175,8 +175,6 @@ export default function ExportAccount() {
             )}
           </Card>
         </Modal>
-
-        <StatusBar style="auto" />
       </View>
     </>
   );

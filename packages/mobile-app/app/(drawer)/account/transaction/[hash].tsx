@@ -268,8 +268,6 @@ export default function TransactionDetails() {
           View on Explorer
         </Button>
       </View>
-
-      <StatusBar style="auto" />
     </Layout>
   );
 }

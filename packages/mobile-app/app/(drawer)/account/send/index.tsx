@@ -348,8 +348,6 @@ export default function Send() {
           </View>
         </Layout>
       </Modal>
-
-      <StatusBar style="auto" />
     </Layout>
   );
 }

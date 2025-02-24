@@ -70,7 +70,6 @@ export default function AccountSelect() {
             Add Account
           </Button>
         </Layout>
-        <StatusBar style="auto" />
       </Layout>
     </>
   );

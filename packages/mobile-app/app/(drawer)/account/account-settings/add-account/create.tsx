@@ -26,7 +26,6 @@ export default function CreateAccount() {
           router.dismissAll();
         }}
       />
-      <StatusBar style="auto" />
     </View>
   );
 }

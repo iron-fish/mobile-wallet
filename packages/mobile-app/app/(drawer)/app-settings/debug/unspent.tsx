@@ -82,7 +82,6 @@ export default function MenuDebugUnspentNotes() {
           </View>
         ))}
       </ScrollView>
-      <StatusBar style="auto" />
     </View>
   );
 }
