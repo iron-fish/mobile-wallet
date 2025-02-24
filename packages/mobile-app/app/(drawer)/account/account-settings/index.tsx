@@ -6,8 +6,9 @@ import {
   Menu,
   MenuItem,
   Toggle,
+  Text,
 } from "@ui-kitten/components";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useFacade } from "@/data/facades";
 import { CurrencyUtils } from "@ironfish/sdk";
@@ -47,14 +48,16 @@ const ACCOUNT_SETTINGS_ROUTES = {
 function getMenuItems({
   currentAccountName,
   currentAccountBalance,
+  hideBalances,
 }: {
   currentAccountName: string;
   currentAccountBalance: string;
+  hideBalances: boolean;
 }) {
   return Object.entries(ACCOUNT_SETTINGS_ROUTES).map(([key, route]) => {
     if (key === "accountSelect") {
       return {
-        title: `${currentAccountName} (${currentAccountBalance} $IRON)`,
+        title: `${currentAccountName} (${hideBalances ? "•••••" : currentAccountBalance} $IRON)`,
         href: route.href,
       };
     }
@@ -106,6 +109,7 @@ function AccountSettingsContent({ accountName }: { accountName: string }) {
     currentAccountBalance: CurrencyUtils.render(
       getAccountResult.data?.balances.iron.confirmed ?? "0",
     ),
+    hideBalances,
   });
 
   const handleSelect = (index: number) => {
@@ -129,12 +133,26 @@ function AccountSettingsContent({ accountName }: { accountName: string }) {
             .concat(
               <MenuItem
                 key="hide-balances"
-                title="Hide Balances"
-                accessoryRight={() => (
-                  <Toggle
-                    checked={hideBalances}
-                    onChange={onToggleHideBalances}
-                  />
+                title={(props) => (
+                  <Layout style={styles.tipContainer}>
+                    <View style={styles.textColumn}>
+                      <Text>Hide Balances</Text>
+                      <Text
+                        category="c1"
+                        appearance="hint"
+                        style={styles.tipText}
+                      >
+                        Tip: Long press on your balance to quickly toggle
+                        visibility
+                      </Text>
+                    </View>
+                    <View style={styles.toggleContainer}>
+                      <Toggle
+                        checked={hideBalances}
+                        onChange={onToggleHideBalances}
+                      />
+                    </View>
+                  </Layout>
                 )}
               />,
             )}
@@ -172,7 +190,23 @@ const styles = StyleSheet.create({
   menu: {
     flex: 1,
   },
-  toggle: {
-    marginRight: 8,
+  tipContainer: {
+    flexDirection: "row",
+    width: "100%",
+  },
+  textColumn: {
+    flex: 1,
+    paddingLeft: 12,
+    paddingRight: 8,
+  },
+  toggleContainer: {
+    justifyContent: "center",
+    alignItems: "flex-end",
+    paddingRight: 12,
+  },
+  tipText: {
+    marginTop: 4,
+    width: "80%",
+    fontStyle: "italic",
   },
 });

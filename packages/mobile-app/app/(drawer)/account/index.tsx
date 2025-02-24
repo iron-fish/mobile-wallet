@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Layout,
   Text,
@@ -12,7 +12,7 @@ import {
   Spinner,
   Modal,
 } from "@ui-kitten/components";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Pressable } from "react-native";
 import { setStringAsync } from "expo-clipboard";
 import Animated, {
   useAnimatedScrollHandler,
@@ -28,6 +28,8 @@ import { CurrencyUtils } from "@ironfish/sdk";
 import { CONFIRMATIONS } from "@/data/constants";
 import { AssetRow } from "@/components/account/AssetRow";
 import { TransactionRow } from "@/components/account/TransactionRow";
+import { useHideBalances } from "@/hooks/useHideBalances";
+import { SettingsKey } from "@/data/settings/db";
 
 const ReceiveIcon = (props: IconProps) => (
   <Icon {...props} name="download-outline" />
@@ -46,11 +48,14 @@ interface Balance {
 }
 
 export default function Balances() {
+  const hideBalances = useHideBalances();
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const facade = useFacade();
   const { account, accountName, isLoading } = useAccount();
   const scrollYOffset = useSharedValue(0);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [addressModalVisible, setAddressModalVisible] = useState(false);
+  const { mutate: setAppSetting } = facade.setAppSetting.useMutation();
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollYOffset.value = event.contentOffset.y;
@@ -104,6 +109,30 @@ export default function Balances() {
       enabled: accountName !== "",
     },
   );
+
+  const handlePressIn = () => {
+    longPressTimerRef.current = setTimeout(() => {
+      setAppSetting({
+        key: SettingsKey.HideBalances,
+        value: hideBalances ? "false" : "true",
+      });
+    }, 3000);
+  };
+
+  const handlePressOut = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
 
   if (isLoading || !account) {
     return (
@@ -178,44 +207,48 @@ export default function Balances() {
                 paddingTop: 40,
               }}
             >
-              <Layout style={styles.headerBalance}>
-                <Text category="h1" style={styles.balanceAmount}>
-                  {CurrencyUtils.render(
-                    account?.balances.iron.confirmed ?? "0",
-                  )}
-                </Text>
-                <Text category="s1" appearance="hint">
-                  {getIronAsset.data?.verification.status === "verified"
-                    ? getIronAsset.data.verification.symbol
-                    : (getIronAsset.data?.name ?? "IRON")}
-                </Text>
-
-                <Layout style={styles.actionButtons}>
-                  <Button
-                    appearance="ghost"
-                    accessoryLeft={ReceiveIcon}
-                    style={styles.actionButton}
-                    onPress={() => setAddressModalVisible(true)}
-                  >
-                    Receive
-                  </Button>
-                  <Button
-                    appearance="ghost"
-                    accessoryLeft={SendIcon}
-                    style={styles.actionButton}
-                    onPress={() => router.push("/(drawer)/account/send")}
-                  >
-                    Send
-                  </Button>
-                  <Button
-                    appearance="ghost"
-                    accessoryLeft={BridgeIcon}
-                    style={styles.actionButton}
-                    onPress={() => router.push("/(drawer)/account/bridge")}
-                  >
-                    Bridge
-                  </Button>
+              <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut}>
+                <Layout style={styles.headerBalance}>
+                  <Text category="h1" style={styles.balanceAmount}>
+                    {hideBalances
+                      ? "•••••"
+                      : CurrencyUtils.render(
+                          account?.balances.iron.confirmed ?? "0",
+                        )}
+                  </Text>
+                  <Text category="s1" appearance="hint">
+                    {getIronAsset.data?.verification.status === "verified"
+                      ? getIronAsset.data.verification.symbol
+                      : (getIronAsset.data?.name ?? "IRON")}
+                  </Text>
                 </Layout>
+              </Pressable>
+
+              <Layout style={styles.actionButtons}>
+                <Button
+                  appearance="ghost"
+                  accessoryLeft={ReceiveIcon}
+                  style={styles.actionButton}
+                  onPress={() => setAddressModalVisible(true)}
+                >
+                  Receive
+                </Button>
+                <Button
+                  appearance="ghost"
+                  accessoryLeft={SendIcon}
+                  style={styles.actionButton}
+                  onPress={() => router.push("/(drawer)/account/send")}
+                >
+                  Send
+                </Button>
+                <Button
+                  appearance="ghost"
+                  accessoryLeft={BridgeIcon}
+                  style={styles.actionButton}
+                  onPress={() => router.push("/(drawer)/account/bridge")}
+                >
+                  Bridge
+                </Button>
               </Layout>
             </Animated.View>
 
@@ -265,6 +298,9 @@ export default function Balances() {
                       }
                       amount={CurrencyUtils.render(
                         account.balances.iron.confirmed,
+                        hideBalances,
+                        account.balances.iron.assetId,
+                        getIronAsset.data?.verification,
                       )}
                       verified={
                         getIronAsset.data?.verification.status === "verified"
@@ -274,6 +310,7 @@ export default function Balances() {
                           ? getIronAsset.data.verification.logoURI
                           : undefined
                       }
+                      forceHideBalance={hideBalances}
                     />
 
                     {/* Custom Assets */}
@@ -289,7 +326,7 @@ export default function Balances() {
                           }
                           amount={CurrencyUtils.render(
                             balance.confirmed,
-                            false,
+                            hideBalances,
                             balance.assetId,
                             asset?.verification.status === "verified"
                               ? asset.verification
@@ -301,6 +338,7 @@ export default function Balances() {
                               ? asset.verification.logoURI
                               : undefined
                           }
+                          forceHideBalance={hideBalances}
                         />
                       );
                     })}
