@@ -1,8 +1,9 @@
 import { StyleSheet, View } from "react-native";
-import { Button, Input, Layout, Text } from "@ui-kitten/components";
-import { useRouter } from "expo-router";
+import { Button, CheckBox, Input, Layout, Text } from "@ui-kitten/components";
+import { Stack, useRouter } from "expo-router";
 import { useState } from "react";
 import { useFacade } from "@/data/facades";
+import Hyperlink from "react-native-hyperlink";
 
 const styles = StyleSheet.create({
   container: {
@@ -38,6 +39,7 @@ export default function ImportEncoded() {
   const [encodedKey, setEncodedKey] = useState("");
   const [nameError, setNameError] = useState("");
   const [encodedError, setEncodedError] = useState("");
+  const [confirmChecked, setConfirmChecked] = useState(false);
 
   const facade = useFacade();
   const importAccount = facade.importAccount.useMutation();
@@ -73,6 +75,12 @@ export default function ImportEncoded() {
 
   return (
     <Layout style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerTitle: "Import Encoded",
+          headerBackTitle: "Back",
+        }}
+      />
       <View style={styles.content}>
         <Text category="p1" style={styles.description}>
           Paste the complete string into the provided text field below.
@@ -114,8 +122,33 @@ export default function ImportEncoded() {
           </View>
         </View>
 
-        <Button onPress={handleContinue} disabled={!accountName || !encodedKey}>
-          Continue
+        <CheckBox checked={confirmChecked} onChange={setConfirmChecked}>
+          <Hyperlink
+            linkDefault
+            linkStyle={{ color: "#2980b9" }}
+            linkText={(url) =>
+              url === "https://oreowallet.com/agreement"
+                ? "Oreowallet Terms of Service"
+                : url
+            }
+          >
+            <Text>
+              I agree to the https://oreowallet.com/agreement and agree to
+              upload my view keys to the Oreowallet server.
+            </Text>
+          </Hyperlink>
+        </CheckBox>
+
+        <Button
+          onPress={handleContinue}
+          disabled={
+            !accountName ||
+            !encodedKey ||
+            importAccount.isPending ||
+            !confirmChecked
+          }
+        >
+          {importAccount.isPending ? "Importing..." : "Continue"}
         </Button>
       </View>
     </Layout>

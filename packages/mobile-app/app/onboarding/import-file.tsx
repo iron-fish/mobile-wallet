@@ -1,5 +1,12 @@
 import { StyleSheet, View } from "react-native";
-import { Button, Input, Layout, Text, Icon } from "@ui-kitten/components";
+import {
+  Button,
+  Input,
+  Layout,
+  Text,
+  Icon,
+  CheckBox,
+} from "@ui-kitten/components";
 import { useState } from "react";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
@@ -7,6 +14,7 @@ import { useFacade } from "@/data/facades";
 import * as FileSystem from "expo-file-system";
 
 import { Files } from "@/svgs/Files";
+import Hyperlink from "react-native-hyperlink";
 
 const styles = StyleSheet.create({
   container: {
@@ -62,6 +70,7 @@ export default function ImportFile() {
   const [accountName, setAccountName] = useState("");
   const [nameError, setNameError] = useState("");
   const [fileError, setFileError] = useState("");
+  const [confirmChecked, setConfirmChecked] = useState(false);
 
   const pickDocument = async () => {
     try {
@@ -165,9 +174,31 @@ export default function ImportFile() {
           </View>
         )}
 
+        <CheckBox checked={confirmChecked} onChange={setConfirmChecked}>
+          <Hyperlink
+            linkDefault
+            linkStyle={{ color: "#2980b9" }}
+            linkText={(url) =>
+              url === "https://oreowallet.com/agreement"
+                ? "Oreowallet Terms of Service"
+                : url
+            }
+          >
+            <Text>
+              I agree to the https://oreowallet.com/agreement and agree to
+              upload my view keys to the Oreowallet server.
+            </Text>
+          </Hyperlink>
+        </CheckBox>
+
         <Button
           onPress={handleContinue}
-          disabled={!accountName || !fileContent || importAccount.isPending}
+          disabled={
+            !accountName ||
+            !fileContent ||
+            importAccount.isPending ||
+            !confirmChecked
+          }
         >
           {importAccount.isPending ? "Importing..." : "Continue"}
         </Button>
