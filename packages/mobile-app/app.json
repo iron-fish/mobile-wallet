@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile-app",
-    "slug": "mobile-app",
+    "name": "Iron Fish",
+    "slug": "ironfishwallet",
     "scheme": "ironfishwallet",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,11 +10,12 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#de83f0"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "bundleIdentifier": "com.ironfish.mobileapp",
+      "icon": "./assets/icon.png",
+      "bundleIdentifier": "network.ironfish.mobilewallet",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
@@ -39,9 +40,9 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#de83f0"
       },
-      "package": "com.ironfish.mobileapp"
+      "package": "network.ironfish.mobilewallet"
     },
     "plugins": ["expo-router", "expo-secure-store", "expo-font", "expo-sqlite"]
   }

@@ -1,20 +1,22 @@
 import { WebView } from "react-native-webview";
-import {
-  Button,
-  Modal,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { StyleSheet, View } from "react-native";
+import { Button, Card, Layout, Text } from "@ui-kitten/components";
 import { oreoWallet } from "@/data/wallet/oreowalletWallet";
 import { Network } from "@/data/constants";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import * as Uint8ArrayUtils from "@/utils/uint8Array";
 import { useFacade } from "@/data/facades";
 import { Output } from "@/data/facades/wallet/types";
 import SendTransactionModal from "@/components/browser/SendTransactionModal";
+import { Image } from "expo-image";
 import Stack from "expo-router/stack";
+import {
+  BottomSheetModal,
+  BottomSheetView,
+  BottomSheetModalProvider,
+  BottomSheetBackdrop,
+} from "@gorhom/bottom-sheet";
+import { SettingsKey } from "@/data/settings/db";
 
 type Message = {
   id: number;
@@ -112,6 +114,15 @@ class MessageHandler {
           data: { address },
         }),
       );
+    } else if (message.type === "disconnect") {
+      this.updateActiveAccount(null);
+      postMessage?.(
+        JSON.stringify({
+          id: message.id,
+          type: "disconnect",
+          data: null,
+        }),
+      );
     } else if (message.type === "getBalances") {
       if (oreoWallet.state.type !== "STARTED" || !this.activeAccount) {
         console.error("Wallet not started");
@@ -191,13 +202,44 @@ export default function MenuDebugBrowser() {
   const webref = useRef<WebView | null>(null);
   const messageHandler = useRef(new MessageHandler());
   const facade = useFacade();
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+
+  const settings = facade.getAppSettings.useQuery(undefined);
+  const network = settings.data
+    ? BRIDGE_URLS[settings.data[SettingsKey.Network]]
+    : null;
 
   const [accountModalVisible, setAccountModalVisible] = useState(false);
   const [sendTransactionData, setSendTransactionData] =
     useState<GeneralTransactionData | null>(null);
-  const accounts = facade.getAccounts.useQuery(undefined, {
-    enabled: accountModalVisible,
-  });
+  const account = facade.getAccount.useQuery(
+    {},
+    {
+      enabled: accountModalVisible,
+    },
+  );
+
+  const handlePresentModalPress = useCallback(() => {
+    bottomSheetModalRef.current?.present();
+    setAccountModalVisible(true);
+  }, []);
+
+  const handleDismissModalPress = useCallback(() => {
+    bottomSheetModalRef.current?.dismiss();
+    setAccountModalVisible(false);
+  }, []);
+
+  const renderBackdrop = useCallback(
+    (props: any) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.5}
+      />
+    ),
+    [],
+  );
 
   const js = `
         window.addEventListener('message', (event) => {
@@ -215,6 +257,8 @@ export default function MenuDebugBrowser() {
 
             if (message.type === "connect") {
                 window.rpccalls[message.id].resolve(message.data.address);
+            } else if (message.type === "disconnect") {
+                window.rpccalls[message.id].resolve(null);
             } else if (message.type === "getBalances") {
                 window.rpccalls[message.id].resolve(message.data.balances);
             } else if (message.type === "generalTransaction") {
@@ -251,6 +295,20 @@ export default function MenuDebugBrowser() {
                 this.#address = result;
                 console.log(result);
                 return result;
+            }
+            async disconnect() {
+                const id = window.rpccounter++;
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                    id,
+                    type: "disconnect",
+                    data: null,
+                }));
+                const result = await new Promise((resolve, reject) => {
+                    window.rpccalls[id] = { resolve, reject };
+                });
+                this.#address = null;
+                console.log("Disconnected");
+                return null;
             }
             async getBalances() {
                 if (!this.#address) {
@@ -306,89 +364,134 @@ export default function MenuDebugBrowser() {
     `;
 
   return (
-    <>
+    <BottomSheetModalProvider>
       <Stack.Screen
         options={{
           headerTitle: "Bridge",
           headerBackTitle: "Back",
         }}
       />
-      <View style={styles.container}>
-        <Modal
-          animationType="slide"
-          visible={accountModalVisible}
-          onRequestClose={() => {
-            messageHandler.current.updateActiveAccount(null);
-            setAccountModalVisible(false);
-          }}
-        >
-          <SafeAreaView>
-            <View style={{ paddingTop: 40, paddingHorizontal: 4 }}>
-              <Text style={{ fontSize: 20, textAlign: "center" }}>
-                This website would like to connect to your wallet.
-              </Text>
-              <Text style={{ textAlign: "center" }}>
-                Choose an account to connect, or click Cancel.
-              </Text>
-              {accounts.data?.map((a) => (
-                <Button
-                  key={a.name}
-                  onPress={() => {
-                    messageHandler.current.updateActiveAccount({
-                      name: a.name,
-                      address: a.publicAddress,
-                    });
-                    setAccountModalVisible(false);
-                  }}
-                  title={`${a.name} (${a.balances.iron.confirmed} $IRON)`}
+      {network && (
+        <View style={styles.container}>
+          <BottomSheetModal
+            ref={bottomSheetModalRef}
+            snapPoints={["50%"]}
+            enablePanDownToClose
+            backdropComponent={renderBackdrop}
+            onDismiss={() => {
+              messageHandler.current.updateActiveAccount(null);
+              setAccountModalVisible(false);
+            }}
+            backgroundStyle={styles.bottomSheetModal}
+          >
+            <BottomSheetView style={styles.bottomSheetContent}>
+              <Layout style={{ flexDirection: "row", gap: 8 }}>
+                <Image
+                  source={network + "favicon.ico"}
+                  style={{ width: 48, height: 48 }}
                 />
-              ))}
-              <Button
-                onPress={() => {
-                  messageHandler.current.updateActiveAccount(null);
-                  setAccountModalVisible(false);
-                }}
-                title="Cancel"
-              />
-            </View>
-          </SafeAreaView>
-        </Modal>
-        <SendTransactionModal
-          sendTransactionData={sendTransactionData}
-          cancel={() => {
-            messageHandler.current.rejectSendTransactionRequest();
-            setSendTransactionData(null);
-          }}
-          success={(hash) => {
-            messageHandler.current.resolveSendTransactionRequest(hash);
-            setSendTransactionData(null);
-          }}
-        />
-        <WebView
-          source={{ uri: BRIDGE_URLS[Network.MAINNET] }}
-          ref={(r) => (webref.current = r)}
-          injectedJavaScriptBeforeContentLoaded={js}
-          onMessage={(event) => {
-            messageHandler.current.handleMessage(
-              event.nativeEvent.data,
-              () => {
-                setAccountModalVisible(true);
-              },
-              (data) => {
-                setSendTransactionData(data);
-              },
-              webref.current?.postMessage,
-            );
-          }}
-          webviewDebuggingEnabled
-        />
-      </View>
-    </>
+                <Layout style={{ gap: 2 }}>
+                  <Text category="h5">Iron Fish Bridge</Text>
+                  <Text category="s2" appearance="hint">
+                    {network}
+                  </Text>
+                </Layout>
+              </Layout>
+              <Text style={styles.modalSubtitle}>
+                Allow this site to view your account's balances and
+                transactions?
+              </Text>
+              <Card>
+                <Text category="h6">{account.data?.name}</Text>
+                <Text category="s2" appearance="hint">
+                  {account.data?.publicAddress}
+                </Text>
+              </Card>
+              <Layout
+                style={{ flexDirection: "row", gap: 8, marginBottom: 32 }}
+              >
+                <Button
+                  onPress={() => {
+                    if (!account.data) {
+                      console.error("No account loaded");
+                      return;
+                    }
+                    messageHandler.current.updateActiveAccount({
+                      name: account.data.name,
+                      address: account.data.publicAddress,
+                    });
+                    handleDismissModalPress();
+                  }}
+                  style={{ flex: 1 }}
+                >
+                  Confirm
+                </Button>
+                <Button
+                  onPress={() => {
+                    messageHandler.current.updateActiveAccount(null);
+                    handleDismissModalPress();
+                  }}
+                  style={{ flex: 1 }}
+                  appearance="outline"
+                >
+                  Cancel
+                </Button>
+              </Layout>
+            </BottomSheetView>
+          </BottomSheetModal>
+          <SendTransactionModal
+            sendTransactionData={sendTransactionData}
+            cancel={() => {
+              messageHandler.current.rejectSendTransactionRequest();
+              setSendTransactionData(null);
+            }}
+            success={(hash) => {
+              messageHandler.current.resolveSendTransactionRequest(hash);
+              setSendTransactionData(null);
+            }}
+          />
+          <WebView
+            source={{ uri: network }}
+            ref={(r) => (webref.current = r)}
+            injectedJavaScriptBeforeContentLoaded={js}
+            onMessage={(event) => {
+              messageHandler.current.handleMessage(
+                event.nativeEvent.data,
+                handlePresentModalPress,
+                (data) => {
+                  setSendTransactionData(data);
+                },
+                webref.current?.postMessage,
+              );
+            }}
+            webviewDebuggingEnabled
+          />
+        </View>
+      )}
+    </BottomSheetModalProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  bottomSheetModal: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.37,
+    shadowRadius: 7.49,
+
+    elevation: 12,
+  },
+  bottomSheetContent: {
+    padding: 16,
+    gap: 16,
+  },
+  modalSubtitle: {
+    textAlign: "center",
   },
 });

@@ -1,8 +1,9 @@
 import { StyleSheet, View } from "react-native";
-import { Button, Input, Layout, Text } from "@ui-kitten/components";
+import { Button, CheckBox, Input, Layout, Text } from "@ui-kitten/components";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useFacade } from "@/data/facades";
+import Hyperlink from "react-native-hyperlink";
 
 const styles = StyleSheet.create({
   container: {
@@ -38,6 +39,7 @@ export default function ImportMnemonic() {
   const [phrase, setPhrase] = useState("");
   const [nameError, setNameError] = useState("");
   const [phraseError, setPhraseError] = useState("");
+  const [confirmChecked, setConfirmChecked] = useState(false);
 
   const facade = useFacade();
   const importAccount = facade.importAccount.useMutation();
@@ -119,8 +121,33 @@ export default function ImportMnemonic() {
           </View>
         </View>
 
-        <Button onPress={handleContinue} disabled={!accountName || !phrase}>
-          Continue
+        <CheckBox checked={confirmChecked} onChange={setConfirmChecked}>
+          <Hyperlink
+            linkDefault
+            linkStyle={{ color: "#2980b9" }}
+            linkText={(url) =>
+              url === "https://oreowallet.com/agreement"
+                ? "Oreowallet Terms of Service"
+                : url
+            }
+          >
+            <Text>
+              I agree to the https://oreowallet.com/agreement and agree to
+              upload my view keys to the Oreowallet server.
+            </Text>
+          </Hyperlink>
+        </CheckBox>
+
+        <Button
+          onPress={handleContinue}
+          disabled={
+            !accountName ||
+            !phrase ||
+            importAccount.isPending ||
+            !confirmChecked
+          }
+        >
+          {importAccount.isPending ? "Importing..." : "Continue"}
         </Button>
       </View>
     </Layout>
