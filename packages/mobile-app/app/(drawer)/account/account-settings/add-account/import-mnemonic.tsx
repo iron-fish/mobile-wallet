@@ -19,14 +19,39 @@ const LoadingIndicator = () => (
   </View>
 );
 
-export default function ImportEncoded() {
+export default function ImportMnemonic() {
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
   const [accountName, setAccountName] = useState("");
-  const [encodedAccount, setEncodedAccount] = useState("");
+  const [phrase, setPhrase] = useState("");
+  const [error, setError] = useState("");
 
   const facade = useFacade();
   const importAccount = facade.importAccount.useMutation();
+
+  const validatePhrase = (text: string) => {
+    const words = text.trim().split(/\s+/);
+    return words.length === 24;
+  };
+
+  const handleImport = async () => {
+    if (!validatePhrase(phrase)) {
+      setError("Please enter all 24 words of your mnemonic phrase");
+      return;
+    }
+
+    try {
+      await importAccount.mutateAsync({
+        account: phrase,
+        name: accountName,
+      });
+      setModalVisible(true);
+    } catch (error) {
+      setError(
+        "Failed to import account. Please check your mnemonic phrase and try again.",
+      );
+    }
+  };
 
   return (
     <>
@@ -69,11 +94,11 @@ export default function ImportEncoded() {
         >
           <Card disabled style={styles.card}>
             <Text category="h6" style={styles.title}>
-              Encoded Key Import
+              Mnemonic Phrase Import
             </Text>
 
             <Text appearance="hint" style={styles.description}>
-              Paste the complete string into the provided text field below.
+              Enter your 24 word mnemonic phrase to restore your account
             </Text>
 
             <Input
@@ -86,33 +111,30 @@ export default function ImportEncoded() {
             />
 
             <Input
-              label="Encoded Key"
-              placeholder="Paste your encoded key here"
-              value={encodedAccount}
-              onChangeText={setEncodedAccount}
+              label="Mnemonic Phrase"
+              placeholder="Enter your 24 word mnemonic phrase"
+              value={phrase}
+              onChangeText={(text) => {
+                setPhrase(text);
+                setError("");
+              }}
               style={styles.input}
               size="large"
               multiline
-              textStyle={styles.encodedInput}
-              maxLength={2000}
+              textStyle={styles.phraseInput}
+              status={error ? "danger" : "basic"}
             />
+
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <Button
               style={styles.button}
               size="large"
-              onPress={async () => {
-                await importAccount.mutateAsync({
-                  account: encodedAccount,
-                  name: accountName,
-                });
-                setModalVisible(true);
-              }}
+              onPress={handleImport}
               accessoryLeft={
                 importAccount.isPending ? LoadingIndicator : undefined
               }
-              disabled={
-                importAccount.isPending || !encodedAccount || !accountName
-              }
+              disabled={importAccount.isPending || !phrase || !accountName}
             >
               {importAccount.isPending ? "Importing..." : "Import Account"}
             </Button>
@@ -145,9 +167,8 @@ const styles = StyleSheet.create({
   input: {
     marginBottom: 16,
   },
-  encodedInput: {
+  phraseInput: {
     minHeight: 120,
-    maxHeight: 200,
     textAlignVertical: "top",
   },
   button: {
@@ -175,6 +196,11 @@ const styles = StyleSheet.create({
   loadingContainer: {
     justifyContent: "center",
     alignItems: "center",
+  },
+  errorText: {
+    color: "#FF3B30",
+    fontSize: 14,
+    marginBottom: 16,
   },
   scrollContent: {
     flexGrow: 1,
