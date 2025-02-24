@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { Button, StyleSheet, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -26,7 +25,6 @@ export default function CreateAccount() {
           router.dismissAll();
         }}
       />
-      <StatusBar style="auto" />
     </View>
   );
 }

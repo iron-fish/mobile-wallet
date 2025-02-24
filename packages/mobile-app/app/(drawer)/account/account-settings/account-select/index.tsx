@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useFacade } from "@/data/facades";
@@ -70,7 +69,6 @@ export default function AccountSelect() {
             Add Account
           </Button>
         </Layout>
-        <StatusBar style="auto" />
       </Layout>
     </>
   );

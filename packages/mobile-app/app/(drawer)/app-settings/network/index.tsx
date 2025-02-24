@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import {
   Button,
   Modal,
@@ -126,7 +125,6 @@ export default function MenuNetwork() {
         </View>
       </View>
       <Button title="Change Network" onPress={() => setModalVisible(true)} />
-      <StatusBar style="auto" />
     </View>
   );
 }

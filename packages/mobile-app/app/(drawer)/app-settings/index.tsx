@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import {
   Icon,
@@ -67,7 +66,6 @@ export default function MenuScreen() {
           />
         ))}
       </Menu>
-      <StatusBar style="auto" />
     </Layout>
   );
 }

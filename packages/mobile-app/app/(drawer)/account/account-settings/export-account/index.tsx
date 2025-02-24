@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View } from "react-native";
 import { Stack } from "expo-router";
 import { useFacade } from "@/data/facades";
@@ -175,8 +174,6 @@ export default function ExportAccount() {
             )}
           </Card>
         </Modal>
-
-        <StatusBar style="auto" />
       </View>
     </>
   );

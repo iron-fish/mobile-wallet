@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View, Linking } from "react-native";
 import { useLocalSearchParams, Stack } from "expo-router";
 import React from "react";
@@ -268,8 +267,6 @@ export default function TransactionDetails() {
           View on Explorer
         </Button>
       </View>
-
-      <StatusBar style="auto" />
     </Layout>
   );
 }

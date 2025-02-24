@@ -321,7 +321,7 @@ export default function Balances() {
             </Layout>
           </Layout>
         </Animated.ScrollView>
-        <StatusBar style="auto" />
+        <StatusBar style="dark" />
       </View>
     </>
   );
