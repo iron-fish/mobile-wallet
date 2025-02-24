@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { Stack, Link } from "expo-router";
 import { Layout, Text, Card, Button, Divider } from "@ui-kitten/components";

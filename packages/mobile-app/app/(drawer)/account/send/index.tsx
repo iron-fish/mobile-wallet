@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View } from "react-native";
 import { useFacade } from "@/data/facades";
 import { useState, useMemo } from "react";

@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { Network } from "@/data/constants";
 import { wallet } from "@/data/wallet/wallet";
