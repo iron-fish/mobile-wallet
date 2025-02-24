@@ -11,7 +11,7 @@ export default function ExportAccount() {
   const [modalVisible, setModalVisible] = useState(false);
   const [exportType, setExportType] = useState<AccountFormat | null>(null);
   const [exportedContent, setExportedContent] = useState<string | null>(null);
-  const [holdProgress, setHoldProgress] = useState(2);
+  const [holdProgress, setHoldProgress] = useState(3);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isHoldingRef = useRef(false);
 
@@ -33,7 +33,7 @@ export default function ExportAccount() {
   const handleExport = async (format: AccountFormat) => {
     setExportType(format);
     setExportedContent(null);
-    setHoldProgress(2);
+    setHoldProgress(3);
     setModalVisible(true);
   };
 
@@ -61,7 +61,7 @@ export default function ExportAccount() {
       holdTimerRef.current = null;
     }
     isHoldingRef.current = false;
-    setHoldProgress(2);
+    setHoldProgress(3);
   };
 
   const handleReveal = async () => {
