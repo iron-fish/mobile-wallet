@@ -53,6 +53,7 @@ export function EncodedImport({
         onSuccess();
       }
     } catch (error) {
+      console.error(error);
       setError(
         "Failed to import account. Please check your encoded key and try again.",
       );

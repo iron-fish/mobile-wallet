@@ -58,6 +58,7 @@ export function MnemonicImport({
         onSuccess();
       }
     } catch (error) {
+      console.error(error);
       setError(
         "Failed to import account. Please check your mnemonic phrase and try again.",
       );

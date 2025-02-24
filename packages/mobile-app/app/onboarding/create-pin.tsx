@@ -7,13 +7,11 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import Hyperlink from "react-native-hyperlink";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { PinInputComponent } from "@/components/PinInputComponent";
 import { useState } from "react";
 import { useFacade } from "@/data/facades";
-import { CheckBox } from "@ui-kitten/components";
 import { TermsOfService } from "@/components/TermsOfService/TermsOfService";
 
 const MIN_PIN_LENGTH = 4;

@@ -85,6 +85,7 @@ export function FileImport({
         onSuccess();
       }
     } catch (error) {
+      console.error(error);
       setError(
         "Failed to import account. Please check your file and try again.",
       );
