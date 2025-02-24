@@ -14,7 +14,20 @@
         "{workspaceRoot}/node_modules/**/*"
       ]
     },
+    "pod-native": {
+      "executor": "@nx/react-native:pod-install",
+      "dependsOn": ["^build", "^cargo-ios-native"],
+      "cache": true,
+      "inputs": [
+        "!{projectRoot}/**/*",
+        "{workspaceRoot}/packages/ironfish-native-module/**/*",
+        "{workspaceRoot}/node_modules/**/*"
+      ]
+    },
     "ios": {
+      "dependsOn": ["pod-sim"]
+    },
+    "ios-native": {
       "dependsOn": ["pod-sim"]
     },
     "lint": {

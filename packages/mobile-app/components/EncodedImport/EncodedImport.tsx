@@ -9,6 +9,7 @@ import {
 } from "@ui-kitten/components";
 import { useState } from "react";
 import { useFacade } from "@/data/facades";
+import { TermsOfService } from "../TermsOfService/TermsOfService";
 
 type EncodedImportProps = {
   onSuccess: () => void;
@@ -29,6 +30,7 @@ export function EncodedImport({
   const [accountName, setAccountName] = useState("");
   const [encodedKey, setEncodedKey] = useState("");
   const [error, setError] = useState("");
+  const [confirmChecked, setConfirmChecked] = useState(false);
 
   const facade = useFacade();
   const importAccount = facade.importAccount.useMutation();
@@ -122,12 +124,19 @@ export function EncodedImport({
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
+        <TermsOfService checked={confirmChecked} onChange={setConfirmChecked} />
+
         <Button
           style={styles.button}
           size="large"
           onPress={handleImport}
           accessoryLeft={importAccount.isPending ? LoadingIndicator : undefined}
-          disabled={importAccount.isPending || !encodedKey || !accountName}
+          disabled={
+            importAccount.isPending ||
+            !encodedKey ||
+            !accountName ||
+            !confirmChecked
+          }
         >
           {importAccount.isPending ? "Importing..." : "Import Account"}
         </Button>

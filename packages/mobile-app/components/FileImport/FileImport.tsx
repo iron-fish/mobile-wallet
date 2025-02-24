@@ -14,6 +14,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
 import { Files } from "@/svgs/Files";
 import React from "react";
+import { TermsOfService } from "../TermsOfService/TermsOfService";
 
 type FileImportProps = {
   onSuccess: () => void;
@@ -35,6 +36,7 @@ export function FileImport({
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [confirmChecked, setConfirmChecked] = useState(false);
 
   const facade = useFacade();
   const importAccount = facade.importAccount.useMutation();
@@ -157,12 +159,19 @@ export function FileImport({
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
+        <TermsOfService checked={confirmChecked} onChange={setConfirmChecked} />
+
         <Button
           style={styles.button}
           size="large"
           onPress={handleImport}
           accessoryLeft={importAccount.isPending ? LoadingIndicator : undefined}
-          disabled={importAccount.isPending || !fileContent || !accountName}
+          disabled={
+            importAccount.isPending ||
+            !fileContent ||
+            !accountName ||
+            !confirmChecked
+          }
         >
           {importAccount.isPending ? "Importing..." : "Import Account"}
         </Button>

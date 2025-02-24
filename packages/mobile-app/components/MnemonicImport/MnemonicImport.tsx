@@ -9,6 +9,7 @@ import {
 } from "@ui-kitten/components";
 import { useState } from "react";
 import { useFacade } from "@/data/facades";
+import { TermsOfService } from "../TermsOfService/TermsOfService";
 
 type MnemonicImportProps = {
   onSuccess: () => void;
@@ -29,6 +30,7 @@ export function MnemonicImport({
   const [accountName, setAccountName] = useState("");
   const [phrase, setPhrase] = useState("");
   const [error, setError] = useState("");
+  const [confirmChecked, setConfirmChecked] = useState(false);
 
   const facade = useFacade();
   const importAccount = facade.importAccount.useMutation();
@@ -124,6 +126,8 @@ export function MnemonicImport({
           status={error ? "danger" : "basic"}
         />
 
+        <TermsOfService checked={confirmChecked} onChange={setConfirmChecked} />
+
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <Button
@@ -131,7 +135,12 @@ export function MnemonicImport({
           size="large"
           onPress={handleImport}
           accessoryLeft={importAccount.isPending ? LoadingIndicator : undefined}
-          disabled={importAccount.isPending || !phrase || !accountName}
+          disabled={
+            importAccount.isPending ||
+            !phrase ||
+            !accountName ||
+            !confirmChecked
+          }
         >
           {importAccount.isPending ? "Importing..." : "Import Account"}
         </Button>
