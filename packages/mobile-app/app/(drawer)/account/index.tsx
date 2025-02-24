@@ -310,7 +310,6 @@ export default function Balances() {
                           ? getIronAsset.data.verification.logoURI
                           : undefined
                       }
-                      forceHideBalance={hideBalances}
                     />
 
                     {/* Custom Assets */}
@@ -338,7 +337,6 @@ export default function Balances() {
                               ? asset.verification.logoURI
                               : undefined
                           }
-                          forceHideBalance={hideBalances}
                         />
                       );
                     })}

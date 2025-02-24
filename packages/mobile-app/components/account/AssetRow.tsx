@@ -8,17 +8,13 @@ export function AssetRow({
   amount,
   verified,
   image,
-  forceHideBalance,
 }: {
   name: string;
   amount: string;
   verified: boolean;
   image?: string;
-  forceHideBalance?: boolean;
 }) {
-  const hideBalancesGlobal = useHideBalances();
-  const hideBalances =
-    forceHideBalance !== undefined ? forceHideBalance : hideBalancesGlobal;
+  const hideBalances = useHideBalances();
 
   return (
     <Card style={styles.assetCard}>
