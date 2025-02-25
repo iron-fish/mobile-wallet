@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import {
   Layout,
   Text,
@@ -49,7 +49,6 @@ interface Balance {
 
 export default function Balances() {
   const hideBalances = useHideBalances();
-  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const facade = useFacade();
   const { account, accountName, isLoading } = useAccount();
   const scrollYOffset = useSharedValue(0);
@@ -110,29 +109,12 @@ export default function Balances() {
     },
   );
 
-  const handlePressIn = () => {
-    longPressTimerRef.current = setTimeout(() => {
-      setAppSetting({
-        key: SettingsKey.HideBalances,
-        value: hideBalances ? "false" : "true",
-      });
-    }, 3000);
+  const handleLongPress = () => {
+    setAppSetting({
+      key: SettingsKey.HideBalances,
+      value: hideBalances ? "false" : "true",
+    });
   };
-
-  const handlePressOut = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-      }
-    };
-  }, []);
 
   if (isLoading || !account) {
     return (
@@ -207,7 +189,7 @@ export default function Balances() {
                 paddingTop: 40,
               }}
             >
-              <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut}>
+              <Pressable onLongPress={handleLongPress} delayLongPress={2000}>
                 <Layout style={styles.headerBalance}>
                   <Text category="h1" style={styles.balanceAmount}>
                     {hideBalances
@@ -300,7 +282,9 @@ export default function Balances() {
                         account.balances.iron.confirmed,
                         hideBalances,
                         account.balances.iron.assetId,
-                        getIronAsset.data?.verification,
+                        getIronAsset.data?.verification.status === "verified"
+                          ? getIronAsset.data.verification
+                          : undefined,
                       )}
                       verified={
                         getIronAsset.data?.verification.status === "verified"

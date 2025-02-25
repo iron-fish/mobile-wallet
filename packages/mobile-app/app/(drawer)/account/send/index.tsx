@@ -7,6 +7,7 @@ import { CurrencyUtils } from "@ironfish/sdk";
 import { useQueries } from "@tanstack/react-query";
 import { Asset } from "@/data/facades/chain/types";
 import { AccountBalance } from "@/data/facades/wallet/types";
+import { useHideBalances } from "@/hooks/useHideBalances";
 import {
   Layout,
   Text,
@@ -42,6 +43,7 @@ type TransactionState = "sending" | "sent" | "idle";
 export default function Send() {
   const facade = useFacade();
   const router = useRouter();
+  const hideBalances = useHideBalances();
 
   const [selectedAssetId, setSelectedAssetId] =
     useState<string>(IRON_ASSET_ID_HEX);
@@ -96,12 +98,12 @@ export default function Send() {
     return map;
   }, [getCustomAssets]);
 
-  // Create asset options for the select component
+  // Update asset options to respect hide balances
   const assetOptions = useMemo(() => {
     const options = [
       {
         id: IRON_ASSET_ID_HEX,
-        title: `IRON (${CurrencyUtils.render(getAccountResult.data?.balances.iron.available ?? "0")})`,
+        title: `IRON (${hideBalances ? "•••••" : CurrencyUtils.render(getAccountResult.data?.balances.iron.available ?? "0")})`,
       },
     ];
 
@@ -110,20 +112,24 @@ export default function Send() {
       if (asset) {
         options.push({
           id: b.assetId,
-          title: `${asset.name} (${CurrencyUtils.render(
-            b.available,
-            false,
-            b.assetId,
-            asset.verification.status === "verified"
-              ? asset.verification
-              : undefined,
-          )})`,
+          title: `${asset.name} (${
+            hideBalances
+              ? "•••••"
+              : CurrencyUtils.render(
+                  b.available,
+                  false,
+                  b.assetId,
+                  asset.verification.status === "verified"
+                    ? asset.verification
+                    : undefined,
+                )
+          })`,
         });
       }
     });
 
     return options;
-  }, [getAccountResult.data, assetMap]);
+  }, [getAccountResult.data, assetMap, hideBalances]);
 
   // Find the selected asset index
   const selectedIndex = useMemo(() => {
@@ -304,7 +310,7 @@ export default function Send() {
             {transactionState === "sending" ? "Sending..." : "Sent!"}
           </Text>
           <Text category="s1" style={styles.amountText}>
-            {amount}{" "}
+            {hideBalances ? "•••••" : amount}{" "}
             {selectedAssetId === IRON_ASSET_ID_HEX
               ? "$IRON"
               : (assetMap.get(selectedAssetId)?.name ?? "Unknown")}{" "}

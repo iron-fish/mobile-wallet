@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
  */
 export function useHideBalances(): boolean {
   const facade = useFacade();
-  const [hideBalances, setHideBalances] = useState(false);
+  const [hideBalances, setHideBalances] = useState(true);
   const appSettings = facade.getAppSettings.useQuery();
 
   useEffect(() => {
