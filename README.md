@@ -45,6 +45,8 @@ Targets can be defined in the `package.json` or `projects.json`. Learn more [in 
 
 ### New Build
 
+- Update the Version and Build numbers in `app.json`. If you're pushing an update, you'll probably just want to increment the build.
+
 ```shell
 nx prebuild mobile-app -- --platform ios
 nx cargo-ios ironfish-native-module -- --target='ios'
@@ -61,7 +63,8 @@ open .
 - Double Click "mobileapp"
 - Signing & Capabilities tab
 - Under signing select "IF Labs" for team (must be added to team in App Store Connect, ask Derek)
-- Bundle identifier should be prepopulated but should read "com.ironfish.mobileapp"
+- Bundle identifier should be prepopulated but should read "network.ironfish.mobilewallet"
+- Double-check Version and Build numbers match those in `app.json`.
 - In the scheme bar (top center of editor), select Any iOS Device (arm64)
 - Mac menu bar - click Product -> Archive, wait for build (might take a minute or two)
 - Click Distribute App button in popup
