@@ -17,6 +17,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAccount } from "@/providers/AccountProvider";
 import { SafeAreaView } from "react-native";
 import { Spinner } from "@ui-kitten/components";
+import { useHideBalances } from "@/hooks/useHideBalances";
 
 const ForwardIcon = (props: any): IconElement => (
   <Icon {...props} name="arrow-ios-forward" />
@@ -49,15 +50,17 @@ function getMenuItems({
   currentAccountName,
   currentAccountBalance,
   hideBalances,
+  balanceMask,
 }: {
   currentAccountName: string;
   currentAccountBalance: string;
   hideBalances: boolean;
+  balanceMask: string;
 }) {
   return Object.entries(ACCOUNT_SETTINGS_ROUTES).map(([key, route]) => {
     if (key === "accountSelect") {
       return {
-        title: `${currentAccountName} (${hideBalances ? "•••••" : currentAccountBalance} $IRON)`,
+        title: `${currentAccountName} (${hideBalances ? balanceMask : currentAccountBalance} $IRON)`,
         href: route.href,
       };
     }
@@ -74,8 +77,9 @@ function getMenuItems({
 function AccountSettingsContent({ accountName }: { accountName: string }) {
   const router = useRouter();
   const facade = useFacade();
+  const { balanceMask } = useHideBalances();
 
-  // I tried using isPending and variables on the mutation, but it was causing toggle
+  // I tried using the useHideBalances hook but it was causing toggle
   // re-renders that made the toggle animation jittery.
   const appSettings = facade.getAppSettings.useQuery();
   const [hideBalances, setHideBalances] = useState(false);
@@ -110,6 +114,7 @@ function AccountSettingsContent({ accountName }: { accountName: string }) {
       getAccountResult.data?.balances.iron.confirmed ?? "0",
     ),
     hideBalances,
+    balanceMask,
   });
 
   const handleSelect = (index: number) => {

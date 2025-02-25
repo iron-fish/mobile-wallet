@@ -54,7 +54,7 @@ const CopyableText = ({ text, style }: { text: string; style?: any }) => {
 export default function TransactionDetails() {
   const { hash } = useLocalSearchParams<{ hash: string }>();
   const facade = useFacade();
-  const hideBalances = useHideBalances();
+  const { hideBalances, balanceMask } = useHideBalances();
 
   const transactionQuery = facade.getTransaction.useQuery(
     {
@@ -183,7 +183,7 @@ export default function TransactionDetails() {
             </Text>
             <Text category="h2" style={styles.mainAmount}>
               {hideBalances
-                ? "•••••"
+                ? balanceMask
                 : CurrencyUtils.render(
                     (mainAmount < 0n ? -mainAmount : mainAmount).toString(),
                     false,
@@ -243,8 +243,9 @@ export default function TransactionDetails() {
                 Fee
               </Text>
               <Text style={styles.value}>
-                {hideBalances ? "•••••" : CurrencyUtils.render(transaction.fee)}{" "}
-                $IRON
+                {hideBalances
+                  ? balanceMask
+                  : CurrencyUtils.render(transaction.fee ?? "0")}
               </Text>
             </View>
             <Divider style={styles.divider} />

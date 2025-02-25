@@ -48,7 +48,7 @@ interface Balance {
 }
 
 export default function Balances() {
-  const hideBalances = useHideBalances();
+  const { hideBalances, balanceMask } = useHideBalances();
   const facade = useFacade();
   const { account, accountName, isLoading } = useAccount();
   const scrollYOffset = useSharedValue(0);
@@ -193,7 +193,7 @@ export default function Balances() {
                 <Layout style={styles.headerBalance}>
                   <Text category="h1" style={styles.balanceAmount}>
                     {hideBalances
-                      ? "•••••"
+                      ? balanceMask
                       : CurrencyUtils.render(
                           account?.balances.iron.confirmed ?? "0",
                         )}

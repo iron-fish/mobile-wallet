@@ -14,7 +14,7 @@ export function AssetRow({
   verified: boolean;
   image?: string;
 }) {
-  const hideBalances = useHideBalances();
+  const { hideBalances, balanceMask } = useHideBalances();
 
   return (
     <Card style={styles.assetCard}>
@@ -27,7 +27,7 @@ export function AssetRow({
             {name} {verified ? "(Verified)" : ""}
           </Text>
           <Text category="p2" appearance="hint">
-            {hideBalances ? "•••••" : amount}
+            {hideBalances ? balanceMask : amount}
           </Text>
         </Layout>
       </Layout>

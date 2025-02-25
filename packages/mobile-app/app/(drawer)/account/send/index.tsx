@@ -43,7 +43,7 @@ type TransactionState = "sending" | "sent" | "idle";
 export default function Send() {
   const facade = useFacade();
   const router = useRouter();
-  const hideBalances = useHideBalances();
+  const { hideBalances, balanceMask } = useHideBalances();
 
   const [selectedAssetId, setSelectedAssetId] =
     useState<string>(IRON_ASSET_ID_HEX);
@@ -103,7 +103,7 @@ export default function Send() {
     const options = [
       {
         id: IRON_ASSET_ID_HEX,
-        title: `IRON (${hideBalances ? "•••••" : CurrencyUtils.render(getAccountResult.data?.balances.iron.available ?? "0")})`,
+        title: `IRON (${hideBalances ? balanceMask : CurrencyUtils.render(getAccountResult.data?.balances.iron.available ?? "0")})`,
       },
     ];
 
@@ -114,7 +114,7 @@ export default function Send() {
           id: b.assetId,
           title: `${asset.name} (${
             hideBalances
-              ? "•••••"
+              ? balanceMask
               : CurrencyUtils.render(
                   b.available,
                   false,
@@ -129,7 +129,7 @@ export default function Send() {
     });
 
     return options;
-  }, [getAccountResult.data, assetMap, hideBalances]);
+  }, [getAccountResult.data, assetMap, hideBalances, balanceMask]);
 
   // Find the selected asset index
   const selectedIndex = useMemo(() => {
@@ -310,7 +310,7 @@ export default function Send() {
             {transactionState === "sending" ? "Sending..." : "Sent!"}
           </Text>
           <Text category="s1" style={styles.amountText}>
-            {hideBalances ? "•••••" : amount}{" "}
+            {hideBalances ? balanceMask : amount}{" "}
             {selectedAssetId === IRON_ASSET_ID_HEX
               ? "$IRON"
               : (assetMap.get(selectedAssetId)?.name ?? "Unknown")}{" "}

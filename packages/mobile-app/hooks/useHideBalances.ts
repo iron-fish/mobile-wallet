@@ -3,9 +3,12 @@ import { useEffect, useState } from "react";
 
 /**
  * Hook that provides the current hide balances setting
- * @returns The current hide balances state
+ * @returns Object with hideBalances state and balanceMask for consistent display
  */
-export function useHideBalances(): boolean {
+export function useHideBalances(): {
+  hideBalances: boolean;
+  balanceMask: string;
+} {
   const facade = useFacade();
   const [hideBalances, setHideBalances] = useState(true);
   const appSettings = facade.getAppSettings.useQuery();
@@ -14,5 +17,8 @@ export function useHideBalances(): boolean {
     setHideBalances(appSettings.data?.hideBalances === "true");
   }, [appSettings.data?.hideBalances]);
 
-  return hideBalances;
+  return {
+    hideBalances,
+    balanceMask: "•••••",
+  };
 }

@@ -95,7 +95,7 @@ const assetBalanceCompare = (
 export function TransactionRow({ transaction }: { transaction: Transaction }) {
   const facade = useFacade();
   const router = useRouter();
-  const hideBalances = useHideBalances();
+  const { hideBalances, balanceMask } = useHideBalances();
 
   const getAssets = useQueries({
     queries:
@@ -198,7 +198,7 @@ export function TransactionRow({ transaction }: { transaction: Transaction }) {
                     color: delta.delta.startsWith("-") ? "black" : "#5BA54C",
                   }}
                 >
-                  {hideBalances ? "•••••" : delta.delta}
+                  {hideBalances ? balanceMask : delta.delta}
                 </Text>
               </Layout>
             );
