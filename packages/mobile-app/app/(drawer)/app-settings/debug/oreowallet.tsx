@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { Button, StyleSheet, Text, View } from "react-native";
 import { IRON_ASSET_ID_HEX, Network } from "@/data/constants";
 import { OreowalletServerApi } from "@/data/oreowalletServerApi/oreowalletServerApi";
@@ -148,7 +147,6 @@ export default function MenuDebugOreowallet() {
           </>
         )}
       </View>
-      <StatusBar style="auto" />
     </View>
   );
 }

@@ -2,13 +2,14 @@ import { Stack } from "expo-router";
 import { useRouter } from "expo-router";
 import { Layout } from "@ui-kitten/components";
 import { StyleSheet } from "react-native";
-import { EncodedImport } from "@/components/EncodedImport/EncodedImport";
+import { FileImport } from "@/components/FileImport/FileImport";
+import React from "react";
 
-export default function ImportEncodedScreen() {
+export default function ImportFileScreen() {
   const router = useRouter();
 
   return (
-    <>
+    <React.Fragment>
       <Stack.Screen
         options={{
           headerTitle: "Account Import",
@@ -17,12 +18,12 @@ export default function ImportEncodedScreen() {
       />
 
       <Layout style={styles.container} level="1">
-        <EncodedImport
+        <FileImport
           onSuccess={() => router.dismissAll()}
           showSuccessModal={true}
         />
       </Layout>
-    </>
+    </React.Fragment>
   );
 }
 

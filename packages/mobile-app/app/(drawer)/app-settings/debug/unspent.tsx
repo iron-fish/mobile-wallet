@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
 import { IRON_ASSET_ID_HEX, Network } from "@/data/constants";
 import { wallet } from "@/data/wallet/wallet";
@@ -82,7 +81,6 @@ export default function MenuDebugUnspentNotes() {
           </View>
         ))}
       </ScrollView>
-      <StatusBar style="auto" />
     </View>
   );
 }

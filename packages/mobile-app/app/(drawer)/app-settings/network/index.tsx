@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import {
   Button,
   Modal,
@@ -160,7 +159,6 @@ export default function MenuNetwork() {
           </View>
         </TouchableOpacity>
       </View>
-      <StatusBar style="auto" />
     </View>
   );
 }

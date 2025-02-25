@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Network } from "@/data/constants";
 import { wallet } from "@/data/wallet/wallet";
@@ -58,7 +57,6 @@ export default function MenuDebugPending() {
           </View>
         ))}
       </ScrollView>
-      <StatusBar style="auto" />
     </View>
   );
 }

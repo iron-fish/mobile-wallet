@@ -1,8 +1,4 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
+import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { ActivityIndicator, SafeAreaView, StyleSheet } from "react-native";
 import {
@@ -11,7 +7,7 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 
-import { useColorScheme, Text } from "react-native";
+import { Text } from "react-native";
 import { FacadeProvider, useFacade } from "@/data/facades";
 import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
@@ -65,7 +61,6 @@ function DatabaseLoader({ children }: { children?: React.ReactNode }) {
 }
 
 export default function Layout() {
-  const scheme = useColorScheme();
   const [loaded] = useFonts({
     Favorit: require("../assets/fonts/ABCFavorit-Regular.otf"),
     FavoritExtended: require("../assets/fonts/ABCFavoritExtended-Regular.otf"),
@@ -74,7 +69,7 @@ export default function Layout() {
   if (!loaded) return null;
 
   return (
-    <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={DefaultTheme}>
       <IconRegistry icons={EvaIconsPack} />
       <ApplicationProvider {...eva} theme={eva.light}>
         <QueryClientProvider client={queryClient}>
