@@ -11,6 +11,7 @@ import { Image } from "expo-image";
 import { ReceiveArrow } from "@/svgs/ReceiveArrow";
 import { SendArrow } from "@/svgs/SendArrow";
 import * as CurrencyUtils from "@/utils/currency";
+import { useHideBalances } from "@/hooks/useHideBalances";
 
 function renderTransactionType(txType: TransactionType): string {
   switch (txType) {
@@ -94,6 +95,7 @@ const assetBalanceCompare = (
 export function TransactionRow({ transaction }: { transaction: Transaction }) {
   const facade = useFacade();
   const router = useRouter();
+  const { hideBalances, balanceMask } = useHideBalances();
 
   const getAssets = useQueries({
     queries:
@@ -196,7 +198,7 @@ export function TransactionRow({ transaction }: { transaction: Transaction }) {
                     color: delta.delta.startsWith("-") ? "black" : "#5BA54C",
                   }}
                 >
-                  {delta.delta}
+                  {hideBalances ? balanceMask : delta.delta}
                 </Text>
               </Layout>
             );

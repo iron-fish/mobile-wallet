@@ -1,6 +1,7 @@
 import { Layout, Text, Card } from "@ui-kitten/components";
 import { Image } from "expo-image";
 import { StyleSheet } from "react-native";
+import { useHideBalances } from "@/hooks/useHideBalances";
 
 export function AssetRow({
   name,
@@ -13,6 +14,8 @@ export function AssetRow({
   verified: boolean;
   image?: string;
 }) {
+  const { hideBalances, balanceMask } = useHideBalances();
+
   return (
     <Card style={styles.assetCard}>
       <Layout style={styles.assetCardContent}>
@@ -24,7 +27,7 @@ export function AssetRow({
             {name} {verified ? "(Verified)" : ""}
           </Text>
           <Text category="p2" appearance="hint">
-            {amount}
+            {hideBalances ? balanceMask : amount}
           </Text>
         </Layout>
       </Layout>

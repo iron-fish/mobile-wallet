@@ -3,11 +3,12 @@ import { Stack, useRouter } from "expo-router";
 import { useFacade } from "@/data/facades";
 import { CurrencyUtils } from "@ironfish/sdk";
 import { Layout, Text, Button, Card, Spinner } from "@ui-kitten/components";
-import React from "react";
+import { useHideBalances } from "@/hooks/useHideBalances";
 
 export default function AccountSelect() {
   const router = useRouter();
   const facade = useFacade();
+  const { hideBalances, balanceMask } = useHideBalances();
 
   const getAccountsResult = facade.getAccounts.useQuery(undefined, {
     refetchInterval: 1000,
@@ -49,7 +50,9 @@ export default function AccountSelect() {
                     <Layout>
                       <Text category="s1">{account.name}</Text>
                       <Text category="p2" appearance="hint">
-                        {`${CurrencyUtils.render(account.balances.iron.confirmed)} $IRON`}
+                        {hideBalances
+                          ? `${balanceMask} $IRON`
+                          : `${CurrencyUtils.render(account.balances.iron.confirmed)} $IRON`}
                       </Text>
                     </Layout>
                     {account.active && (

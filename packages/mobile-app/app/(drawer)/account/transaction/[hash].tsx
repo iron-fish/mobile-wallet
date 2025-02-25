@@ -14,6 +14,7 @@ import { useFacade } from "../../../../data/facades";
 import { CurrencyUtils } from "@ironfish/sdk";
 import { useQueries } from "@tanstack/react-query";
 import { setStringAsync } from "expo-clipboard";
+import { useHideBalances } from "@/hooks/useHideBalances";
 
 const ExternalLinkIcon = (props: IconProps) => (
   <Icon {...props} name="external-link-outline" />
@@ -52,6 +53,7 @@ const CopyableText = ({ text, style }: { text: string; style?: any }) => {
 export default function TransactionDetails() {
   const { hash } = useLocalSearchParams<{ hash: string }>();
   const facade = useFacade();
+  const { hideBalances, balanceMask } = useHideBalances();
 
   const transactionQuery = facade.getTransaction.useQuery(
     {
@@ -179,10 +181,12 @@ export default function TransactionDetails() {
               {isReceived ? "Received" : "Sent"}
             </Text>
             <Text category="h2" style={styles.mainAmount}>
-              {CurrencyUtils.render(
-                (mainAmount < 0n ? -mainAmount : mainAmount).toString(),
-                false,
-              )}{" "}
+              {hideBalances
+                ? balanceMask
+                : CurrencyUtils.render(
+                    (mainAmount < 0n ? -mainAmount : mainAmount).toString(),
+                    false,
+                  )}{" "}
               {mainAssetName}
             </Text>
             <Text category="s1" appearance="hint" style={styles.timestamp}>
@@ -238,7 +242,9 @@ export default function TransactionDetails() {
                 Fee
               </Text>
               <Text style={styles.value}>
-                {CurrencyUtils.render(transaction.fee)} $IRON
+                {hideBalances
+                  ? balanceMask
+                  : CurrencyUtils.render(transaction.fee ?? "0")}
               </Text>
             </View>
             <Divider style={styles.divider} />
