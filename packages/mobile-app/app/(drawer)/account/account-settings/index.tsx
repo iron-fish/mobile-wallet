@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import {
   Icon,
   IconElement,
@@ -162,7 +161,6 @@ function AccountSettingsContent({ accountName }: { accountName: string }) {
               />,
             )}
         </Menu>
-        <StatusBar style="auto" />
       </Layout>
     </>
   );

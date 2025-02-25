@@ -1,9 +1,8 @@
-import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useFacade } from "@/data/facades";
 import { CurrencyUtils } from "@ironfish/sdk";
-import { Layout, Text, Button, Card } from "@ui-kitten/components";
+import { Layout, Text, Button, Card, Spinner } from "@ui-kitten/components";
 import { useHideBalances } from "@/hooks/useHideBalances";
 
 export default function AccountSelect() {
@@ -17,6 +16,12 @@ export default function AccountSelect() {
 
   const setActiveAccount = facade.setActiveAccount.useMutation();
 
+  const renderLoadingSkeleton = () => (
+    <Layout style={[styles.content, styles.loadingContainer]}>
+      <Spinner size="large" />
+    </Layout>
+  );
+
   return (
     <>
       <Stack.Screen
@@ -27,35 +32,37 @@ export default function AccountSelect() {
       />
       <Layout style={styles.container}>
         <Layout style={styles.content}>
-          {getAccountsResult.data?.map((account) => (
-            <Card
-              key={account.name}
-              style={styles.accountCard}
-              onPress={async () => {
-                const result = await setActiveAccount.mutateAsync({
-                  name: account.name,
-                });
-                console.log(`setActiveAccount: ${result}`);
-                router.dismissAll();
-              }}
-            >
-              <Layout style={styles.accountInfo}>
-                <Layout>
-                  <Text category="s1">{account.name}</Text>
-                  <Text category="p2" appearance="hint">
-                    {hideBalances
-                      ? `${balanceMask} $IRON`
-                      : `${CurrencyUtils.render(account.balances.iron.confirmed)} $IRON`}
-                  </Text>
-                </Layout>
-                {account.active && (
-                  <Text status="success" category="c1">
-                    Active
-                  </Text>
-                )}
-              </Layout>
-            </Card>
-          ))}
+          {getAccountsResult.isLoading
+            ? renderLoadingSkeleton()
+            : getAccountsResult.data?.map((account) => (
+                <Card
+                  key={account.name}
+                  style={styles.accountCard}
+                  onPress={async () => {
+                    const result = await setActiveAccount.mutateAsync({
+                      name: account.name,
+                    });
+                    console.log(`setActiveAccount: ${result}`);
+                    router.dismissAll();
+                  }}
+                >
+                  <Layout style={styles.accountInfo}>
+                    <Layout>
+                      <Text category="s1">{account.name}</Text>
+                      <Text category="p2" appearance="hint">
+                        {hideBalances
+                          ? `${balanceMask} $IRON`
+                          : `${CurrencyUtils.render(account.balances.iron.confirmed)} $IRON`}
+                      </Text>
+                    </Layout>
+                    {account.active && (
+                      <Text status="success" category="c1">
+                        Active
+                      </Text>
+                    )}
+                  </Layout>
+                </Card>
+              ))}
           <Button
             style={styles.addButton}
             onPress={() =>
@@ -65,7 +72,6 @@ export default function AccountSelect() {
             Add Account
           </Button>
         </Layout>
-        <StatusBar style="auto" />
       </Layout>
     </>
   );
@@ -91,5 +97,9 @@ const styles = StyleSheet.create({
   },
   addButton: {
     marginTop: 8,
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View } from "react-native";
 import { useFacade } from "@/data/facades";
 import { useState, useMemo } from "react";
@@ -354,8 +353,6 @@ export default function Send() {
           </View>
         </Layout>
       </Modal>
-
-      <StatusBar style="auto" />
     </Layout>
   );
 }

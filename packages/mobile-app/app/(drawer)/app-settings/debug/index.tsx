@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { Network } from "@/data/constants";
 import { wallet } from "@/data/wallet/wallet";
@@ -69,7 +68,6 @@ export default function MenuDebug() {
           Remove Blocks
         </Button>
       </Layout>
-      <StatusBar style="auto" />
     </Layout>
   );
 }
