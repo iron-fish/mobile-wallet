@@ -65,6 +65,16 @@ export default function TransactionDetails() {
     },
   );
 
+  const explorer = facade.getExplorerUrl.useQuery(
+    {
+      type: "transaction",
+      hash: hash,
+    },
+    {
+      enabled: !!hash,
+    },
+  );
+
   // Get assets for all balance deltas
   const assetQueries = useQueries({
     queries:
@@ -76,7 +86,8 @@ export default function TransactionDetails() {
   });
 
   const openInExplorer = () => {
-    Linking.openURL(`https://explorer.ironfish.network/transaction/${hash}`);
+    if (!explorer.data) return;
+    Linking.openURL(explorer.data);
   };
 
   if (transactionQuery.isLoading || assetQueries.some((q) => q.isLoading)) {

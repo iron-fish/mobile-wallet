@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { Button, Card, Layout, Text } from "@ui-kitten/components";
 import { oreoWallet } from "@/data/wallet/oreowalletWallet";
 import { Network } from "@/data/constants";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as Uint8ArrayUtils from "@/utils/uint8Array";
 import { useFacade } from "@/data/facades";
 import { Output } from "@/data/facades/wallet/types";
@@ -219,15 +219,13 @@ export default function MenuDebugBrowser() {
     },
   );
 
-  const handlePresentModalPress = useCallback(() => {
-    bottomSheetModalRef.current?.present();
-    setAccountModalVisible(true);
-  }, []);
-
-  const handleDismissModalPress = useCallback(() => {
-    bottomSheetModalRef.current?.dismiss();
-    setAccountModalVisible(false);
-  }, []);
+  useEffect(() => {
+    if (accountModalVisible) {
+      bottomSheetModalRef.current?.present();
+    } else {
+      bottomSheetModalRef.current?.dismiss();
+    }
+  }, [accountModalVisible]);
 
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -379,7 +377,10 @@ export default function MenuDebugBrowser() {
             enablePanDownToClose
             backdropComponent={renderBackdrop}
             onDismiss={() => {
-              messageHandler.current.updateActiveAccount(null);
+              if (messageHandler.current.connectRequest) {
+                messageHandler.current.connectRequest.resolve(null);
+                messageHandler.current.connectRequest = null;
+              }
               setAccountModalVisible(false);
             }}
             backgroundStyle={styles.bottomSheetModal}
@@ -391,7 +392,7 @@ export default function MenuDebugBrowser() {
                   style={{ width: 48, height: 48 }}
                 />
                 <Layout style={{ gap: 2 }}>
-                  <Text category="h5">Iron Fish Bridge</Text>
+                  <Text category="h5">Connect Account</Text>
                   <Text category="s2" appearance="hint">
                     {network}
                   </Text>
@@ -412,34 +413,36 @@ export default function MenuDebugBrowser() {
               >
                 <Button
                   onPress={() => {
-                    if (!account.data) {
-                      console.error("No account loaded");
-                      return;
-                    }
-                    messageHandler.current.updateActiveAccount({
-                      name: account.data.name,
-                      address: account.data.publicAddress,
-                    });
-                    handleDismissModalPress();
-                  }}
-                  style={{ flex: 1 }}
-                >
-                  Confirm
-                </Button>
-                <Button
-                  onPress={() => {
                     messageHandler.current.updateActiveAccount(null);
-                    handleDismissModalPress();
+                    setAccountModalVisible(false);
                   }}
                   style={{ flex: 1 }}
                   appearance="outline"
                 >
                   Cancel
                 </Button>
+                <Button
+                  onPress={async () => {
+                    if (!account.data) {
+                      console.error("No account loaded");
+                      return;
+                    }
+                    await messageHandler.current.updateActiveAccount({
+                      name: account.data.name,
+                      address: account.data.publicAddress,
+                    });
+                    setAccountModalVisible(false);
+                  }}
+                  style={{ flex: 1 }}
+                >
+                  Confirm
+                </Button>
               </Layout>
             </BottomSheetView>
           </BottomSheetModal>
           <SendTransactionModal
+            network={network}
+            renderBackdrop={renderBackdrop}
             sendTransactionData={sendTransactionData}
             cancel={() => {
               messageHandler.current.rejectSendTransactionRequest();
@@ -457,7 +460,7 @@ export default function MenuDebugBrowser() {
             onMessage={(event) => {
               messageHandler.current.handleMessage(
                 event.nativeEvent.data,
-                handlePresentModalPress,
+                () => setAccountModalVisible(true),
                 (data) => {
                   setSendTransactionData(data);
                 },

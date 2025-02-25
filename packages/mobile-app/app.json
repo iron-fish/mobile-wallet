@@ -16,6 +16,8 @@
     "ios": {
       "icon": "./assets/icon.png",
       "bundleIdentifier": "network.ironfish.mobilewallet",
+      "appleTeamId": "9WR79D873L",
+      "buildNumber": "2",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,

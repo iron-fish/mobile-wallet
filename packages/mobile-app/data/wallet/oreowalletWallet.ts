@@ -393,14 +393,12 @@ export class Wallet {
       memo = memo.padEnd(64, "0");
 
       const key = `${output.publicAddress}:${output.amount}:${output.assetId ?? IRON_ASSET_ID_HEX}:${memo}`;
-      console.log(`Output key: ${key}`);
 
       map.set(key, (map.get(key) ?? 0) + 1);
     }
 
     for (const output of rawTransaction.outputs) {
       const key = `${output.note.owner()}:${output.note.value()}:${output.note.assetId().toString("hex")}:${output.note.memo().toString("hex")}`;
-      console.log(`rawTxn output key: ${key}`);
 
       const count = map.get(key) ?? 0;
 
