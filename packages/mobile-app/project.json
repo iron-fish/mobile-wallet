@@ -27,9 +27,6 @@
     "ios": {
       "dependsOn": ["pod-sim"]
     },
-    "ios-native": {
-      "dependsOn": ["pod-sim"]
-    },
     "lint": {
       "dependsOn": ["^build"]
     },

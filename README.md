@@ -43,48 +43,52 @@ Targets can be defined in the `package.json` or `projects.json`. Learn more [in 
 
 ## TestFlight
 
-### New Build
+[TestFlight](https://developer.apple.com/testflight/) makes it easy to deploy beta builds to iOS users. To deploy, you'll need to have XCode installed.
 
-- Update the Version and Build numbers in `app.json`. If you're pushing an update, you'll probably just want to increment the build.
+### Preparing the build
 
-```shell
-nx prebuild mobile-app -- --platform ios
-nx cargo-ios ironfish-native-module -- --target='ios'
-cd packages/mobile-app/ios
-pod install
-open .
-```
+1. Increment the build number in `app.json`. Updating just the build allows for quicker deploys to TestFlight, so avoid updating the version number.
 
-- Double click .xcworkspace file (requires xcode)
+1. Prebuild the app:
+    ```shell
+    nx prebuild mobile-app -- --platform ios
+    ```
+1. Install native dependencies:
+    ```
+    nx pod-native mobile-app
+    ```
+1. Open the XCode Workspace:
+    ```
+    open packages/mobile-app/ios/IronFish.xcworkspace
+    ```
 
-#### In XCode
+#### Creating and uploading the build
 
-- Click folder icon in top left of editor
-- Double Click "mobileapp"
-- Signing & Capabilities tab
-- Under signing select "IF Labs" for team (must be added to team in App Store Connect, ask Derek)
-- Bundle identifier should be prepopulated but should read "network.ironfish.mobilewallet"
-- Double-check Version and Build numbers match those in `app.json`.
-- In the scheme bar (top center of editor), select Any iOS Device (arm64)
-- Mac menu bar - click Product -> Archive, wait for build (might take a minute or two)
-- Click Distribute App button in popup
-- App Store Connect -> Distribute
+1. Click the folder icon in top left of editor (Project navigator).
+1. Click "IronFish", then the Signing & Capabilities tab.
+1. Verify that "IF Labs" displays for the team. If not, select it if available, or sign in with an Apple account that has access to the developer team.
+1. Verify that the bundle identifier reads "network.ironfish.mobilewallet"
+1. Switch to the Info tab. Verify that the following fields match `app.json`:
+    * "Bundle version" should match `buildNumber`
+    * "Bundle version string (short)" should match `version`
+1.  In the scheme bar (top center of editor), select "Any iOS Device (arm64)"
+1. In the Mac menu bar, click Product -> Archive, then wait for the build to complete.
+    * `codesign` may ask you to enter your password to sign the build.
+1. The list of builds will appear (You can return here with Window -> Organizer). Select the latest archive and click "Distribute App".
+1. Select "App Store Connect", then click "Distribute".
+  * There may be some errors about missing symbols, but it's fine to ignore.
 
-#### TestFlight website
+#### Deploying the build to TestFlight
 
-- Login at appstoreconnect.apple.com
-- Go to apps
-- Click Iron Fish Wallet
-- Click Test Flight tab
-- From here you can manage internal testing groups/members and builds
-
-### Adding Testflight user
-
-- For internal only, go to AppStoreConnect, Users and Access
-- Click +, enter email of employee that they use on their iOS device (probably not work email), add them as customer support
-- Have them verify joining team by checking email
-- Go to Apps -> Ironfish Wallet -> Testflight
-- Left panel Click Internal Testing IF Labs
-- Click + for testers
-- Select new user, click add
-- Have user go to email, and follow link to test app
+1. Login at appstoreconnect.apple.com
+1. Click "Apps"
+1. Click "Iron Fish Wallet"
+1. Click the TestFlight tab
+1. Wait for the build you uploaded to finish processing
+    * You may need to complete encryption compliance questions.
+1. Click on the build number
+1. Under Test Details, fill out information about what changed.
+1. Under Group, click the plus and add "External Testers".
+1. Check "Automatically notify testers"
+1. Fill out the field with the same content as Test Details
+1. Click Submit for Review
